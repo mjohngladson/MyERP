@@ -549,6 +549,438 @@ class BackendTester:
             self.log_test("Global Search", False, f"Error: {str(e)}")
             return False
     
+    async def test_sales_overview_report(self):
+        """Test sales overview report endpoint"""
+        try:
+            # Test with default parameters (30 days)
+            async with self.session.get(f"{self.base_url}/api/reports/sales-overview") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["totalSales", "totalOrders", "avgOrderValue", "growthRate", "topProducts", "salesTrend", "dateRange"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify data types and structure
+                        if (isinstance(data["totalSales"], (int, float)) and
+                            isinstance(data["totalOrders"], int) and
+                            isinstance(data["avgOrderValue"], (int, float)) and
+                            isinstance(data["growthRate"], (int, float)) and
+                            isinstance(data["topProducts"], list) and
+                            isinstance(data["salesTrend"], list) and
+                            isinstance(data["dateRange"], dict)):
+                            
+                            # Check dateRange structure
+                            if all(key in data["dateRange"] for key in ["start", "end", "days"]):
+                                self.log_test("Sales Overview Report - Default", True, f"Sales overview report working. Total Sales: {data['totalSales']}, Orders: {data['totalOrders']}", data)
+                            else:
+                                self.log_test("Sales Overview Report - Default", False, "Missing dateRange fields", data)
+                                return False
+                        else:
+                            self.log_test("Sales Overview Report - Default", False, "Invalid data types in response", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Sales Overview Report - Default", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Sales Overview Report - Default", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with different day parameters
+            for days in [7, 90, 365]:
+                async with self.session.get(f"{self.base_url}/api/reports/sales-overview?days={days}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data["dateRange"]["days"] == days:
+                            self.log_test(f"Sales Overview Report - {days} days", True, f"Report for {days} days working", {"days": days, "totalSales": data["totalSales"]})
+                        else:
+                            self.log_test(f"Sales Overview Report - {days} days", False, f"Days parameter not respected: expected {days}, got {data['dateRange']['days']}")
+                            return False
+                    else:
+                        self.log_test(f"Sales Overview Report - {days} days", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test salesTrend structure
+            async with self.session.get(f"{self.base_url}/api/reports/sales-overview") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["salesTrend"]) > 0:
+                        trend_item = data["salesTrend"][0]
+                        if all(key in trend_item for key in ["month", "sales", "target"]):
+                            self.log_test("Sales Overview Report - Trend Structure", True, "Sales trend structure valid", trend_item)
+                        else:
+                            self.log_test("Sales Overview Report - Trend Structure", False, "Invalid sales trend structure", trend_item)
+                            return False
+                    else:
+                        self.log_test("Sales Overview Report - Trend Structure", True, "Empty sales trend (acceptable)", data["salesTrend"])
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Overview Report", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_financial_summary_report(self):
+        """Test financial summary report endpoint"""
+        try:
+            # Test with default parameters
+            async with self.session.get(f"{self.base_url}/api/reports/financial-summary") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["totalRevenue", "totalExpenses", "netProfit", "profitMargin", "expenses", "dateRange"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify calculations
+                        calculated_profit = data["totalRevenue"] - data["totalExpenses"]
+                        if abs(calculated_profit - data["netProfit"]) < 0.01:  # Allow for floating point precision
+                            self.log_test("Financial Summary Report - Default", True, f"Financial summary working. Revenue: {data['totalRevenue']}, Expenses: {data['totalExpenses']}, Profit: {data['netProfit']}", data)
+                        else:
+                            self.log_test("Financial Summary Report - Default", False, f"Profit calculation incorrect: expected {calculated_profit}, got {data['netProfit']}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Financial Summary Report - Default", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Financial Summary Report - Default", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with different day parameters
+            for days in [7, 90]:
+                async with self.session.get(f"{self.base_url}/api/reports/financial-summary?days={days}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data["dateRange"]["days"] == days:
+                            self.log_test(f"Financial Summary Report - {days} days", True, f"Financial report for {days} days working", {"days": days, "netProfit": data["netProfit"]})
+                        else:
+                            self.log_test(f"Financial Summary Report - {days} days", False, f"Days parameter not respected")
+                            return False
+                    else:
+                        self.log_test(f"Financial Summary Report - {days} days", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test expense breakdown structure
+            async with self.session.get(f"{self.base_url}/api/reports/financial-summary") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["expenses"]) > 0:
+                        expense_item = data["expenses"][0]
+                        if all(key in expense_item for key in ["category", "amount", "percentage"]):
+                            self.log_test("Financial Summary Report - Expense Structure", True, "Expense breakdown structure valid", expense_item)
+                        else:
+                            self.log_test("Financial Summary Report - Expense Structure", False, "Invalid expense structure", expense_item)
+                            return False
+                    else:
+                        self.log_test("Financial Summary Report - Expense Structure", True, "Empty expenses (acceptable)", data["expenses"])
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Financial Summary Report", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_customer_analysis_report(self):
+        """Test customer analysis report endpoint"""
+        try:
+            # Test with default parameters
+            async with self.session.get(f"{self.base_url}/api/reports/customer-analysis") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["totalCustomers", "activeCustomers", "newCustomers", "churnRate", "segments", "dateRange"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify customer metrics
+                        if (isinstance(data["totalCustomers"], int) and
+                            isinstance(data["activeCustomers"], int) and
+                            isinstance(data["newCustomers"], int) and
+                            isinstance(data["churnRate"], (int, float)) and
+                            isinstance(data["segments"], list)):
+                            
+                            self.log_test("Customer Analysis Report - Default", True, f"Customer analysis working. Total: {data['totalCustomers']}, Active: {data['activeCustomers']}, Churn: {data['churnRate']}%", data)
+                        else:
+                            self.log_test("Customer Analysis Report - Default", False, "Invalid data types in response", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Customer Analysis Report - Default", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Customer Analysis Report - Default", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test segments structure
+            async with self.session.get(f"{self.base_url}/api/reports/customer-analysis") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["segments"]) > 0:
+                        segment = data["segments"][0]
+                        if all(key in segment for key in ["name", "count", "revenue"]):
+                            # Check for expected segment names
+                            segment_names = [s["name"] for s in data["segments"]]
+                            expected_segments = ["High Value", "Regular", "New", "At Risk"]
+                            if any(seg in segment_names for seg in expected_segments):
+                                self.log_test("Customer Analysis Report - Segments", True, f"Customer segments working: {segment_names}", {"segments": len(data["segments"])})
+                            else:
+                                self.log_test("Customer Analysis Report - Segments", False, f"Expected segments not found: {segment_names}")
+                                return False
+                        else:
+                            self.log_test("Customer Analysis Report - Segments", False, "Invalid segment structure", segment)
+                            return False
+                    else:
+                        self.log_test("Customer Analysis Report - Segments", True, "Empty segments (acceptable)", data["segments"])
+            
+            # Test with different time periods
+            for days in [7, 90]:
+                async with self.session.get(f"{self.base_url}/api/reports/customer-analysis?days={days}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data["dateRange"]["days"] == days:
+                            self.log_test(f"Customer Analysis Report - {days} days", True, f"Customer analysis for {days} days working", {"days": days, "totalCustomers": data["totalCustomers"]})
+                        else:
+                            self.log_test(f"Customer Analysis Report - {days} days", False, f"Days parameter not respected")
+                            return False
+                    else:
+                        self.log_test(f"Customer Analysis Report - {days} days", False, f"HTTP {response.status}")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Customer Analysis Report", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_inventory_report(self):
+        """Test inventory report endpoint"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/reports/inventory-report") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["totalItems", "totalStockValue", "lowStockCount", "outOfStockCount", "topItems", "stockSummary"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify data types
+                        if (isinstance(data["totalItems"], int) and
+                            isinstance(data["totalStockValue"], (int, float)) and
+                            isinstance(data["lowStockCount"], int) and
+                            isinstance(data["outOfStockCount"], int) and
+                            isinstance(data["topItems"], list) and
+                            isinstance(data["stockSummary"], dict)):
+                            
+                            self.log_test("Inventory Report - Basic", True, f"Inventory report working. Total Items: {data['totalItems']}, Stock Value: {data['totalStockValue']}", data)
+                        else:
+                            self.log_test("Inventory Report - Basic", False, "Invalid data types in response", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Inventory Report - Basic", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Inventory Report - Basic", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test topItems structure
+            async with self.session.get(f"{self.base_url}/api/reports/inventory-report") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["topItems"]) > 0:
+                        item = data["topItems"][0]
+                        required_item_fields = ["name", "code", "stock_qty", "unit_price", "total_value"]
+                        if all(field in item for field in required_item_fields):
+                            # Verify value calculation
+                            calculated_value = item["stock_qty"] * item["unit_price"]
+                            if abs(calculated_value - item["total_value"]) < 0.01:
+                                self.log_test("Inventory Report - Top Items", True, f"Top items structure valid. First item: {item['name']}", item)
+                            else:
+                                self.log_test("Inventory Report - Top Items", False, f"Value calculation incorrect: expected {calculated_value}, got {item['total_value']}", item)
+                                return False
+                        else:
+                            missing = [f for f in required_item_fields if f not in item]
+                            self.log_test("Inventory Report - Top Items", False, f"Missing item fields: {missing}", item)
+                            return False
+                    else:
+                        self.log_test("Inventory Report - Top Items", True, "Empty top items (acceptable)", data["topItems"])
+            
+            # Test stock summary structure
+            async with self.session.get(f"{self.base_url}/api/reports/inventory-report") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    summary_fields = ["in_stock", "low_stock", "out_of_stock"]
+                    if all(field in data["stockSummary"] for field in summary_fields):
+                        self.log_test("Inventory Report - Stock Summary", True, f"Stock summary structure valid: {data['stockSummary']}", data["stockSummary"])
+                    else:
+                        missing = [f for f in summary_fields if f not in data["stockSummary"]]
+                        self.log_test("Inventory Report - Stock Summary", False, f"Missing summary fields: {missing}", data["stockSummary"])
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Inventory Report", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_performance_metrics_report(self):
+        """Test performance metrics report endpoint"""
+        try:
+            # Test with default parameters
+            async with self.session.get(f"{self.base_url}/api/reports/performance-metrics") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["kpis", "totalSales", "totalPurchases", "activeCustomers", "customerRetentionRate", "inventoryTurnover", "weeklyPerformance", "dateRange"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify KPIs structure
+                        if isinstance(data["kpis"], list) and len(data["kpis"]) > 0:
+                            kpi = data["kpis"][0]
+                            kpi_fields = ["name", "value", "target", "unit", "achievement"]
+                            if all(field in kpi for field in kpi_fields):
+                                self.log_test("Performance Metrics Report - Default", True, f"Performance metrics working. KPIs: {len(data['kpis'])}, Sales: {data['totalSales']}", data)
+                            else:
+                                missing = [f for f in kpi_fields if f not in kpi]
+                                self.log_test("Performance Metrics Report - Default", False, f"Missing KPI fields: {missing}", kpi)
+                                return False
+                        else:
+                            self.log_test("Performance Metrics Report - Default", False, "Invalid KPIs structure", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Performance Metrics Report - Default", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Performance Metrics Report - Default", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test weekly performance structure
+            async with self.session.get(f"{self.base_url}/api/reports/performance-metrics") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["weeklyPerformance"]) > 0:
+                        week = data["weeklyPerformance"][0]
+                        if all(key in week for key in ["week", "sales", "orders"]):
+                            self.log_test("Performance Metrics Report - Weekly Performance", True, f"Weekly performance structure valid: {len(data['weeklyPerformance'])} weeks", week)
+                        else:
+                            self.log_test("Performance Metrics Report - Weekly Performance", False, "Invalid weekly performance structure", week)
+                            return False
+                    else:
+                        self.log_test("Performance Metrics Report - Weekly Performance", True, "Empty weekly performance (acceptable)", data["weeklyPerformance"])
+            
+            # Test achievement percentage calculations
+            async with self.session.get(f"{self.base_url}/api/reports/performance-metrics") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    for kpi in data["kpis"]:
+                        if kpi["target"] > 0:
+                            expected_achievement = min(100, (kpi["value"] / kpi["target"]) * 100)
+                            if abs(expected_achievement - kpi["achievement"]) < 1:  # Allow 1% tolerance
+                                self.log_test(f"Performance Metrics Report - {kpi['name']} Achievement", True, f"Achievement calculation correct: {kpi['achievement']}%", kpi)
+                            else:
+                                self.log_test(f"Performance Metrics Report - {kpi['name']} Achievement", False, f"Achievement calculation incorrect: expected {expected_achievement}, got {kpi['achievement']}", kpi)
+                                return False
+            
+            # Test with different day parameters
+            for days in [7, 90]:
+                async with self.session.get(f"{self.base_url}/api/reports/performance-metrics?days={days}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data["dateRange"]["days"] == days:
+                            self.log_test(f"Performance Metrics Report - {days} days", True, f"Performance metrics for {days} days working", {"days": days, "totalSales": data["totalSales"]})
+                        else:
+                            self.log_test(f"Performance Metrics Report - {days} days", False, f"Days parameter not respected")
+                            return False
+                    else:
+                        self.log_test(f"Performance Metrics Report - {days} days", False, f"HTTP {response.status}")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Performance Metrics Report", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_export_functionality(self):
+        """Test report export functionality"""
+        try:
+            # Test export endpoint with different report types
+            report_types = ["sales_overview", "financial_summary", "customer_analysis", "inventory_report", "performance_metrics"]
+            
+            for report_type in report_types:
+                # Test PDF export
+                async with self.session.post(f"{self.base_url}/api/reports/export/{report_type}?format=pdf") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        required_fields = ["message", "export_id", "format", "status", "download_url"]
+                        
+                        if all(field in data for field in required_fields):
+                            if data["format"] == "pdf" and data["status"] == "processing":
+                                self.log_test(f"Export Functionality - {report_type} PDF", True, f"PDF export initiated for {report_type}", data)
+                            else:
+                                self.log_test(f"Export Functionality - {report_type} PDF", False, f"Invalid export response", data)
+                                return False
+                        else:
+                            missing = [f for f in required_fields if f not in data]
+                            self.log_test(f"Export Functionality - {report_type} PDF", False, f"Missing fields: {missing}", data)
+                            return False
+                    else:
+                        self.log_test(f"Export Functionality - {report_type} PDF", False, f"HTTP {response.status}")
+                        return False
+                
+                # Test Excel export
+                async with self.session.post(f"{self.base_url}/api/reports/export/{report_type}?format=excel") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data["format"] == "excel":
+                            self.log_test(f"Export Functionality - {report_type} Excel", True, f"Excel export initiated for {report_type}", data)
+                        else:
+                            self.log_test(f"Export Functionality - {report_type} Excel", False, f"Format not set correctly", data)
+                            return False
+                    else:
+                        self.log_test(f"Export Functionality - {report_type} Excel", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test download endpoint
+            test_export_id = "test-export-id-123"
+            async with self.session.get(f"{self.base_url}/api/reports/download/{test_export_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "export_id" in data and data["export_id"] == test_export_id:
+                        self.log_test("Export Functionality - Download", True, f"Download endpoint working", data)
+                    else:
+                        self.log_test("Export Functionality - Download", False, f"Export ID not returned correctly", data)
+                        return False
+                else:
+                    self.log_test("Export Functionality - Download", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Export Functionality", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_reporting_error_handling(self):
+        """Test error handling for reporting endpoints"""
+        try:
+            # Test invalid report type for export
+            async with self.session.post(f"{self.base_url}/api/reports/export/invalid_report") as response:
+                if response.status in [400, 422, 500]:  # Accept various error codes
+                    self.log_test("Reporting Error Handling - Invalid Report Type", True, f"Invalid report type handled with HTTP {response.status}")
+                else:
+                    self.log_test("Reporting Error Handling - Invalid Report Type", False, f"Expected error status, got {response.status}")
+                    return False
+            
+            # Test invalid parameters
+            async with self.session.get(f"{self.base_url}/api/reports/sales-overview?days=-1") as response:
+                # Should either work with default or return error
+                if response.status in [200, 400, 422]:
+                    self.log_test("Reporting Error Handling - Invalid Days Parameter", True, f"Invalid days parameter handled with HTTP {response.status}")
+                else:
+                    self.log_test("Reporting Error Handling - Invalid Days Parameter", False, f"Unexpected status {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting Backend API Tests for ERPNext Clone")
@@ -565,6 +997,13 @@ class BackendTester:
             self.test_database_initialization,
             self.test_search_suggestions,
             self.test_global_search,
+            self.test_sales_overview_report,
+            self.test_financial_summary_report,
+            self.test_customer_analysis_report,
+            self.test_inventory_report,
+            self.test_performance_metrics_report,
+            self.test_export_functionality,
+            self.test_reporting_error_handling,
             self.test_error_handling
         ]
         
