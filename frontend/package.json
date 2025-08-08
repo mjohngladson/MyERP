@@ -84,5 +84,5 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17"
   },
-  "packageManager": "npm@10.8.2"
+
 }
