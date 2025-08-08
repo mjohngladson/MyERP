@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from datetime import datetime, timedelta
-from ..database import (
+from database import (
     transactions_collection,
     notifications_collection,
     sales_orders_collection,
@@ -10,7 +10,7 @@ from ..database import (
     suppliers_collection,
     items_collection
 )
-from ..models import QuickStats, Transaction, Notification, MonthlyReport
+from models import QuickStats, Transaction, Notification, MonthlyReport
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
