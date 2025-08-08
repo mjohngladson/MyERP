@@ -228,7 +228,7 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <button
-              onClick={() => window.location.hash = '#advanced-reporting'}
+              onClick={onAdvancedReporting}
               className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group"
             >
               <BarChart3 className="text-blue-600 group-hover:text-blue-700 mb-2" size={24} />
