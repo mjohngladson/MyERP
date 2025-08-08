@@ -5,19 +5,23 @@ WORKDIR /app
 # Copy package files (both npm and yarn)
 COPY package*.json yarn.lock* ./
 
-# Install dependencies - use yarn since you have yarn.lock
-RUN yarn install --frozen-lockfile
+# Clean install with specific Node version
+RUN yarn install --frozen-lockfile --network-timeout 1000000
 
 # Copy source code
 COPY . .
 
+# Set NODE_OPTIONS for legacy compatibility
+ENV NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=4096"
+
 # Build the app
 RUN yarn build
 
-# Install serve to serve the build
-RUN npm install -g serve
+# Production stage
+FROM nginx:alpine
+COPY --from=0 /app/build /usr/share/nginx/html
 
-EXPOSE 3000
+# Copy custom nginx config if needed
+EXPOSE 80
 
-# Serve the build
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["nginx", "-g", "daemon off;"]
