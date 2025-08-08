@@ -190,7 +190,9 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   const clearSearch = () => {
     setSearchTerm('');
     setResults([]);
+    setSuggestions([]);
     setSelectedIndex(-1);
+    setShowFullResults(false);
   };
 
   const groupedResults = results.reduce((groups, result) => {
