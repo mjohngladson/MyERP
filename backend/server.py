@@ -75,6 +75,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize sample data on startup"""
+    await init_sample_data()
+    logger.info("✅ ERPNext Clone API started successfully")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
