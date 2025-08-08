@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from ..database import users_collection, companies_collection
-from ..models import User, UserLogin
+from database import users_collection, companies_collection
+from models import User, UserLogin
 from typing import Optional
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
