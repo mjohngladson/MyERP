@@ -227,7 +227,7 @@ const MainApp = () => {
   const renderActiveComponent = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard onViewAllTransactions={handleViewAllTransactions} />;
+        return <Dashboard onViewAllTransactions={handleViewAllTransactions} onAdvancedReporting={handleAdvancedReporting} />;
       
       case 'profile':
         return <ProfilePage onBack={() => setActiveView('dashboard')} />;
