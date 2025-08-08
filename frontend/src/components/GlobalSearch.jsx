@@ -51,64 +51,59 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     return colors[type] || 'gray';
   };
 
-  // Mock search results
-  const mockResults = [
-    {
-      id: 1,
-      type: 'sales_order',
-      title: 'Sales Order SO-2024-001',
-      subtitle: 'ABC Corp • ₹25,000 • Draft',
-      icon: FileText,
-      color: 'blue',
-      category: 'Sales',
-      date: '2024-01-15',
-      path: '/sales-orders/1'
-    },
-    {
-      id: 2,
-      type: 'customer',
-      title: 'ABC Corp',
-      subtitle: 'Active customer • 15 orders • Mumbai',
-      icon: Building,
-      color: 'green',
-      category: 'Customers',
-      date: '2024-01-10',
-      path: '/customers/1'
-    },
-    {
-      id: 3,
-      type: 'item',
-      title: 'Product A',
-      subtitle: 'PROD-A-001 • ₹100/unit • 50 in stock',
-      icon: Package,
-      color: 'purple',
-      category: 'Inventory',
-      date: '2024-01-08',
-      path: '/items/1'
-    },
-    {
-      id: 4,
-      type: 'invoice',
-      title: 'Invoice SINV-2024-001',
-      subtitle: 'ABC Corp • ₹25,000 • Paid',
-      icon: DollarSign,
-      color: 'orange',
-      category: 'Accounting',
-      date: '2024-01-12',
-      path: '/invoices/1'
-    },
-    {
-      id: 5,
-      type: 'employee',
-      title: 'John Doe',
-      subtitle: 'Software Engineer • Engineering Dept',
-      icon: Users,
-      color: 'indigo',
-      category: 'HR',
-      date: '2024-01-05',
-      path: '/employees/1'
+  // Fetch suggestions for autocomplete
+  const fetchSuggestions = async (searchQuery) => {
+    if (searchQuery.length < 2) {
+      setSuggestions([]);
+      return;
     }
-  ];
+    
+    try {
+      setLoading(true);
+      const response = await api.search.suggestions(searchQuery);
+      setSuggestions(response.data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fetch full search results
+  const fetchSearchResults = async (searchQuery) => {
+    if (searchQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await api.search.global(searchQuery);
+      const apiResults = response.data.results || [];
+      
+      // Transform API results to match expected format
+      const transformedResults = apiResults.map(result => ({
+        id: result.id,
+        type: result.type,
+        title: result.title,
+        subtitle: result.subtitle,
+        description: result.description,
+        icon: getTypeIcon(result.type),
+        color: getTypeColor(result.type),
+        category: result.type.charAt(0).toUpperCase() + result.type.slice(1).replace('_', ' '),
+        path: result.url,
+        relevance: result.relevance
+      }));
+      
+      setResults(transformedResults);
+    } catch (error) {
+      console.error('Error fetching search results:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -117,25 +112,32 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   }, [isOpen]);
 
   useEffect(() => {
-    if (searchTerm.length > 2) {
-      setLoading(true);
-      // Simulate API search delay
-      const timer = setTimeout(() => {
-        const filtered = mockResults.filter(result =>
-          result.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          result.subtitle.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setResults(filtered);
-        setLoading(false);
-        setSelectedIndex(-1);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    } else {
-      setResults([]);
-      setSelectedIndex(-1);
+    // Clear existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
-  }, [searchTerm]);
+    
+    // Set new timer for debounced search
+    debounceTimer.current = setTimeout(() => {
+      if (searchTerm.length >= 2) {
+        if (!showFullResults) {
+          fetchSuggestions(searchTerm);
+        } else {
+          fetchSearchResults(searchTerm);
+        }
+      } else {
+        setSuggestions([]);
+        setResults([]);
+        setSelectedIndex(-1);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchTerm, showFullResults]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
