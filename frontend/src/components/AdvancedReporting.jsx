@@ -51,64 +51,57 @@ const AdvancedReporting = ({ onBack }) => {
     }
   ];
 
-  // Mock report data
-  const mockReportData = {
-    sales_overview: {
-      totalSales: 2500000,
-      totalOrders: 145,
-      avgOrderValue: 17241,
-      growthRate: 15.3,
-      topProducts: [
-        { name: 'Product A', revenue: 450000, growth: 12.5 },
-        { name: 'Product B', revenue: 380000, growth: 8.2 },
-        { name: 'Service Package', revenue: 320000, growth: 22.1 }
-      ],
-      salesTrend: [
-        { month: 'Jan', sales: 180000, target: 200000 },
-        { month: 'Feb', sales: 220000, target: 210000 },
-        { month: 'Mar', sales: 190000, target: 220000 },
-        { month: 'Apr', sales: 250000, target: 240000 },
-        { month: 'May', sales: 280000, target: 250000 },
-        { month: 'Jun', sales: 310000, target: 280000 }
-      ]
-    },
-    financial_summary: {
-      totalRevenue: 2500000,
-      totalExpenses: 1800000,
-      netProfit: 700000,
-      profitMargin: 28,
-      expenses: [
-        { category: 'Cost of Goods', amount: 900000, percentage: 50 },
-        { category: 'Operations', amount: 450000, percentage: 25 },
-        { category: 'Marketing', amount: 270000, percentage: 15 },
-        { category: 'Administration', amount: 180000, percentage: 10 }
-      ]
-    },
-    customer_analysis: {
-      totalCustomers: 342,
-      activeCustomers: 287,
-      newCustomers: 45,
-      churnRate: 3.2,
-      segments: [
-        { name: 'High Value', count: 28, revenue: 1200000 },
-        { name: 'Regular', count: 156, revenue: 900000 },
-        { name: 'New', count: 89, revenue: 300000 },
-        { name: 'At Risk', count: 23, revenue: 100000 }
-      ]
-    }
-  };
-
   useEffect(() => {
     loadReportData();
   }, [selectedReport, dateRange]);
 
-  const loadReportData = () => {
+  const getDaysFromRange = (range) => {
+    const rangeDays = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90,
+      '1y': 365
+    };
+    return rangeDays[range] || 30;
+  };
+
+  const loadReportData = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setReportData(mockReportData[selectedReport] || {});
+    setError(null);
+    
+    try {
+      const days = getDaysFromRange(dateRange);
+      let response;
+      
+      switch (selectedReport) {
+        case 'sales_overview':
+          response = await api.reports.salesOverview(days);
+          break;
+        case 'financial_summary':
+          response = await api.reports.financialSummary(days);
+          break;
+        case 'customer_analysis':
+          response = await api.reports.customerAnalysis(days);
+          break;
+        case 'inventory_report':
+          response = await api.reports.inventoryReport();
+          break;
+        case 'performance_metrics':
+          response = await api.reports.performanceMetrics(days);
+          break;
+        default:
+          setReportData({});
+          return;
+      }
+      
+      setReportData(response.data || {});
+    } catch (error) {
+      console.error('Error loading report data:', error);
+      setError(`Failed to load ${selectedReport.replace('_', ' ')} report. Please try again.`);
+      setReportData({});
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const formatCurrency = (amount) => {
