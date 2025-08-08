@@ -55,13 +55,12 @@ const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
         </button>
         
         {/* Global search */}
-        <div className="hidden md:flex items-center bg-gray-50 rounded-lg px-3 py-2 w-96">
+        <div 
+          onClick={handleSearchClick}
+          className="hidden md:flex items-center bg-gray-50 rounded-lg px-3 py-2 w-96 cursor-pointer hover:bg-gray-100 transition-colors"
+        >
           <Search size={18} className="text-gray-400 mr-2" />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="bg-transparent outline-none flex-1 text-sm"
-          />
+          <span className="text-sm text-gray-500 flex-1">Search anything...</span>
           <kbd className="hidden sm:inline-block bg-white px-2 py-1 text-xs text-gray-500 rounded border">
             Ctrl K
           </kbd>
