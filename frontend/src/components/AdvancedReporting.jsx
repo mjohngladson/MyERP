@@ -116,9 +116,19 @@ const AdvancedReporting = ({ onBack }) => {
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
-  const exportReport = (format) => {
-    console.log(`Exporting report as ${format}`);
-    // Implement export functionality
+  const exportReport = async (format) => {
+    try {
+      const days = getDaysFromRange(dateRange);
+      const response = await api.reports.export(selectedReport, format, days);
+      
+      if (response.data.download_url) {
+        // In a real implementation, you'd redirect to the download URL
+        alert(`Report export initiated. Export ID: ${response.data.export_id}`);
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Failed to export report. Please try again.');
+    }
   };
 
   const renderSalesOverview = () => {
