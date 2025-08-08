@@ -271,6 +271,9 @@ const MainApp = () => {
       case 'all-transactions':
         return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
       
+      case 'advanced-reporting':
+        return <AdvancedReporting onBack={() => setActiveView('dashboard')} />;
+      
       default:
         return (
           <div className="p-6 bg-gray-50 min-h-screen">
