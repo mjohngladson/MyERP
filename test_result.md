@@ -120,20 +120,80 @@ backend:
           agent: "testing"
           comment: "✅ Global Search Suggestions endpoint working perfectly. Tested all scenarios: short queries (returns suggestions for 'A'), ABC query (finds ABC Corp), Product query (finds Product A & B), case-insensitive search (finds XYZ Suppliers), and response structure validation. All required fields (text, type, category) present. Endpoint handles edge cases gracefully and provides proper autocomplete functionality."
   
-  - task: "Global Search API - Full Search Endpoint"
+  - task: "Reporting API - Sales Overview"
     implemented: true
     working: true
-    file: "routers/search.py"
+    file: "routers/reporting.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
-        - working: "NA"
-          agent: "main"
-          comment: "Implemented global search endpoint at /api/search/global. Searches across customers, suppliers, items, sales_orders, purchase_orders, and transactions. Returns unified results with relevance scoring, category filtering, and proper result structure for frontend consumption."
         - working: true
           agent: "testing"
-          comment: "✅ Global Search Full Results endpoint working excellently. Comprehensive testing completed: short queries return empty results, ABC finds ABC Corp customer + transaction, Product finds both Product A & B items, PROD-A finds Product A by item code, XYZ finds XYZ Suppliers + transaction. Limit parameter working (tested with limit=1), category filtering working (customers filter), result structure complete (id, type, title, subtitle, description, url, relevance), relevance sorting working properly, empty queries handled, special characters handled gracefully. All search functionality working as expected with proper MongoDB regex search and relevance scoring."
+          comment: "✅ Sales Overview Report API working perfectly. All required fields present (totalSales, totalOrders, avgOrderValue, growthRate, topProducts, salesTrend, dateRange). Calculations based on actual sales_invoice transactions. Growth rate calculation and monthly trend data working correctly. Tested with multiple day parameters (7, 30, 90, 365)."
+
+  - task: "Reporting API - Financial Summary"
+    implemented: true
+    working: true
+    file: "routers/reporting.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Financial Summary Report API working correctly. Revenue/expense calculations accurate (revenue - expenses = profit). Expense breakdown structure valid with categories and percentages. Profit margin calculations correct. Tested with different time periods."
+
+  - task: "Reporting API - Customer Analysis"
+    implemented: true
+    working: true
+    file: "routers/reporting.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Customer Analysis Report API working excellently. Customer segmentation working with High Value, Regular, New, At Risk categories. Churn rate calculations and new customer detection based on created_at dates. All customer metrics calculating correctly."
+
+  - task: "Reporting API - Inventory Report"
+    implemented: true
+    working: true
+    file: "routers/reporting.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Inventory Report API working perfectly. Stock value calculations correct (unit_price * stock_qty). Low stock detection working (items < 10 units). Top items sorted by value correctly. Stock summary and low stock alerts functioning properly."
+
+  - task: "Reporting API - Performance Metrics"
+    implemented: true
+    working: true
+    file: "routers/reporting.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ Performance metrics endpoint had cursor issue: AttributeError: 'Cursor' object has no attribute 'count_documents'."
+        - working: true
+          agent: "testing"
+          comment: "✅ Fixed performance metrics endpoint cursor issue. KPI calculations working correctly with achievement percentages. Customer retention rate, inventory turnover, and weekly performance trends all functioning properly. All 4 KPIs (Sales Revenue, Sales Orders, Customer Retention, Inventory Turnover) working with proper target calculations."
+
+  - task: "Reporting API - Export Functionality"
+    implemented: true
+    working: true
+    file: "routers/reporting.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Report Export Functionality API working correctly. Export simulation for all report types (sales_overview, financial_summary, customer_analysis, inventory_report, performance_metrics) with both PDF and Excel formats. Export ID generation and download URL structure working properly."
 
   - task: "Sales Overview Report API"
     implemented: true
