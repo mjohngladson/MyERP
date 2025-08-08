@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 
 # Import routers
-from routers import dashboard, auth, sales
+from routers import dashboard, auth, sales, search
 from database import init_sample_data
 
 ROOT_DIR = Path(__file__).parent
