@@ -1,0 +1,66 @@
+{
+  "summary": {
+    "passed": 0,
+    "total": 8,
+    "success_rate": "0.0%",
+    "timestamp": "2025-08-08T19:32:44.766248"
+  },
+  "detailed_results": [
+    {
+      "test": "Health Check",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.703300",
+      "response_data": null
+    },
+    {
+      "test": "Dashboard Stats",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.710025",
+      "response_data": null
+    },
+    {
+      "test": "Dashboard Transactions",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.716580",
+      "response_data": null
+    },
+    {
+      "test": "Auth Me",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.723234",
+      "response_data": null
+    },
+    {
+      "test": "Sales Orders",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.733240",
+      "response_data": null
+    },
+    {
+      "test": "Sales Customers",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-08T19:32:44.740836",
+      "response_data": null
+    },
+    {
+      "test": "Database Initialization",
+      "success": false,
+      "details": "Sample data missing - customers: False, transactions: False, stats: False",
+      "timestamp": "2025-08-08T19:32:44.759323",
+      "response_data": null
+    },
+    {
+      "test": "Error Handling",
+      "success": false,
+      "details": "Expected 404, got 502",
+      "timestamp": "2025-08-08T19:32:44.766045",
+      "response_data": null
+    }
+  ]
+}
