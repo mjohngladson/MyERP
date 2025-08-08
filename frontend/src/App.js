@@ -212,6 +212,10 @@ const MainApp = () => {
     setActiveView('all-transactions');
   };
 
+  const handleAdvancedReporting = () => {
+    setActiveView('advanced-reporting');
+  };
+
   const handleProfileClick = () => {
     setActiveView('profile');
   };
