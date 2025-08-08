@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginPage from './components/LoginPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
+import ProfilePage from './components/ProfilePage';
+import SettingsPage from './components/SettingsPage';
 import SalesOrdersList from './components/SalesOrdersList';
 import CustomersList from './components/CustomersList';
 import QuotationsList from './components/QuotationsList';
@@ -22,7 +26,8 @@ import { Toaster } from './components/ui/toaster';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-function App() {
+const MainApp = () => {
+  const { isAuthenticated, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModule, setActiveModule] = useState('dashboard');
   const [activeView, setActiveView] = useState('dashboard');
@@ -41,8 +46,10 @@ function App() {
   };
 
   useEffect(() => {
-    helloWorldApi();
-  }, []);
+    if (isAuthenticated) {
+      helloWorldApi();
+    }
+  }, [isAuthenticated]);
 
   const handleModuleClick = (moduleId) => {
     setActiveModule(moduleId);
@@ -204,10 +211,24 @@ function App() {
     setActiveView('all-transactions');
   };
 
+  const handleProfileClick = () => {
+    setActiveView('profile');
+  };
+
+  const handleSettingsClick = () => {
+    setActiveView('settings');
+  };
+
   const renderActiveComponent = () => {
     switch (activeView) {
       case 'dashboard':
         return <Dashboard onViewAllTransactions={handleViewAllTransactions} />;
+      
+      case 'profile':
+        return <ProfilePage onBack={() => setActiveView('dashboard')} />;
+      
+      case 'settings':
+        return <SettingsPage onBack={() => setActiveView('dashboard')} />;
       
       // Sales Module
       case 'sales-orders':
@@ -274,31 +295,60 @@ function App() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar 
+        isOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        activeModule={activeModule}
+        setActiveModule={handleModuleClick}
+        onSubItemClick={handleSubItemClick}
+      />
+      
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+        {/* Header */}
+        <Header 
+          toggleSidebar={toggleSidebar}
+          onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
+        />
+        
+        {/* Main content */}
+        <main className="flex-1 overflow-auto">
+          {renderActiveComponent()}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <div className="flex h-screen bg-gray-50">
-          {/* Sidebar */}
-          <Sidebar 
-            isOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
-            activeModule={activeModule}
-            setActiveModule={handleModuleClick}
-            onSubItemClick={handleSubItemClick}
-          />
-          
-          {/* Main content area */}
-          <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-            {/* Header */}
-            <Header toggleSidebar={toggleSidebar} />
-            
-            {/* Main content */}
-            <main className="flex-1 overflow-auto">
-              {renderActiveComponent()}
-            </main>
-          </div>
-        </div>
-        <Toaster />
+        <AuthProvider>
+          <MainApp />
+          <Toaster />
+        </AuthProvider>
       </BrowserRouter>
     </div>
   );
