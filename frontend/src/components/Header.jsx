@@ -162,6 +162,15 @@ const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
         </div>
       </div>
       
+      {/* Global Search Modal */}
+      {showSearch && (
+        <GlobalSearch 
+          isOpen={showSearch}
+          onClose={() => setShowSearch(false)}
+          onNavigate={handleSearchNavigate}
+        />
+      )}
+      
       {/* Click outside handlers */}
       {showUserMenu && (
         <div 
