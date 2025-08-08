@@ -1,16 +1,16 @@
 {
   "summary": {
-    "passed": 8,
-    "total": 8,
+    "passed": 10,
+    "total": 10,
     "success_rate": "100.0%",
-    "timestamp": "2025-08-08T19:33:30.098316"
+    "timestamp": "2025-08-08T20:56:01.578634"
   },
   "detailed_results": [
     {
       "test": "Health Check",
       "success": true,
       "details": "API is running",
-      "timestamp": "2025-08-08T19:33:29.805015",
+      "timestamp": "2025-08-08T20:56:00.849121",
       "response_data": {
         "message": "ERPNext Clone API is running"
       }
@@ -19,11 +19,11 @@
       "test": "Dashboard Stats",
       "success": true,
       "details": "All required fields present with numeric values",
-      "timestamp": "2025-08-08T19:33:29.818182",
+      "timestamp": "2025-08-08T20:56:00.906119",
       "response_data": {
-        "id": "e2d8046e-7a59-441c-8420-6e8f26400f29",
-        "created_at": "2025-08-08T19:33:29.814911",
-        "updated_at": "2025-08-08T19:33:29.814913",
+        "id": "c8469795-139a-41e0-8949-d23ce2959b1d",
+        "created_at": "2025-08-08T20:56:00.861448",
+        "updated_at": "2025-08-08T20:56:00.861451",
         "sales_orders": 0.0,
         "purchase_orders": 0.0,
         "outstanding_amount": 0.0,
@@ -34,13 +34,13 @@
       "test": "Dashboard Transactions",
       "success": true,
       "details": "Retrieved 3 transactions",
-      "timestamp": "2025-08-08T19:33:29.868770",
+      "timestamp": "2025-08-08T20:56:00.922752",
       "response_data": {
         "count": 3,
         "sample": {
           "id": "703b7075-b295-485b-b3c3-fb05b0ce1c33",
           "created_at": "2025-08-08T19:33:07.411000",
-          "updated_at": "2025-08-08T19:33:29.823972",
+          "updated_at": "2025-08-08T20:56:00.919517",
           "type": "sales_invoice",
           "reference_number": "SINV-2024-00001",
           "party_id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
@@ -56,11 +56,11 @@
       "test": "Auth Me",
       "success": true,
       "details": "User profile retrieved: John Doe",
-      "timestamp": "2025-08-08T19:33:29.919625",
+      "timestamp": "2025-08-08T20:56:00.975929",
       "response_data": {
         "id": "bf60a11f-6540-48da-9565-b0b1e37a0e8d",
         "created_at": "2025-08-08T19:33:07.341000",
-        "updated_at": "2025-08-08T19:33:29.875877",
+        "updated_at": "2025-08-08T20:56:00.932791",
         "name": "John Doe",
         "email": "john.doe@company.com",
         "role": "System Manager",
@@ -71,20 +71,20 @@
       "test": "Sales Orders",
       "success": true,
       "details": "Empty sales orders list (valid)",
-      "timestamp": "2025-08-08T19:33:29.930025",
+      "timestamp": "2025-08-08T20:56:00.984045",
       "response_data": []
     },
     {
       "test": "Sales Customers",
       "success": true,
       "details": "Retrieved 2 customers",
-      "timestamp": "2025-08-08T19:33:29.980632",
+      "timestamp": "2025-08-08T20:56:01.036557",
       "response_data": {
         "count": 2,
         "sample": {
           "id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
           "created_at": "2025-08-08T19:33:07.354000",
-          "updated_at": "2025-08-08T19:33:29.936612",
+          "updated_at": "2025-08-08T20:56:00.992744",
           "name": "ABC Corp",
           "email": "contact@abccorp.com",
           "phone": "+1234567891",
@@ -97,7 +97,7 @@
       "test": "Database Initialization",
       "success": true,
       "details": "Sample data properly initialized",
-      "timestamp": "2025-08-08T19:33:30.050497",
+      "timestamp": "2025-08-08T20:56:01.152552",
       "response_data": {
         "customers": 2,
         "transactions": 3,
@@ -105,10 +105,248 @@
       }
     },
     {
+      "test": "Search Suggestions - Short Query",
+      "success": true,
+      "details": "Short query returned 2 suggestions",
+      "timestamp": "2025-08-08T20:56:01.206135",
+      "response_data": {
+        "suggestions": [
+          {
+            "text": "ABC Corp",
+            "type": "customer",
+            "category": "Customers"
+          },
+          {
+            "text": "Product A",
+            "type": "item",
+            "category": "Items"
+          }
+        ]
+      }
+    },
+    {
+      "test": "Search Suggestions - ABC Query",
+      "success": true,
+      "details": "Found ABC Corp in 1 suggestions",
+      "timestamp": "2025-08-08T20:56:01.216928",
+      "response_data": {
+        "suggestions": [
+          {
+            "text": "ABC Corp",
+            "type": "customer",
+            "category": "Customers"
+          }
+        ]
+      }
+    },
+    {
+      "test": "Search Suggestions - Product Query",
+      "success": true,
+      "details": "Found 2 product suggestions",
+      "timestamp": "2025-08-08T20:56:01.227858",
+      "response_data": {
+        "suggestions": [
+          {
+            "text": "Product A",
+            "type": "item",
+            "category": "Items"
+          },
+          {
+            "text": "Product B",
+            "type": "item",
+            "category": "Items"
+          }
+        ]
+      }
+    },
+    {
+      "test": "Search Suggestions - Case Insensitive",
+      "success": true,
+      "details": "Case-insensitive search working",
+      "timestamp": "2025-08-08T20:56:01.280211",
+      "response_data": {
+        "suggestions": [
+          {
+            "text": "XYZ Suppliers",
+            "type": "supplier",
+            "category": "Suppliers"
+          }
+        ]
+      }
+    },
+    {
+      "test": "Search Suggestions - Response Structure",
+      "success": true,
+      "details": "All required fields present in suggestions",
+      "timestamp": "2025-08-08T20:56:01.289830",
+      "response_data": {
+        "text": "ABC Corp",
+        "type": "customer",
+        "category": "Customers"
+      }
+    },
+    {
+      "test": "Global Search - Short Query",
+      "success": true,
+      "details": "Short query correctly returned empty results",
+      "timestamp": "2025-08-08T20:56:01.339031",
+      "response_data": {
+        "query": "A",
+        "total_results": 0,
+        "results": [],
+        "categories": {}
+      }
+    },
+    {
+      "test": "Global Search - ABC Query",
+      "success": true,
+      "details": "Found ABC Corp in 2 results",
+      "timestamp": "2025-08-08T20:56:01.351871",
+      "response_data": {
+        "total": 2,
+        "categories": {
+          "customers": 1,
+          "suppliers": 0,
+          "items": 0,
+          "sales_orders": 0,
+          "purchase_orders": 0,
+          "transactions": 1
+        }
+      }
+    },
+    {
+      "test": "Global Search - Product Query",
+      "success": true,
+      "details": "Found 2 product results",
+      "timestamp": "2025-08-08T20:56:01.363571",
+      "response_data": {
+        "total": 2,
+        "categories": {
+          "customers": 0,
+          "suppliers": 0,
+          "items": 2,
+          "sales_orders": 0,
+          "purchase_orders": 0,
+          "transactions": 0
+        }
+      }
+    },
+    {
+      "test": "Global Search - Item Code Query",
+      "success": true,
+      "details": "Found Product A by item code in 1 results",
+      "timestamp": "2025-08-08T20:56:01.415955",
+      "response_data": {
+        "total": 1,
+        "categories": {
+          "customers": 0,
+          "suppliers": 0,
+          "items": 1,
+          "sales_orders": 0,
+          "purchase_orders": 0,
+          "transactions": 0
+        }
+      }
+    },
+    {
+      "test": "Global Search - XYZ Query",
+      "success": true,
+      "details": "Found XYZ Suppliers in 2 results",
+      "timestamp": "2025-08-08T20:56:01.428914",
+      "response_data": {
+        "total": 2,
+        "categories": {
+          "customers": 0,
+          "suppliers": 1,
+          "items": 0,
+          "sales_orders": 0,
+          "purchase_orders": 0,
+          "transactions": 1
+        }
+      }
+    },
+    {
+      "test": "Global Search - Limit Parameter",
+      "success": true,
+      "details": "Limit parameter working, got 1 results",
+      "timestamp": "2025-08-08T20:56:01.441638",
+      "response_data": {
+        "total": 1,
+        "results_count": 1
+      }
+    },
+    {
+      "test": "Global Search - Category Filter",
+      "success": true,
+      "details": "Category filtering working, all 1 results are customers",
+      "timestamp": "2025-08-08T20:56:01.492292",
+      "response_data": {
+        "categories": {
+          "customers": 1,
+          "suppliers": 0,
+          "items": 0,
+          "sales_orders": 0,
+          "purchase_orders": 0,
+          "transactions": 0
+        }
+      }
+    },
+    {
+      "test": "Global Search - Result Structure",
+      "success": true,
+      "details": "All required fields present in results",
+      "timestamp": "2025-08-08T20:56:01.504196",
+      "response_data": {
+        "id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+        "type": "customer",
+        "title": "ABC Corp",
+        "subtitle": "contact@abccorp.com",
+        "description": "+1234567891",
+        "url": "/sales/customers/a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+        "relevance": 0.8
+      }
+    },
+    {
+      "test": "Global Search - Relevance Sorting",
+      "success": true,
+      "details": "Results properly sorted by relevance: [0.8, 0.8]",
+      "timestamp": "2025-08-08T20:56:01.517752",
+      "response_data": {
+        "scores": [
+          0.8,
+          0.8
+        ]
+      }
+    },
+    {
+      "test": "Global Search - Empty Query",
+      "success": true,
+      "details": "Empty query correctly returned no results",
+      "timestamp": "2025-08-08T20:56:01.565016",
+      "response_data": {
+        "query": "",
+        "total_results": 0,
+        "results": [],
+        "categories": {}
+      }
+    },
+    {
+      "test": "Global Search - Special Characters",
+      "success": true,
+      "details": "Special characters handled gracefully, got 0 results",
+      "timestamp": "2025-08-08T20:56:01.572336",
+      "response_data": {
+        "query": "@",
+        "total_results": 0,
+        "results": [],
+        "categories": {}
+      }
+    },
+    {
       "test": "Error Handling",
       "success": true,
       "details": "404 returned for invalid endpoint",
-      "timestamp": "2025-08-08T19:33:30.098093",
+      "timestamp": "2025-08-08T20:56:01.578407",
       "response_data": null
     }
   ]
