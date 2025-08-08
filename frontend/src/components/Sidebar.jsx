@@ -26,7 +26,7 @@ const iconComponents = {
   UserCheck
 };
 
-const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule }) => {
+const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubItemClick }) => {
   const [expandedModules, setExpandedModules] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -35,6 +35,13 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule }) => {
       ...prev,
       [moduleId]: !prev[moduleId]
     }));
+    setActiveModule(moduleId);
+  };
+
+  const handleSubItemClick = (moduleId, subItem) => {
+    if (onSubItemClick) {
+      onSubItemClick(moduleId, subItem);
+    }
   };
 
   const filteredModules = mockModules.filter(module => 
@@ -89,6 +96,24 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule }) => {
           {/* Modules */}
           <div className="flex-1 overflow-y-auto p-2">
             <div className="space-y-1">
+              {/* Dashboard item */}
+              <button
+                onClick={() => setActiveModule('dashboard')}
+                className={`
+                  w-full flex items-center space-x-3 p-3 rounded-lg
+                  transition-all duration-200 hover:bg-gray-50
+                  ${activeModule === 'dashboard' ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
+                `}
+              >
+                <div 
+                  className="p-2 rounded-md"
+                  style={{ backgroundColor: `#2563eb15`, color: '#2563eb' }}
+                >
+                  <TrendingUp size={20} />
+                </div>
+                <span className="font-medium text-gray-700">Dashboard</span>
+              </button>
+
               {filteredModules.map((module) => {
                 const IconComponent = iconComponents[module.icon];
                 const isExpanded = expandedModules[module.id];
@@ -97,10 +122,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule }) => {
                 return (
                   <div key={module.id}>
                     <button
-                      onClick={() => {
-                        toggleModule(module.id);
-                        setActiveModule(module.id);
-                      }}
+                      onClick={() => toggleModule(module.id)}
                       className={`
                         w-full flex items-center justify-between p-3 rounded-lg
                         transition-all duration-200 hover:bg-gray-50
@@ -132,6 +154,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule }) => {
                         {module.items.map((item, index) => (
                           <button
                             key={index}
+                            onClick={() => handleSubItemClick(module.id, item)}
                             className="w-full text-left p-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
                           >
                             {item}
