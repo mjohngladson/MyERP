@@ -241,30 +241,29 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
                 <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-gray-600">Searching...</p>
               </div>
-            ) : searchTerm.length > 2 ? (
-              // Search Results
-              <div className="py-2">
-                {Object.keys(groupedResults).length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-2">No results found</p>
-                    <p className="text-gray-400 text-sm">Try different keywords or check spelling</p>
-                  </div>
-                ) : (
-                  Object.entries(groupedResults).map(([category, categoryResults]) => (
-                    <div key={category} className="mb-4">
+            ) : searchTerm.length >= 2 ? (
+              showFullResults ? (
+                // Full Search Results
+                <div className="py-2">
+                  {results.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">No results found</p>
+                      <p className="text-gray-400 text-sm">Try different keywords or check spelling</p>
+                    </div>
+                  ) : (
+                    <div>
                       <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                        <h3 className="text-sm font-medium text-gray-700">{category}</h3>
+                        <h3 className="text-sm font-medium text-gray-700">Search Results ({results.length})</h3>
                       </div>
-                      {categoryResults.map((result, index) => {
-                        const globalIndex = results.findIndex(r => r.id === result.id);
+                      {results.map((result, index) => {
                         const IconComponent = result.icon;
                         return (
                           <button
                             key={result.id}
                             onClick={() => handleResultClick(result)}
                             className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center space-x-3 border-b border-gray-50 transition-colors ${
-                              globalIndex === selectedIndex ? 'bg-blue-50 border-blue-200' : ''
+                              index === selectedIndex ? 'bg-blue-50 border-blue-200' : ''
                             }`}
                           >
                             <div className={`w-10 h-10 bg-${result.color}-100 rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -273,19 +272,71 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-gray-800 truncate">{result.title}</div>
                               <div className="text-sm text-gray-500 truncate">{result.subtitle}</div>
+                              {result.description && (
+                                <div className="text-xs text-gray-400 truncate mt-0.5">{result.description}</div>
+                              )}
                             </div>
-                            <div className="flex items-center space-x-2 text-gray-400">
-                              <Calendar size={14} />
-                              <span className="text-xs">{new Date(result.date).toLocaleDateString()}</span>
-                              <ArrowRight size={14} />
-                            </div>
+                            <ArrowRight size={14} className="text-gray-400" />
                           </button>
                         );
                       })}
                     </div>
-                  ))
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                // Suggestions/Autocomplete
+                <div className="py-2">
+                  {suggestions.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Type more to see suggestions</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                        <h3 className="text-sm font-medium text-gray-700">Suggestions</h3>
+                      </div>
+                      {suggestions.map((suggestion, index) => {
+                        const IconComponent = getTypeIcon(suggestion.type);
+                        const color = getTypeColor(suggestion.type);
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-3 border-b border-gray-50 transition-colors ${
+                              index === selectedIndex ? 'bg-blue-50 border-blue-200' : ''
+                            }`}
+                          >
+                            <div className={`w-6 h-6 bg-${color}-100 rounded flex items-center justify-center flex-shrink-0`}>
+                              <IconComponent className={`text-${color}-600`} size={14} />
+                            </div>
+                            <div className="flex-1">
+                              <span className="text-sm text-gray-800">{suggestion.text}</span>
+                              <span className="text-xs text-gray-500 ml-2">in {suggestion.category}</span>
+                            </div>
+                            <ArrowRight size={12} className="text-gray-400" />
+                          </button>
+                        );
+                      })}
+                      
+                      {searchTerm.length >= 2 && (
+                        <button
+                          onClick={() => {
+                            setShowFullResults(true);
+                            fetchSearchResults(searchTerm);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-50 border-t border-gray-100 flex items-center text-blue-600"
+                        >
+                          <Search size={16} className="mr-3" />
+                          <span className="text-sm font-medium">
+                            Search all for "{searchTerm}"
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
             ) : (
               // Recent Searches
               <div className="py-2">
