@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Clock, FileText, Users, Package, DollarSign, 
-  ArrowRight, X, Filter, Star, Calendar, Building
+  ArrowRight, X, Filter, Star, Calendar, Building, ShoppingCart, Receipt, Truck
 } from 'lucide-react';
+import { api } from '../services/api';
 
 const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
