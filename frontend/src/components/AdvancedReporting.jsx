@@ -310,11 +310,33 @@ const AdvancedReporting = ({ onBack }) => {
       );
     }
 
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <BarChart3 className="w-16 h-16 text-red-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Error Loading Report</h3>
+          <p className="text-red-600 text-center mb-4">{error}</p>
+          <button
+            onClick={loadReportData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
     switch (selectedReport) {
       case 'sales_overview':
         return renderSalesOverview();
       case 'financial_summary':
         return renderFinancialSummary();
+      case 'customer_analysis':
+        return renderCustomerAnalysis();
+      case 'inventory_report':
+        return renderInventoryReport();
+      case 'performance_metrics':
+        return renderPerformanceMetrics();
       default:
         return (
           <div className="text-center py-12">
