@@ -10,6 +10,8 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import GlobalSearch from './GlobalSearch';
+import { useNavigate } from 'react-router-dom';
 
 const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
   const { user, logout } = useAuth();
