@@ -107,27 +107,33 @@ user_problem_statement: "Test the ERPNext clone frontend to ensure all functiona
 backend:
   - task: "Global Search API - Suggestions Endpoint"
     implemented: true
-    working: "NA"
+    working: true
     file: "routers/search.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented global search suggestions endpoint at /api/search/suggestions. Provides autocomplete suggestions from customers, items, and suppliers with relevance scoring. Supports regex-based case-insensitive search with proper error handling."
+        - working: true
+          agent: "testing"
+          comment: "✅ Global Search Suggestions endpoint working perfectly. Tested all scenarios: short queries (returns suggestions for 'A'), ABC query (finds ABC Corp), Product query (finds Product A & B), case-insensitive search (finds XYZ Suppliers), and response structure validation. All required fields (text, type, category) present. Endpoint handles edge cases gracefully and provides proper autocomplete functionality."
   
   - task: "Global Search API - Full Search Endpoint"
     implemented: true
-    working: "NA"
+    working: true
     file: "routers/search.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented global search endpoint at /api/search/global. Searches across customers, suppliers, items, sales_orders, purchase_orders, and transactions. Returns unified results with relevance scoring, category filtering, and proper result structure for frontend consumption."
+        - working: true
+          agent: "testing"
+          comment: "✅ Global Search Full Results endpoint working excellently. Comprehensive testing completed: short queries return empty results, ABC finds ABC Corp customer + transaction, Product finds both Product A & B items, PROD-A finds Product A by item code, XYZ finds XYZ Suppliers + transaction. Limit parameter working (tested with limit=1), category filtering working (customers filter), result structure complete (id, type, title, subtitle, description, url, relevance), relevance sorting working properly, empty queries handled, special characters handled gracefully. All search functionality working as expected with proper MongoDB regex search and relevance scoring."
 
 backend:
   - task: "Basic Health Check API"
