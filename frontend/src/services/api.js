@@ -68,6 +68,18 @@ export const api = {
       apiClient.get(`/search/suggestions?query=${encodeURIComponent(query)}&limit=${limit}`),
   },
 
+  // Reporting
+  reports: {
+    salesOverview: (days = 30) => apiClient.get(`/reports/sales-overview?days=${days}`),
+    financialSummary: (days = 30) => apiClient.get(`/reports/financial-summary?days=${days}`),
+    customerAnalysis: (days = 30) => apiClient.get(`/reports/customer-analysis?days=${days}`),
+    inventoryReport: () => apiClient.get(`/reports/inventory-report`),
+    performanceMetrics: (days = 30) => apiClient.get(`/reports/performance-metrics?days=${days}`),
+    export: (reportType, format = 'pdf', days = 30) => 
+      apiClient.post(`/reports/export/${reportType}?format=${format}&days=${days}`),
+    download: (exportId) => apiClient.get(`/reports/download/${exportId}`),
+  },
+
   // Generic API call helper
   get: (endpoint) => apiClient.get(endpoint),
   post: (endpoint, data) => apiClient.post(endpoint, data),
