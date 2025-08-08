@@ -5,6 +5,9 @@ import axios from "axios";
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
+import SalesOrdersList from './components/SalesOrdersList';
+import CustomersList from './components/CustomersList';
+import TransactionsPage from './components/TransactionsPage';
 import { Toaster } from './components/ui/toaster';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -13,6 +16,7 @@ const API = `${BACKEND_URL}/api`;
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModule, setActiveModule] = useState('dashboard');
+  const [activeView, setActiveView] = useState('dashboard');
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -31,10 +35,49 @@ function App() {
     helloWorldApi();
   }, []);
 
+  const handleModuleClick = (moduleId) => {
+    setActiveModule(moduleId);
+    setActiveView(moduleId);
+  };
+
+  const handleSubItemClick = (moduleId, subItem) => {
+    setActiveModule(moduleId);
+    
+    // Map sub-items to specific views
+    if (moduleId === 'sales') {
+      switch (subItem) {
+        case 'Sales Order':
+          setActiveView('sales-orders');
+          break;
+        case 'Customer':
+          setActiveView('customers');
+          break;
+        default:
+          setActiveView('sales');
+      }
+    } else {
+      setActiveView(moduleId);
+    }
+  };
+
+  const handleViewAllTransactions = () => {
+    setActiveView('all-transactions');
+  };
+
   const renderActiveComponent = () => {
-    switch (activeModule) {
+    switch (activeView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onViewAllTransactions={handleViewAllTransactions} />;
+      
+      case 'sales-orders':
+        return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
+      
+      case 'customers':
+        return <CustomersList onBack={() => setActiveView('dashboard')} />;
+      
+      case 'all-transactions':
+        return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
+      
       default:
         return (
           <div className="p-6 bg-gray-50 min-h-screen">
@@ -46,8 +89,14 @@ function App() {
                 This module is currently under development. Please check back later for full functionality.
               </p>
               <div className="text-sm text-gray-500">
-                Module ID: {activeModule}
+                Module ID: {activeModule} | View: {activeView}
               </div>
+              <button 
+                onClick={() => setActiveView('dashboard')}
+                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Back to Dashboard
+              </button>
             </div>
           </div>
         );
@@ -63,7 +112,8 @@ function App() {
             isOpen={sidebarOpen}
             toggleSidebar={toggleSidebar}
             activeModule={activeModule}
-            setActiveModule={setActiveModule}
+            setActiveModule={handleModuleClick}
+            onSubItemClick={handleSubItemClick}
           />
           
           {/* Main content area */}
