@@ -59,6 +59,7 @@ app.include_router(api_router)
 app.include_router(dashboard.router)
 app.include_router(auth.router)
 app.include_router(sales.router)
+app.include_router(search.router)
 
 app.add_middleware(
     CORSMiddleware,
