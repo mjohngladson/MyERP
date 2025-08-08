@@ -446,8 +446,8 @@ const AdvancedReporting = ({ onBack }) => {
               </div>
               <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full transition-all duration-300 ${kpi.achievement >= 80 ? 'bg-green-500' : 'bg-red-500'}`}
-                  style={{ width: `${Math.min(100, kpi.achievement)}%` }}
+                  className={`h-2 rounded-full transition-all duration-300 ${(kpi.achievement || 0) >= 80 ? 'bg-green-500' : 'bg-red-500'}`}
+                  style={{ width: `${Math.min(100, kpi.achievement || 0)}%` }}
                 ></div>
               </div>
             </div>
