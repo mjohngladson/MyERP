@@ -113,6 +113,7 @@ const AdvancedReporting = ({ onBack }) => {
   };
 
   const formatPercentage = (value) => {
+    if (value == null || isNaN(value)) return '0.0%';
     return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
   };
 
