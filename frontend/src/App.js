@@ -21,6 +21,7 @@ import ProjectsList from './components/ProjectsList';
 import StockEntryList from './components/StockEntryList';
 import WarehousesList from './components/WarehousesList';
 import EmployeesList from './components/EmployeesList';
+import AdvancedReporting from './components/AdvancedReporting';
 import { Toaster } from './components/ui/toaster';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
