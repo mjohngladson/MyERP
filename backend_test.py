@@ -563,6 +563,8 @@ class BackendTester:
             self.test_sales_orders,
             self.test_sales_customers,
             self.test_database_initialization,
+            self.test_search_suggestions,
+            self.test_global_search,
             self.test_error_handling
         ]
         
