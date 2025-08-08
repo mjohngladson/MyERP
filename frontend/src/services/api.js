@@ -55,6 +55,19 @@ export const api = {
     createCustomer: (customerData) => apiClient.post('/sales/customers', customerData),
   },
 
+  // Search
+  search: {
+    global: (query, limit = 20, category = null) => {
+      let url = `/search/global?query=${encodeURIComponent(query)}&limit=${limit}`;
+      if (category) {
+        url += `&category=${category}`;
+      }
+      return apiClient.get(url);
+    },
+    suggestions: (query, limit = 8) => 
+      apiClient.get(`/search/suggestions?query=${encodeURIComponent(query)}&limit=${limit}`),
+  },
+
   // Generic API call helper
   get: (endpoint) => apiClient.get(endpoint),
   post: (endpoint, data) => apiClient.post(endpoint, data),
