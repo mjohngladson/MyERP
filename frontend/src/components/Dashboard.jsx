@@ -20,7 +20,7 @@ import {
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
-const Dashboard = ({ onViewAllTransactions }) => {
+const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
   const [currentUser, setCurrentUser] = useState(null);
   
   // API hooks for dashboard data
