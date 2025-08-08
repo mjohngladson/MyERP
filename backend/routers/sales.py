@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from ..database import sales_orders_collection, customers_collection
-from ..models import SalesOrder, SalesOrderCreate, Customer, CustomerCreate
+from database import sales_orders_collection, customers_collection
+from models import SalesOrder, SalesOrderCreate, Customer, CustomerCreate
 import uuid
 from datetime import datetime
 
