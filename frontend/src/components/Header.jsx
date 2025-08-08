@@ -9,11 +9,27 @@ import {
   Search,
   Plus
 } from 'lucide-react';
-import { mockUserData } from '../mockData';
+import { useAuth } from '../contexts/AuthContext';
 
-const Header = ({ toggleSidebar }) => {
+const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
+  const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+  };
+
+  const handleProfileClick = () => {
+    onProfileClick();
+    setShowUserMenu(false);
+  };
+
+  const handleSettingsClick = () => {
+    onSettingsClick();
+    setShowUserMenu(false);
+  };
   
   return (
     <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sticky top-0 z-30">
@@ -66,10 +82,14 @@ const Header = ({ toggleSidebar }) => {
                 <h3 className="font-semibold text-gray-800">Notifications</h3>
               </div>
               <div className="max-h-80 overflow-y-auto">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="p-4 border-b border-gray-50 hover:bg-gray-50">
-                    <p className="text-sm text-gray-800 font-medium">New sales order received</p>
-                    <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                {[
+                  { title: 'New sales order received', time: '2 hours ago', type: 'success' },
+                  { title: 'Payment overdue reminder', time: '4 hours ago', type: 'warning' },
+                  { title: 'Low stock alert', time: '6 hours ago', type: 'error' }
+                ].map((notification, index) => (
+                  <div key={index} className="p-4 border-b border-gray-50 hover:bg-gray-50">
+                    <p className="text-sm text-gray-800 font-medium">{notification.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
                   </div>
                 ))}
               </div>
@@ -89,13 +109,13 @@ const Header = ({ toggleSidebar }) => {
             className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <img
-              src={mockUserData.avatar}
-              alt={mockUserData.name}
+              src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
+              alt={user?.name || 'User'}
               className="w-8 h-8 rounded-full object-cover"
             />
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-gray-800">{mockUserData.name}</p>
-              <p className="text-xs text-gray-500">{mockUserData.role}</p>
+              <p className="text-sm font-medium text-gray-800">{user?.name || 'User'}</p>
+              <p className="text-xs text-gray-500">{user?.role || 'User'}</p>
             </div>
             <ChevronDown size={16} className="text-gray-400" />
           </button>
@@ -103,16 +123,25 @@ const Header = ({ toggleSidebar }) => {
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
               <div className="py-2">
-                <button className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <button 
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
                   <User size={16} />
                   <span>Profile</span>
                 </button>
-                <button className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <button 
+                  onClick={handleSettingsClick}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
                   <Settings size={16} />
                   <span>Settings</span>
                 </button>
                 <hr className="my-2" />
-                <button className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
                   <LogOut size={16} />
                   <span>Logout</span>
                 </button>
