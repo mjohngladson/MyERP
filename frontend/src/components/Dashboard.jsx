@@ -13,7 +13,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  Plus
 } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
