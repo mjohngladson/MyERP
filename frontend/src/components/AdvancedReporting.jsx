@@ -11,6 +11,7 @@ const AdvancedReporting = ({ onBack }) => {
   const [dateRange, setDateRange] = useState('30d');
   const [reportData, setReportData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const reportTypes = [
     {
