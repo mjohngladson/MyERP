@@ -373,8 +373,7 @@ async def get_performance_metrics_report(
         unique_customers = len(set(t.get("party_id") for t in sales_transactions if t.get("party_id")))
         
         # Get total customers for customer retention rate
-        customers_cursor = db.customers.find({})
-        total_customers = await customers_cursor.count_documents({})
+        total_customers = await db.customers.count_documents({})
         customer_retention_rate = (unique_customers / total_customers * 100) if total_customers > 0 else 0
         
         # Purchase metrics
