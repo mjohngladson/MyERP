@@ -263,6 +263,292 @@ class BackendTester:
             self.log_test("Error Handling", False, f"Error: {str(e)}")
             return False
     
+    async def test_search_suggestions(self):
+        """Test global search suggestions endpoint"""
+        try:
+            # Test with short query (should return empty suggestions)
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=A") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        self.log_test("Search Suggestions - Short Query", True, f"Short query returned {len(data['suggestions'])} suggestions", data)
+                    else:
+                        self.log_test("Search Suggestions - Short Query", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Search Suggestions - Short Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with valid query for ABC (should find ABC Corp)
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=ABC") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        # Check if ABC Corp is in suggestions
+                        abc_found = any(s.get("text", "").lower() == "abc corp" for s in data["suggestions"])
+                        if abc_found:
+                            self.log_test("Search Suggestions - ABC Query", True, f"Found ABC Corp in {len(data['suggestions'])} suggestions", data)
+                        else:
+                            self.log_test("Search Suggestions - ABC Query", False, f"ABC Corp not found in suggestions: {data['suggestions']}")
+                            return False
+                    else:
+                        self.log_test("Search Suggestions - ABC Query", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Search Suggestions - ABC Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with Product query (should find Product A and Product B)
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=Product") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        product_suggestions = [s for s in data["suggestions"] if "product" in s.get("text", "").lower()]
+                        if len(product_suggestions) > 0:
+                            self.log_test("Search Suggestions - Product Query", True, f"Found {len(product_suggestions)} product suggestions", data)
+                        else:
+                            self.log_test("Search Suggestions - Product Query", False, f"No product suggestions found: {data['suggestions']}")
+                            return False
+                    else:
+                        self.log_test("Search Suggestions - Product Query", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Search Suggestions - Product Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test case-insensitive search
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=xyz") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        xyz_found = any("xyz" in s.get("text", "").lower() for s in data["suggestions"])
+                        if xyz_found:
+                            self.log_test("Search Suggestions - Case Insensitive", True, "Case-insensitive search working", data)
+                        else:
+                            self.log_test("Search Suggestions - Case Insensitive", True, "No XYZ results (acceptable)", data)
+                    else:
+                        self.log_test("Search Suggestions - Case Insensitive", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Search Suggestions - Case Insensitive", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test response structure
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=ABC") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and len(data["suggestions"]) > 0:
+                        suggestion = data["suggestions"][0]
+                        required_fields = ["text", "type", "category"]
+                        if all(field in suggestion for field in required_fields):
+                            self.log_test("Search Suggestions - Response Structure", True, "All required fields present in suggestions", suggestion)
+                        else:
+                            missing = [f for f in required_fields if f not in suggestion]
+                            self.log_test("Search Suggestions - Response Structure", False, f"Missing fields: {missing}", suggestion)
+                            return False
+                    else:
+                        self.log_test("Search Suggestions - Response Structure", True, "Empty suggestions (valid)", data)
+                else:
+                    self.log_test("Search Suggestions - Response Structure", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Search Suggestions", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_global_search(self):
+        """Test global search full results endpoint"""
+        try:
+            # Test with short query (should return empty results)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=A") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["query", "total_results", "results", "categories"]
+                    if all(field in data for field in required_fields):
+                        if data["total_results"] == 0 and len(data["results"]) == 0:
+                            self.log_test("Global Search - Short Query", True, "Short query correctly returned empty results", data)
+                        else:
+                            self.log_test("Global Search - Short Query", False, f"Short query should return empty results, got {data['total_results']}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Global Search - Short Query", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Global Search - Short Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with ABC query (should find ABC Corp customer)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=ABC") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] > 0:
+                        # Check if ABC Corp is in results
+                        abc_found = any("abc corp" in r.get("title", "").lower() for r in data["results"])
+                        if abc_found:
+                            self.log_test("Global Search - ABC Query", True, f"Found ABC Corp in {data['total_results']} results", {"total": data["total_results"], "categories": data["categories"]})
+                        else:
+                            self.log_test("Global Search - ABC Query", False, f"ABC Corp not found in results", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - ABC Query", False, "No results found for ABC query", data)
+                        return False
+                else:
+                    self.log_test("Global Search - ABC Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with Product query (should find Product A and Product B)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=Product") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] > 0:
+                        product_results = [r for r in data["results"] if "product" in r.get("title", "").lower()]
+                        if len(product_results) > 0:
+                            self.log_test("Global Search - Product Query", True, f"Found {len(product_results)} product results", {"total": data["total_results"], "categories": data["categories"]})
+                        else:
+                            self.log_test("Global Search - Product Query", False, f"No product results found", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - Product Query", False, "No results found for Product query", data)
+                        return False
+                else:
+                    self.log_test("Global Search - Product Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with PROD-A query (should find Product A by item code)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=PROD-A") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] > 0:
+                        prod_a_found = any("prod-a" in r.get("subtitle", "").lower() or "product a" in r.get("title", "").lower() for r in data["results"])
+                        if prod_a_found:
+                            self.log_test("Global Search - Item Code Query", True, f"Found Product A by item code in {data['total_results']} results", {"total": data["total_results"], "categories": data["categories"]})
+                        else:
+                            self.log_test("Global Search - Item Code Query", False, f"Product A not found by item code", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - Item Code Query", False, "No results found for PROD-A query", data)
+                        return False
+                else:
+                    self.log_test("Global Search - Item Code Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with XYZ query (should find XYZ Suppliers)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=XYZ") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] > 0:
+                        xyz_found = any("xyz" in r.get("title", "").lower() for r in data["results"])
+                        if xyz_found:
+                            self.log_test("Global Search - XYZ Query", True, f"Found XYZ Suppliers in {data['total_results']} results", {"total": data["total_results"], "categories": data["categories"]})
+                        else:
+                            self.log_test("Global Search - XYZ Query", False, f"XYZ Suppliers not found", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - XYZ Query", False, "No results found for XYZ query", data)
+                        return False
+                else:
+                    self.log_test("Global Search - XYZ Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test limit parameter
+            async with self.session.get(f"{self.base_url}/api/search/global?query=Product&limit=1") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["results"]) <= 1:
+                        self.log_test("Global Search - Limit Parameter", True, f"Limit parameter working, got {len(data['results'])} results", {"total": data["total_results"], "results_count": len(data["results"])})
+                    else:
+                        self.log_test("Global Search - Limit Parameter", False, f"Limit not respected, got {len(data['results'])} results", data)
+                        return False
+                else:
+                    self.log_test("Global Search - Limit Parameter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test category filtering
+            async with self.session.get(f"{self.base_url}/api/search/global?query=ABC&category=customers") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] > 0:
+                        # All results should be customers
+                        all_customers = all(r.get("type") == "customer" for r in data["results"])
+                        if all_customers:
+                            self.log_test("Global Search - Category Filter", True, f"Category filtering working, all {len(data['results'])} results are customers", {"categories": data["categories"]})
+                        else:
+                            self.log_test("Global Search - Category Filter", False, f"Category filter not working properly", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - Category Filter", True, "No customer results for ABC (acceptable)", data)
+                else:
+                    self.log_test("Global Search - Category Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test result structure
+            async with self.session.get(f"{self.base_url}/api/search/global?query=ABC") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["results"]) > 0:
+                        result = data["results"][0]
+                        required_fields = ["id", "type", "title", "subtitle", "description", "url", "relevance"]
+                        if all(field in result for field in required_fields):
+                            self.log_test("Global Search - Result Structure", True, "All required fields present in results", result)
+                        else:
+                            missing = [f for f in required_fields if f not in result]
+                            self.log_test("Global Search - Result Structure", False, f"Missing fields: {missing}", result)
+                            return False
+                    else:
+                        self.log_test("Global Search - Result Structure", True, "No results to check structure (acceptable)", data)
+                else:
+                    self.log_test("Global Search - Result Structure", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test relevance scoring (results should be sorted by relevance)
+            async with self.session.get(f"{self.base_url}/api/search/global?query=Product") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["results"]) > 1:
+                        relevance_scores = [r.get("relevance", 0) for r in data["results"]]
+                        is_sorted = all(relevance_scores[i] >= relevance_scores[i+1] for i in range(len(relevance_scores)-1))
+                        if is_sorted:
+                            self.log_test("Global Search - Relevance Sorting", True, f"Results properly sorted by relevance: {relevance_scores}", {"scores": relevance_scores})
+                        else:
+                            self.log_test("Global Search - Relevance Sorting", False, f"Results not sorted by relevance: {relevance_scores}", data)
+                            return False
+                    else:
+                        self.log_test("Global Search - Relevance Sorting", True, "Not enough results to test sorting (acceptable)", data)
+                else:
+                    self.log_test("Global Search - Relevance Sorting", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test empty query
+            async with self.session.get(f"{self.base_url}/api/search/global?query=") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["total_results"] == 0:
+                        self.log_test("Global Search - Empty Query", True, "Empty query correctly returned no results", data)
+                    else:
+                        self.log_test("Global Search - Empty Query", False, f"Empty query should return no results, got {data['total_results']}", data)
+                        return False
+                else:
+                    self.log_test("Global Search - Empty Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test special characters
+            async with self.session.get(f"{self.base_url}/api/search/global?query=@#$%") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Global Search - Special Characters", True, f"Special characters handled gracefully, got {data['total_results']} results", data)
+                else:
+                    self.log_test("Global Search - Special Characters", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Global Search", False, f"Error: {str(e)}")
+            return False
+    
     async def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting Backend API Tests for ERPNext Clone")
