@@ -15,8 +15,10 @@ import { useNavigate } from 'react-router-dom';
 
 const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   
   const handleLogout = async () => {
     await logout();
