@@ -430,18 +430,18 @@ const AdvancedReporting = ({ onBack }) => {
             <div key={index} className="bg-white rounded-lg p-6 border border-gray-200">
               <h3 className="text-sm font-medium text-gray-600 mb-2">{kpi.name}</h3>
               <div className="text-2xl font-bold text-gray-800 mb-2">
-                {kpi.unit === 'currency' ? formatCurrency(kpi.value) : 
-                 kpi.unit === 'percentage' ? `${kpi.value.toFixed(1)}%` :
-                 kpi.unit === 'ratio' ? kpi.value.toFixed(2) : kpi.value}
+                {kpi.unit === 'currency' ? formatCurrency(kpi.value || 0) : 
+                 kpi.unit === 'percentage' ? `${(kpi.value || 0).toFixed(1)}%` :
+                 kpi.unit === 'ratio' ? (kpi.value || 0).toFixed(2) : (kpi.value || 0)}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">
-                  Target: {kpi.unit === 'currency' ? formatCurrency(kpi.target) : 
-                           kpi.unit === 'percentage' ? `${kpi.target}%` :
-                           kpi.unit === 'ratio' ? kpi.target.toFixed(2) : kpi.target}
+                  Target: {kpi.unit === 'currency' ? formatCurrency(kpi.target || 0) : 
+                           kpi.unit === 'percentage' ? `${kpi.target || 0}%` :
+                           kpi.unit === 'ratio' ? (kpi.target || 0).toFixed(2) : (kpi.target || 0)}
                 </span>
-                <span className={`text-sm font-medium ${kpi.achievement >= 80 ? 'text-green-600' : 'text-red-600'}`}>
-                  {kpi.achievement.toFixed(0)}%
+                <span className={`text-sm font-medium ${(kpi.achievement || 0) >= 80 ? 'text-green-600' : 'text-red-600'}`}>
+                  {(kpi.achievement || 0).toFixed(0)}%
                 </span>
               </div>
               <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
