@@ -8,6 +8,7 @@ import { api } from '../services/api';
 const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [recentSearches, setRecentSearches] = useState([
     'Sales Order SO-2024-001',
     'Customer ABC Corp',
@@ -16,7 +17,39 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   ]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showFullResults, setShowFullResults] = useState(false);
   const searchInputRef = useRef(null);
+  const debounceTimer = useRef(null);
+
+  // Icon mapping for different types
+  const getTypeIcon = (type) => {
+    const icons = {
+      customer: Users,
+      supplier: Truck,
+      item: Package,
+      sales_order: ShoppingCart,
+      purchase_order: Receipt,
+      transaction: FileText,
+      invoice: DollarSign,
+      employee: Users
+    };
+    return icons[type] || FileText;
+  };
+
+  // Color mapping for different types
+  const getTypeColor = (type) => {
+    const colors = {
+      customer: 'blue',
+      supplier: 'green',
+      item: 'purple',
+      sales_order: 'orange',
+      purchase_order: 'indigo',
+      transaction: 'gray',
+      invoice: 'orange',
+      employee: 'indigo'
+    };
+    return colors[type] || 'gray';
+  };
 
   // Mock search results
   const mockResults = [
