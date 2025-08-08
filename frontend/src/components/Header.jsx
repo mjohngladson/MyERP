@@ -42,6 +42,19 @@ const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
   const handleSearchNavigate = (path) => {
     navigate(path);
   };
+
+  // Global keyboard shortcut (Ctrl+K)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
   
   return (
     <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 sticky top-0 z-30">
