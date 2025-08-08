@@ -301,6 +301,201 @@ const AdvancedReporting = ({ onBack }) => {
     );
   };
 
+  const renderCustomerAnalysis = () => {
+    const data = reportData;
+    
+    return (
+      <div className="space-y-6">
+        {/* Customer Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Total Customers</h3>
+            <div className="text-2xl font-bold text-gray-800">{data.totalCustomers || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Active Customers</h3>
+            <div className="text-2xl font-bold text-green-600">{data.activeCustomers || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">New Customers</h3>
+            <div className="text-2xl font-bold text-blue-600">{data.newCustomers || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Churn Rate</h3>
+            <div className="text-2xl font-bold text-red-600">{data.churnRate || 0}%</div>
+          </div>
+        </div>
+
+        {/* Customer Segments */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-6">Customer Segments</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {data.segments?.map((segment, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-800 mb-2">{segment.name}</h4>
+                <p className="text-sm text-gray-600 mb-1">{segment.count} customers</p>
+                <p className="text-lg font-bold text-green-600">{formatCurrency(segment.revenue)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderInventoryReport = () => {
+    const data = reportData;
+    
+    return (
+      <div className="space-y-6">
+        {/* Inventory Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Total Items</h3>
+            <div className="text-2xl font-bold text-gray-800">{data.totalItems || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Stock Value</h3>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(data.totalStockValue || 0)}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Low Stock Items</h3>
+            <div className="text-2xl font-bold text-orange-600">{data.lowStockCount || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Out of Stock</h3>
+            <div className="text-2xl font-bold text-red-600">{data.outOfStockCount || 0}</div>
+          </div>
+        </div>
+
+        {/* Top Items */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-6">Top Items by Value</h3>
+          <div className="space-y-4">
+            {data.topItems?.slice(0, 5).map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Package className="text-purple-600" size={16} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">{item.name}</h4>
+                    <p className="text-sm text-gray-500">Code: {item.code}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-gray-800">{formatCurrency(item.total_value || 0)}</p>
+                  <p className="text-sm text-gray-500">{item.stock_qty} units</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Low Stock Alert */}
+        {data.lowStockItems?.length > 0 && (
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+              <ArrowDown className="text-orange-500 mr-2" size={20} />
+              Low Stock Alert
+            </h3>
+            <div className="space-y-3">
+              {data.lowStockItems.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <div>
+                    <h4 className="font-medium text-gray-800">{item.name}</h4>
+                    <p className="text-sm text-gray-500">Code: {item.code}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-orange-600 font-bold">{item.stock_qty} units</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPerformanceMetrics = () => {
+    const data = reportData;
+    
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {data.kpis?.map((kpi, index) => (
+            <div key={index} className="bg-white rounded-lg p-6 border border-gray-200">
+              <h3 className="text-sm font-medium text-gray-600 mb-2">{kpi.name}</h3>
+              <div className="text-2xl font-bold text-gray-800 mb-2">
+                {kpi.unit === 'currency' ? formatCurrency(kpi.value) : 
+                 kpi.unit === 'percentage' ? `${kpi.value.toFixed(1)}%` :
+                 kpi.unit === 'ratio' ? kpi.value.toFixed(2) : kpi.value}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  Target: {kpi.unit === 'currency' ? formatCurrency(kpi.target) : 
+                           kpi.unit === 'percentage' ? `${kpi.target}%` :
+                           kpi.unit === 'ratio' ? kpi.target.toFixed(2) : kpi.target}
+                </span>
+                <span className={`text-sm font-medium ${kpi.achievement >= 80 ? 'text-green-600' : 'text-red-600'}`}>
+                  {kpi.achievement.toFixed(0)}%
+                </span>
+              </div>
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${kpi.achievement >= 80 ? 'bg-green-500' : 'bg-red-500'}`}
+                  style={{ width: `${Math.min(100, kpi.achievement)}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Performance Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Total Sales</h3>
+            <div className="text-2xl font-bold text-gray-800">{formatCurrency(data.totalSales || 0)}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Active Customers</h3>
+            <div className="text-2xl font-bold text-gray-800">{data.activeCustomers || 0}</div>
+          </div>
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">Inventory Turnover</h3>
+            <div className="text-2xl font-bold text-gray-800">{data.inventoryTurnover?.toFixed(2) || '0.00'}x</div>
+          </div>
+        </div>
+
+        {/* Weekly Performance Chart */}
+        {data.weeklyPerformance && (
+          <div className="bg-white rounded-lg p-6 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-6">Weekly Performance Trend</h3>
+            <div className="h-48 flex items-end justify-between space-x-4">
+              {data.weeklyPerformance.map((week, index) => {
+                const maxValue = Math.max(...data.weeklyPerformance.map(w => w.sales));
+                const height = maxValue > 0 ? (week.sales / maxValue) * 150 : 0;
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center space-y-2">
+                    <div
+                      className="bg-blue-500 rounded-t w-full hover:bg-blue-600 transition-colors cursor-pointer"
+                      style={{ height: `${height}px` }}
+                      title={`Sales: ${formatCurrency(week.sales)}, Orders: ${week.orders}`}
+                    ></div>
+                    <span className="text-xs text-gray-600 font-medium">{week.week}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderReport = () => {
     if (loading) {
       return (
