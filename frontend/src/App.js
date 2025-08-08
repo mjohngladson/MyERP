@@ -7,7 +7,16 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import SalesOrdersList from './components/SalesOrdersList';
 import CustomersList from './components/CustomersList';
+import QuotationsList from './components/QuotationsList';
+import ItemsList from './components/ItemsList';
+import PurchaseOrdersList from './components/PurchaseOrdersList';
+import SuppliersList from './components/SuppliersList';
 import TransactionsPage from './components/TransactionsPage';
+import LeadsList from './components/LeadsList';
+import ProjectsList from './components/ProjectsList';
+import StockEntryList from './components/StockEntryList';
+import WarehousesList from './components/WarehousesList';
+import EmployeesList from './components/EmployeesList';
 import { Toaster } from './components/ui/toaster';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -43,17 +52,148 @@ function App() {
   const handleSubItemClick = (moduleId, subItem) => {
     setActiveModule(moduleId);
     
-    // Map sub-items to specific views
+    // Map sub-items to specific views for all modules
     if (moduleId === 'sales') {
       switch (subItem) {
         case 'Sales Order':
           setActiveView('sales-orders');
           break;
+        case 'Quotation':
+          setActiveView('quotations');
+          break;
         case 'Customer':
           setActiveView('customers');
           break;
+        case 'Item':
+          setActiveView('items');
+          break;
+        case 'Sales Invoice':
+          setActiveView('sales-invoices');
+          break;
         default:
           setActiveView('sales');
+      }
+    } else if (moduleId === 'buying') {
+      switch (subItem) {
+        case 'Purchase Order':
+          setActiveView('purchase-orders');
+          break;
+        case 'Supplier':
+          setActiveView('suppliers');
+          break;
+        case 'Purchase Invoice':
+          setActiveView('purchase-invoices');
+          break;
+        case 'Purchase Receipt':
+          setActiveView('purchase-receipts');
+          break;
+        default:
+          setActiveView('buying');
+      }
+    } else if (moduleId === 'stock') {
+      switch (subItem) {
+        case 'Stock Entry':
+          setActiveView('stock-entry');
+          break;
+        case 'Item':
+          setActiveView('items');
+          break;
+        case 'Warehouse':
+          setActiveView('warehouses');
+          break;
+        case 'Stock Reconciliation':
+          setActiveView('stock-reconciliation');
+          break;
+        default:
+          setActiveView('stock');
+      }
+    } else if (moduleId === 'accounts') {
+      switch (subItem) {
+        case 'Chart of Accounts':
+          setActiveView('chart-of-accounts');
+          break;
+        case 'Journal Entry':
+          setActiveView('journal-entry');
+          break;
+        case 'Payment Entry':
+          setActiveView('payment-entry');
+          break;
+        case 'General Ledger':
+          setActiveView('general-ledger');
+          break;
+        default:
+          setActiveView('accounts');
+      }
+    } else if (moduleId === 'crm') {
+      switch (subItem) {
+        case 'Lead':
+          setActiveView('leads');
+          break;
+        case 'Opportunity':
+          setActiveView('opportunities');
+          break;
+        case 'Customer':
+          setActiveView('customers');
+          break;
+        case 'Contact':
+          setActiveView('contacts');
+          break;
+        case 'Campaign':
+          setActiveView('campaigns');
+          break;
+        default:
+          setActiveView('crm');
+      }
+    } else if (moduleId === 'projects') {
+      switch (subItem) {
+        case 'Project':
+          setActiveView('projects');
+          break;
+        case 'Task':
+          setActiveView('tasks');
+          break;
+        case 'Timesheet':
+          setActiveView('timesheets');
+          break;
+        case 'Project Update':
+          setActiveView('project-updates');
+          break;
+        default:
+          setActiveView('projects');
+      }
+    } else if (moduleId === 'manufacturing') {
+      switch (subItem) {
+        case 'BOM':
+          setActiveView('bom');
+          break;
+        case 'Work Order':
+          setActiveView('work-orders');
+          break;
+        case 'Production Plan':
+          setActiveView('production-plans');
+          break;
+        case 'Job Card':
+          setActiveView('job-cards');
+          break;
+        default:
+          setActiveView('manufacturing');
+      }
+    } else if (moduleId === 'hr') {
+      switch (subItem) {
+        case 'Employee':
+          setActiveView('employees');
+          break;
+        case 'Attendance':
+          setActiveView('attendance');
+          break;
+        case 'Leave Application':
+          setActiveView('leave-applications');
+          break;
+        case 'Salary Slip':
+          setActiveView('salary-slips');
+          break;
+        default:
+          setActiveView('hr');
       }
     } else {
       setActiveView(moduleId);
@@ -69,12 +209,43 @@ function App() {
       case 'dashboard':
         return <Dashboard onViewAllTransactions={handleViewAllTransactions} />;
       
+      // Sales Module
       case 'sales-orders':
         return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
-      
+      case 'quotations':
+        return <QuotationsList onBack={() => setActiveView('dashboard')} />;
       case 'customers':
         return <CustomersList onBack={() => setActiveView('dashboard')} />;
+      case 'items':
+        return <ItemsList onBack={() => setActiveView('dashboard')} />;
+      case 'sales-invoices':
+        return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
       
+      // Buying Module
+      case 'purchase-orders':
+        return <PurchaseOrdersList onBack={() => setActiveView('dashboard')} />;
+      case 'suppliers':
+        return <SuppliersList onBack={() => setActiveView('dashboard')} />;
+      
+      // Stock Module
+      case 'stock-entry':
+        return <StockEntryList onBack={() => setActiveView('dashboard')} />;
+      case 'warehouses':
+        return <WarehousesList onBack={() => setActiveView('dashboard')} />;
+      
+      // CRM Module
+      case 'leads':
+        return <LeadsList onBack={() => setActiveView('dashboard')} />;
+      
+      // Projects Module
+      case 'projects':
+        return <ProjectsList onBack={() => setActiveView('dashboard')} />;
+      
+      // HR Module
+      case 'employees':
+        return <EmployeesList onBack={() => setActiveView('dashboard')} />;
+      
+      // Other views
       case 'all-transactions':
         return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
       
@@ -83,17 +254,17 @@ function App() {
           <div className="p-6 bg-gray-50 min-h-screen">
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {activeModule.charAt(0).toUpperCase() + activeModule.slice(1)} Module
+                {activeView.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </h2>
               <p className="text-gray-600 mb-6">
-                This module is currently under development. Please check back later for full functionality.
+                This feature is currently under development. Please check back later for full functionality.
               </p>
-              <div className="text-sm text-gray-500">
-                Module ID: {activeModule} | View: {activeView}
+              <div className="text-sm text-gray-500 mb-4">
+                Module: {activeModule} | View: {activeView}
               </div>
               <button 
                 onClick={() => setActiveView('dashboard')}
-                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Dashboard
               </button>
