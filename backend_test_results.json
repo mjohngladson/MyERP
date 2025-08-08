@@ -1,65 +1,114 @@
 {
   "summary": {
-    "passed": 0,
+    "passed": 8,
     "total": 8,
-    "success_rate": "0.0%",
-    "timestamp": "2025-08-08T19:32:44.766248"
+    "success_rate": "100.0%",
+    "timestamp": "2025-08-08T19:33:30.098316"
   },
   "detailed_results": [
     {
       "test": "Health Check",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.703300",
-      "response_data": null
+      "success": true,
+      "details": "API is running",
+      "timestamp": "2025-08-08T19:33:29.805015",
+      "response_data": {
+        "message": "ERPNext Clone API is running"
+      }
     },
     {
       "test": "Dashboard Stats",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.710025",
-      "response_data": null
+      "success": true,
+      "details": "All required fields present with numeric values",
+      "timestamp": "2025-08-08T19:33:29.818182",
+      "response_data": {
+        "id": "e2d8046e-7a59-441c-8420-6e8f26400f29",
+        "created_at": "2025-08-08T19:33:29.814911",
+        "updated_at": "2025-08-08T19:33:29.814913",
+        "sales_orders": 0.0,
+        "purchase_orders": 0.0,
+        "outstanding_amount": 0.0,
+        "stock_value": 11000.0
+      }
     },
     {
       "test": "Dashboard Transactions",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.716580",
-      "response_data": null
+      "success": true,
+      "details": "Retrieved 3 transactions",
+      "timestamp": "2025-08-08T19:33:29.868770",
+      "response_data": {
+        "count": 3,
+        "sample": {
+          "id": "703b7075-b295-485b-b3c3-fb05b0ce1c33",
+          "created_at": "2025-08-08T19:33:07.411000",
+          "updated_at": "2025-08-08T19:33:29.823972",
+          "type": "sales_invoice",
+          "reference_number": "SINV-2024-00001",
+          "party_id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+          "party_name": "ABC Corp",
+          "amount": 25000.0,
+          "date": "2025-08-07T19:33:07.411000",
+          "status": "completed",
+          "company_id": "1a75ed63-a1fe-4bbc-bd8c-3d393de5ad8a"
+        }
+      }
     },
     {
       "test": "Auth Me",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.723234",
-      "response_data": null
+      "success": true,
+      "details": "User profile retrieved: John Doe",
+      "timestamp": "2025-08-08T19:33:29.919625",
+      "response_data": {
+        "id": "bf60a11f-6540-48da-9565-b0b1e37a0e8d",
+        "created_at": "2025-08-08T19:33:07.341000",
+        "updated_at": "2025-08-08T19:33:29.875877",
+        "name": "John Doe",
+        "email": "john.doe@company.com",
+        "role": "System Manager",
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      }
     },
     {
       "test": "Sales Orders",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.733240",
-      "response_data": null
+      "success": true,
+      "details": "Empty sales orders list (valid)",
+      "timestamp": "2025-08-08T19:33:29.930025",
+      "response_data": []
     },
     {
       "test": "Sales Customers",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-08-08T19:32:44.740836",
-      "response_data": null
+      "success": true,
+      "details": "Retrieved 2 customers",
+      "timestamp": "2025-08-08T19:33:29.980632",
+      "response_data": {
+        "count": 2,
+        "sample": {
+          "id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+          "created_at": "2025-08-08T19:33:07.354000",
+          "updated_at": "2025-08-08T19:33:29.936612",
+          "name": "ABC Corp",
+          "email": "contact@abccorp.com",
+          "phone": "+1234567891",
+          "address": "456 Customer Ave, City, Country",
+          "company_id": "1a75ed63-a1fe-4bbc-bd8c-3d393de5ad8a"
+        }
+      }
     },
     {
       "test": "Database Initialization",
-      "success": false,
-      "details": "Sample data missing - customers: False, transactions: False, stats: False",
-      "timestamp": "2025-08-08T19:32:44.759323",
-      "response_data": null
+      "success": true,
+      "details": "Sample data properly initialized",
+      "timestamp": "2025-08-08T19:33:30.050497",
+      "response_data": {
+        "customers": 2,
+        "transactions": 3,
+        "stats_populated": true
+      }
     },
     {
       "test": "Error Handling",
-      "success": false,
-      "details": "Expected 404, got 502",
-      "timestamp": "2025-08-08T19:32:44.766045",
+      "success": true,
+      "details": "404 returned for invalid endpoint",
+      "timestamp": "2025-08-08T19:33:30.098093",
       "response_data": null
     }
   ]
