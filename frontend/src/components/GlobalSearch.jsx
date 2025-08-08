@@ -140,20 +140,36 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
   }, [searchTerm, showFullResults]);
 
   const handleKeyDown = (e) => {
+    const items = showFullResults ? results : suggestions;
+    
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+      setSelectedIndex(prev => Math.min(prev + 1, items.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => Math.max(prev - 1, -1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (selectedIndex >= 0 && results[selectedIndex]) {
-        handleResultClick(results[selectedIndex]);
+      if (selectedIndex >= 0) {
+        if (showFullResults && results[selectedIndex]) {
+          handleResultClick(results[selectedIndex]);
+        } else if (suggestions[selectedIndex]) {
+          handleSuggestionClick(suggestions[selectedIndex]);
+        }
+      } else if (searchTerm.trim().length >= 2) {
+        // Enter without selection shows full results
+        setShowFullResults(true);
+        fetchSearchResults(searchTerm);
       }
     } else if (e.key === 'Escape') {
       onClose();
     }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setSearchTerm(suggestion.text);
+    setShowFullResults(true);
+    fetchSearchResults(suggestion.text);
   };
 
   const handleResultClick = (result) => {
