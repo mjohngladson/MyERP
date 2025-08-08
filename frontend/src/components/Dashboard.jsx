@@ -220,6 +220,34 @@ const Dashboard = ({ onViewAllTransactions }) => {
         )}
       </div>
 
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button
+              onClick={() => window.location.hash = '#advanced-reporting'}
+              className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group"
+            >
+              <BarChart3 className="text-blue-600 group-hover:text-blue-700 mb-2" size={24} />
+              <span className="text-sm font-medium text-blue-800 group-hover:text-blue-900">Advanced Reports</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group">
+              <Plus className="text-green-600 group-hover:text-green-700 mb-2" size={24} />
+              <span className="text-sm font-medium text-green-800 group-hover:text-green-900">Create Order</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors group">
+              <Users className="text-purple-600 group-hover:text-purple-700 mb-2" size={24} />
+              <span className="text-sm font-medium text-purple-800 group-hover:text-purple-900">Add Customer</span>
+            </button>
+            <button className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors group">
+              <Package className="text-orange-600 group-hover:text-orange-700 mb-2" size={24} />
+              <span className="text-sm font-medium text-orange-800 group-hover:text-orange-900">Stock Entry</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
