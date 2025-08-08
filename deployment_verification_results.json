@@ -1,0 +1,153 @@
+{
+  "deployment_verification": {
+    "passed": 6,
+    "total": 6,
+    "success_rate": "100.0%",
+    "all_working": true,
+    "timestamp": "2025-08-08T23:45:54.244247"
+  },
+  "endpoint_results": [
+    {
+      "endpoint": "GET /api/ (Health Check)",
+      "success": true,
+      "details": "API is running: ERPNext Clone API is running",
+      "timestamp": "2025-08-08T23:45:54.100031",
+      "response_data": {
+        "message": "ERPNext Clone API is running"
+      }
+    },
+    {
+      "endpoint": "GET /api/dashboard/stats",
+      "success": true,
+      "details": "All stats present - Stock Value: \u20b911000.0",
+      "timestamp": "2025-08-08T23:45:54.115674",
+      "response_data": {
+        "id": "cf1a4b56-27c2-4378-8728-7d7ac31e1af0",
+        "created_at": "2025-08-08T23:45:54.112461",
+        "updated_at": "2025-08-08T23:45:54.112463",
+        "sales_orders": 0.0,
+        "purchase_orders": 0.0,
+        "outstanding_amount": 0.0,
+        "stock_value": 11000.0
+      }
+    },
+    {
+      "endpoint": "GET /api/dashboard/transactions",
+      "success": true,
+      "details": "Retrieved 3 transactions - First: sales_invoice \u20b925000.0",
+      "timestamp": "2025-08-08T23:45:54.128325",
+      "response_data": {
+        "count": 3,
+        "sample": {
+          "id": "703b7075-b295-485b-b3c3-fb05b0ce1c33",
+          "created_at": "2025-08-08T19:33:07.411000",
+          "updated_at": "2025-08-08T23:45:54.125220",
+          "type": "sales_invoice",
+          "reference_number": "SINV-2024-00001",
+          "party_id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+          "party_name": "ABC Corp",
+          "amount": 25000.0,
+          "date": "2025-08-07T19:33:07.411000",
+          "status": "completed",
+          "company_id": "1a75ed63-a1fe-4bbc-bd8c-3d393de5ad8a"
+        }
+      }
+    },
+    {
+      "endpoint": "GET /api/auth/me",
+      "success": true,
+      "details": "User authenticated: John Doe (System Manager)",
+      "timestamp": "2025-08-08T23:45:54.179110",
+      "response_data": {
+        "id": "bf60a11f-6540-48da-9565-b0b1e37a0e8d",
+        "created_at": "2025-08-08T19:33:07.341000",
+        "updated_at": "2025-08-08T23:45:54.134656",
+        "name": "John Doe",
+        "email": "john.doe@company.com",
+        "role": "System Manager",
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      }
+    },
+    {
+      "endpoint": "GET /api/search/suggestions?q=ABC",
+      "success": true,
+      "details": "Found ABC Corp in 1 suggestions",
+      "timestamp": "2025-08-08T23:45:54.189482",
+      "response_data": {
+        "suggestions": [
+          {
+            "text": "ABC Corp",
+            "type": "customer",
+            "category": "Customers"
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "GET /api/reports/sales-overview",
+      "success": true,
+      "details": "Sales report working - Total Sales: \u20b925000.0, Orders: 1",
+      "timestamp": "2025-08-08T23:45:54.244013",
+      "response_data": {
+        "totalSales": 25000.0,
+        "totalOrders": 1,
+        "avgOrderValue": 25000.0,
+        "growthRate": 0,
+        "topProducts": [
+          {
+            "name": "Product A",
+            "revenue": 7500.0,
+            "growth": 12.5
+          },
+          {
+            "name": "Product B",
+            "revenue": 6250.0,
+            "growth": 8.2
+          },
+          {
+            "name": "Service Package",
+            "revenue": 5000.0,
+            "growth": 22.1
+          }
+        ],
+        "salesTrend": [
+          {
+            "month": "Mar",
+            "sales": 0,
+            "target": 0.0
+          },
+          {
+            "month": "Apr",
+            "sales": 0,
+            "target": 0.0
+          },
+          {
+            "month": "May",
+            "sales": 0,
+            "target": 0.0
+          },
+          {
+            "month": "Jun",
+            "sales": 0,
+            "target": 0.0
+          },
+          {
+            "month": "Jul",
+            "sales": 0,
+            "target": 0.0
+          },
+          {
+            "month": "Aug",
+            "sales": 25000.0,
+            "target": 27500.000000000004
+          }
+        ],
+        "dateRange": {
+          "start": "2025-07-09T23:45:54.193680",
+          "end": "2025-08-08T23:45:54.193680",
+          "days": 30
+        }
+      }
+    }
+  ]
+}
