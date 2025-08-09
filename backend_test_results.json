@@ -3,14 +3,14 @@
     "passed": 23,
     "total": 24,
     "success_rate": "95.8%",
-    "timestamp": "2025-08-09T17:55:39.774886"
+    "timestamp": "2025-08-09T17:59:52.962281"
   },
   "detailed_results": [
     {
       "test": "Health Check",
       "success": true,
       "details": "API is running",
-      "timestamp": "2025-08-09T17:55:37.866775",
+      "timestamp": "2025-08-09T17:59:51.283335",
       "response_data": {
         "message": "GiLi API is running"
       }
@@ -19,7 +19,7 @@
       "test": "Dashboard Stats",
       "success": true,
       "details": "All required fields present with numeric values",
-      "timestamp": "2025-08-09T17:55:37.883226",
+      "timestamp": "2025-08-09T17:59:51.295935",
       "response_data": {
         "sales_orders": 0.0,
         "purchase_orders": 0.0,
@@ -31,20 +31,20 @@
       "test": "Dashboard Transactions",
       "success": true,
       "details": "Retrieved 3 transactions",
-      "timestamp": "2025-08-09T17:55:37.901546",
+      "timestamp": "2025-08-09T17:59:51.307954",
       "response_data": {
         "count": 3,
         "sample": {
-          "id": "703b7075-b295-485b-b3c3-fb05b0ce1c33",
+          "id": "f250857a-e7e9-4c98-ad52-46332ad8ec52",
           "type": "sales_invoice",
           "reference_number": "SINV-2024-00001",
-          "party_id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+          "party_id": "bb7b88f2-0bfc-447e-b054-dcc7ab89a7c7",
           "party_name": "ABC Corp",
           "amount": 25000.0,
-          "date": "2025-08-07T19:33:07.411000",
+          "date": "2025-08-08T17:56:32.871000",
           "status": "completed",
-          "company_id": "1a75ed63-a1fe-4bbc-bd8c-3d393de5ad8a",
-          "created_at": "2025-08-08T19:33:07.411000"
+          "company_id": "8064860b-87ac-46c6-a543-d96f9a7a26b9",
+          "created_at": "2025-08-09T17:56:32.871000"
         }
       }
     },
@@ -52,38 +52,38 @@
       "test": "Auth Me",
       "success": true,
       "details": "User profile retrieved: John Doe",
-      "timestamp": "2025-08-09T17:55:37.954182",
+      "timestamp": "2025-08-09T17:59:51.358191",
       "response_data": {
-        "id": "bf60a11f-6540-48da-9565-b0b1e37a0e8d",
+        "id": "d4275a3c-8ee6-4bfc-a495-d69b2525bafa",
         "name": "John Doe",
         "email": "john.doe@company.com",
         "role": "System Manager",
         "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-        "created_at": "2025-08-08T19:33:07.341000"
+        "created_at": "2025-08-09T17:56:32.868000"
       }
     },
     {
       "test": "Sales Orders",
       "success": true,
       "details": "Empty sales orders list (valid)",
-      "timestamp": "2025-08-09T17:55:38.004850",
+      "timestamp": "2025-08-09T17:59:51.366798",
       "response_data": []
     },
     {
       "test": "Sales Customers",
       "success": true,
       "details": "Retrieved 2 customers",
-      "timestamp": "2025-08-09T17:55:38.021717",
+      "timestamp": "2025-08-09T17:59:51.415237",
       "response_data": {
         "count": 2,
         "sample": {
-          "id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+          "id": "bb7b88f2-0bfc-447e-b054-dcc7ab89a7c7",
           "name": "ABC Corp",
           "email": "contact@abccorp.com",
           "phone": "+1234567891",
           "address": "456 Customer Ave, City, Country",
-          "company_id": "1a75ed63-a1fe-4bbc-bd8c-3d393de5ad8a",
-          "created_at": "2025-08-08T19:33:07.354000"
+          "company_id": "8064860b-87ac-46c6-a543-d96f9a7a26b9",
+          "created_at": "2025-08-09T17:56:32.869000"
         }
       }
     },
@@ -91,7 +91,7 @@
       "test": "Database Initialization",
       "success": true,
       "details": "Sample data properly initialized",
-      "timestamp": "2025-08-09T17:55:38.089937",
+      "timestamp": "2025-08-09T17:59:51.481975",
       "response_data": {
         "customers": 2,
         "transactions": 3,
@@ -102,7 +102,7 @@
       "test": "Search Suggestions - Short Query",
       "success": true,
       "details": "Short query returned 2 suggestions",
-      "timestamp": "2025-08-09T17:55:38.142927",
+      "timestamp": "2025-08-09T17:59:51.495192",
       "response_data": {
         "suggestions": [
           {
@@ -122,7 +122,7 @@
       "test": "Search Suggestions - ABC Query",
       "success": true,
       "details": "Found ABC Corp in 1 suggestions",
-      "timestamp": "2025-08-09T17:55:38.152282",
+      "timestamp": "2025-08-09T17:59:51.545150",
       "response_data": {
         "suggestions": [
           {
@@ -137,7 +137,7 @@
       "test": "Search Suggestions - Product Query",
       "success": true,
       "details": "Found 2 product suggestions",
-      "timestamp": "2025-08-09T17:55:38.161559",
+      "timestamp": "2025-08-09T17:59:51.555515",
       "response_data": {
         "suggestions": [
           {
@@ -157,7 +157,7 @@
       "test": "Search Suggestions - Case Insensitive",
       "success": true,
       "details": "Case-insensitive search working",
-      "timestamp": "2025-08-09T17:55:38.211315",
+      "timestamp": "2025-08-09T17:59:51.564726",
       "response_data": {
         "suggestions": [
           {
@@ -172,7 +172,7 @@
       "test": "Search Suggestions - Response Structure",
       "success": true,
       "details": "All required fields present in suggestions",
-      "timestamp": "2025-08-09T17:55:38.220008",
+      "timestamp": "2025-08-09T17:59:51.616046",
       "response_data": {
         "text": "ABC Corp",
         "type": "customer",
@@ -183,7 +183,7 @@
       "test": "Global Search - Short Query",
       "success": true,
       "details": "Short query correctly returned empty results",
-      "timestamp": "2025-08-09T17:55:38.226755",
+      "timestamp": "2025-08-09T17:59:51.664918",
       "response_data": {
         "query": "A",
         "total_results": 0,
@@ -195,7 +195,7 @@
       "test": "Global Search - ABC Query",
       "success": true,
       "details": "Found ABC Corp in 2 results",
-      "timestamp": "2025-08-09T17:55:38.278070",
+      "timestamp": "2025-08-09T17:59:51.676772",
       "response_data": {
         "total": 2,
         "categories": {
@@ -212,7 +212,7 @@
       "test": "Global Search - Product Query",
       "success": true,
       "details": "Found 2 product results",
-      "timestamp": "2025-08-09T17:55:38.290562",
+      "timestamp": "2025-08-09T17:59:51.687789",
       "response_data": {
         "total": 2,
         "categories": {
@@ -229,7 +229,7 @@
       "test": "Global Search - Item Code Query",
       "success": true,
       "details": "Found Product A by item code in 1 results",
-      "timestamp": "2025-08-09T17:55:38.303128",
+      "timestamp": "2025-08-09T17:59:51.741028",
       "response_data": {
         "total": 1,
         "categories": {
@@ -246,7 +246,7 @@
       "test": "Global Search - XYZ Query",
       "success": true,
       "details": "Found XYZ Suppliers in 2 results",
-      "timestamp": "2025-08-09T17:55:38.315030",
+      "timestamp": "2025-08-09T17:59:51.753105",
       "response_data": {
         "total": 2,
         "categories": {
@@ -263,7 +263,7 @@
       "test": "Global Search - Limit Parameter",
       "success": true,
       "details": "Limit parameter working, got 1 results",
-      "timestamp": "2025-08-09T17:55:38.367410",
+      "timestamp": "2025-08-09T17:59:51.764220",
       "response_data": {
         "total": 1,
         "results_count": 1
@@ -273,7 +273,7 @@
       "test": "Global Search - Category Filter",
       "success": true,
       "details": "Category filtering working, all 1 results are customers",
-      "timestamp": "2025-08-09T17:55:38.375907",
+      "timestamp": "2025-08-09T17:59:51.812452",
       "response_data": {
         "categories": {
           "customers": 1,
@@ -289,14 +289,14 @@
       "test": "Global Search - Result Structure",
       "success": true,
       "details": "All required fields present in results",
-      "timestamp": "2025-08-09T17:55:38.388566",
+      "timestamp": "2025-08-09T17:59:51.824696",
       "response_data": {
-        "id": "a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+        "id": "bb7b88f2-0bfc-447e-b054-dcc7ab89a7c7",
         "type": "customer",
         "title": "ABC Corp",
         "subtitle": "contact@abccorp.com",
         "description": "+1234567891",
-        "url": "/sales/customers/a98f3b87-e13f-44a0-9cf3-be81e1230fee",
+        "url": "/sales/customers/bb7b88f2-0bfc-447e-b054-dcc7ab89a7c7",
         "relevance": 0.8
       }
     },
@@ -304,7 +304,7 @@
       "test": "Global Search - Relevance Sorting",
       "success": true,
       "details": "Results properly sorted by relevance: [0.8, 0.8]",
-      "timestamp": "2025-08-09T17:55:38.442714",
+      "timestamp": "2025-08-09T17:59:51.837979",
       "response_data": {
         "scores": [
           0.8,
@@ -316,7 +316,7 @@
       "test": "Global Search - Empty Query",
       "success": true,
       "details": "Empty query correctly returned no results",
-      "timestamp": "2025-08-09T17:55:38.490153",
+      "timestamp": "2025-08-09T17:59:51.844761",
       "response_data": {
         "query": "",
         "total_results": 0,
@@ -328,7 +328,7 @@
       "test": "Global Search - Special Characters",
       "success": true,
       "details": "Special characters handled gracefully, got 0 results",
-      "timestamp": "2025-08-09T17:55:38.496923",
+      "timestamp": "2025-08-09T17:59:51.893542",
       "response_data": {
         "query": "@",
         "total_results": 0,
@@ -340,7 +340,7 @@
       "test": "Sales Overview Report - Default",
       "success": true,
       "details": "Sales overview report working. Total Sales: 25000.0, Orders: 1",
-      "timestamp": "2025-08-09T17:55:38.510392",
+      "timestamp": "2025-08-09T17:59:51.911310",
       "response_data": {
         "totalSales": 25000.0,
         "totalOrders": 1,
@@ -396,8 +396,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-07-10T17:55:38.500976",
-          "end": "2025-08-09T17:55:38.500976",
+          "start": "2025-07-10T17:59:51.902006",
+          "end": "2025-08-09T17:59:51.902006",
           "days": 30
         }
       }
@@ -406,7 +406,7 @@
       "test": "Sales Overview Report - 7 days",
       "success": true,
       "details": "Report for 7 days working",
-      "timestamp": "2025-08-09T17:55:38.566431",
+      "timestamp": "2025-08-09T17:59:51.924674",
       "response_data": {
         "days": 7,
         "totalSales": 25000.0
@@ -416,7 +416,7 @@
       "test": "Sales Overview Report - 90 days",
       "success": true,
       "details": "Report for 90 days working",
-      "timestamp": "2025-08-09T17:55:38.580785",
+      "timestamp": "2025-08-09T17:59:51.938477",
       "response_data": {
         "days": 90,
         "totalSales": 25000.0
@@ -426,7 +426,7 @@
       "test": "Sales Overview Report - 365 days",
       "success": true,
       "details": "Report for 365 days working",
-      "timestamp": "2025-08-09T17:55:38.634584",
+      "timestamp": "2025-08-09T17:59:51.993067",
       "response_data": {
         "days": 365,
         "totalSales": 25000.0
@@ -436,7 +436,7 @@
       "test": "Sales Overview Report - Trend Structure",
       "success": true,
       "details": "Sales trend structure valid",
-      "timestamp": "2025-08-09T17:55:38.648107",
+      "timestamp": "2025-08-09T17:59:52.010258",
       "response_data": {
         "month": "Mar",
         "sales": 0,
@@ -447,7 +447,7 @@
       "test": "Financial Summary Report - Default",
       "success": true,
       "details": "Financial summary working. Revenue: 25000.0, Expenses: 25000.0, Profit: 0.0",
-      "timestamp": "2025-08-09T17:55:38.697027",
+      "timestamp": "2025-08-09T17:59:52.018698",
       "response_data": {
         "totalRevenue": 25000.0,
         "totalExpenses": 25000.0,
@@ -476,8 +476,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-07-10T17:55:38.652385",
-          "end": "2025-08-09T17:55:38.652385",
+          "start": "2025-07-10T17:59:52.014612",
+          "end": "2025-08-09T17:59:52.014612",
           "days": 30
         }
       }
@@ -486,7 +486,7 @@
       "test": "Financial Summary Report - 7 days",
       "success": true,
       "details": "Financial report for 7 days working",
-      "timestamp": "2025-08-09T17:55:38.705262",
+      "timestamp": "2025-08-09T17:59:52.070095",
       "response_data": {
         "days": 7,
         "netProfit": 0.0
@@ -496,7 +496,7 @@
       "test": "Financial Summary Report - 90 days",
       "success": true,
       "details": "Financial report for 90 days working",
-      "timestamp": "2025-08-09T17:55:38.754933",
+      "timestamp": "2025-08-09T17:59:52.078592",
       "response_data": {
         "days": 90,
         "netProfit": 0.0
@@ -506,7 +506,7 @@
       "test": "Financial Summary Report - Expense Structure",
       "success": true,
       "details": "Expense breakdown structure valid",
-      "timestamp": "2025-08-09T17:55:38.763022",
+      "timestamp": "2025-08-09T17:59:52.086336",
       "response_data": {
         "category": "Cost of Goods",
         "amount": 15000.0,
@@ -517,7 +517,7 @@
       "test": "Customer Analysis Report - Default",
       "success": true,
       "details": "Customer analysis working. Total: 2, Active: 1, Churn: 50.0%",
-      "timestamp": "2025-08-09T17:55:38.773349",
+      "timestamp": "2025-08-09T17:59:52.136423",
       "response_data": {
         "totalCustomers": 2,
         "activeCustomers": 1,
@@ -546,8 +546,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-07-10T17:55:38.767751",
-          "end": "2025-08-09T17:55:38.767751",
+          "start": "2025-07-10T17:59:52.090230",
+          "end": "2025-08-09T17:59:52.090230",
           "days": 30
         }
       }
@@ -556,7 +556,7 @@
       "test": "Customer Analysis Report - Segments",
       "success": true,
       "details": "Customer segments working: ['High Value', 'Regular', 'New', 'At Risk']",
-      "timestamp": "2025-08-09T17:55:38.782693",
+      "timestamp": "2025-08-09T17:59:52.146490",
       "response_data": {
         "segments": 4
       }
@@ -565,7 +565,7 @@
       "test": "Customer Analysis Report - 7 days",
       "success": true,
       "details": "Customer analysis for 7 days working",
-      "timestamp": "2025-08-09T17:55:38.832977",
+      "timestamp": "2025-08-09T17:59:52.157679",
       "response_data": {
         "days": 7,
         "totalCustomers": 2
@@ -575,7 +575,7 @@
       "test": "Customer Analysis Report - 90 days",
       "success": true,
       "details": "Customer analysis for 90 days working",
-      "timestamp": "2025-08-09T17:55:38.842259",
+      "timestamp": "2025-08-09T17:59:52.167228",
       "response_data": {
         "days": 90,
         "totalCustomers": 2
@@ -585,7 +585,7 @@
       "test": "Inventory Report - Basic",
       "success": true,
       "details": "Inventory report working. Total Items: 2, Stock Value: 11000.0",
-      "timestamp": "2025-08-09T17:55:38.891261",
+      "timestamp": "2025-08-09T17:59:52.216184",
       "response_data": {
         "totalItems": 2,
         "totalStockValue": 11000.0,
@@ -619,7 +619,7 @@
       "test": "Inventory Report - Top Items",
       "success": true,
       "details": "Top items structure valid. First item: Product B",
-      "timestamp": "2025-08-09T17:55:38.898817",
+      "timestamp": "2025-08-09T17:59:52.223859",
       "response_data": {
         "name": "Product B",
         "code": "PROD-B-001",
@@ -632,7 +632,7 @@
       "test": "Inventory Report - Stock Summary",
       "success": true,
       "details": "Stock summary structure valid: {'in_stock': 2, 'low_stock': 0, 'out_of_stock': 0}",
-      "timestamp": "2025-08-09T17:55:38.906787",
+      "timestamp": "2025-08-09T17:59:52.273636",
       "response_data": {
         "in_stock": 2,
         "low_stock": 0,
@@ -643,7 +643,7 @@
       "test": "Performance Metrics Report - Default",
       "success": true,
       "details": "Performance metrics working. KPIs: 4, Sales: 25000.0",
-      "timestamp": "2025-08-09T17:55:38.956769",
+      "timestamp": "2025-08-09T17:59:52.283621",
       "response_data": {
         "kpis": [
           {
@@ -703,8 +703,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-07-10T17:55:38.910400",
-          "end": "2025-08-09T17:55:38.910400",
+          "start": "2025-07-10T17:59:52.277574",
+          "end": "2025-08-09T17:59:52.277574",
           "days": 30
         }
       }
@@ -713,7 +713,7 @@
       "test": "Performance Metrics Report - Weekly Performance",
       "success": true,
       "details": "Weekly performance structure valid: 4 weeks",
-      "timestamp": "2025-08-09T17:55:38.966624",
+      "timestamp": "2025-08-09T17:59:52.293746",
       "response_data": {
         "week": "Week 1",
         "sales": 0,
@@ -724,7 +724,7 @@
       "test": "Performance Metrics Report - Sales Revenue Achievement",
       "success": true,
       "details": "Achievement calculation correct: 83.33333333333334%",
-      "timestamp": "2025-08-09T17:55:39.017641",
+      "timestamp": "2025-08-09T17:59:52.344041",
       "response_data": {
         "name": "Sales Revenue",
         "value": 25000.0,
@@ -737,7 +737,7 @@
       "test": "Performance Metrics Report - Sales Orders Achievement",
       "success": true,
       "details": "Achievement calculation correct: 16.666666666666664%",
-      "timestamp": "2025-08-09T17:55:39.017680",
+      "timestamp": "2025-08-09T17:59:52.344082",
       "response_data": {
         "name": "Sales Orders",
         "value": 1,
@@ -750,7 +750,7 @@
       "test": "Performance Metrics Report - Customer Retention Achievement",
       "success": true,
       "details": "Achievement calculation correct: 58.82352941176471%",
-      "timestamp": "2025-08-09T17:55:39.017688",
+      "timestamp": "2025-08-09T17:59:52.344089",
       "response_data": {
         "name": "Customer Retention",
         "value": 50.0,
@@ -763,7 +763,7 @@
       "test": "Performance Metrics Report - Inventory Turnover Achievement",
       "success": true,
       "details": "Achievement calculation correct: 34.090909090909086%",
-      "timestamp": "2025-08-09T17:55:39.017695",
+      "timestamp": "2025-08-09T17:59:52.344096",
       "response_data": {
         "name": "Inventory Turnover",
         "value": 1.3636363636363635,
@@ -776,7 +776,7 @@
       "test": "Performance Metrics Report - 7 days",
       "success": true,
       "details": "Performance metrics for 7 days working",
-      "timestamp": "2025-08-09T17:55:39.027411",
+      "timestamp": "2025-08-09T17:59:52.394996",
       "response_data": {
         "days": 7,
         "totalSales": 25000.0
@@ -786,7 +786,7 @@
       "test": "Performance Metrics Report - 90 days",
       "success": true,
       "details": "Performance metrics for 90 days working",
-      "timestamp": "2025-08-09T17:55:39.037491",
+      "timestamp": "2025-08-09T17:59:52.405329",
       "response_data": {
         "days": 90,
         "totalSales": 25000.0
@@ -796,147 +796,147 @@
       "test": "Export Functionality - sales_overview PDF",
       "success": true,
       "details": "PDF export initiated for sales_overview",
-      "timestamp": "2025-08-09T17:55:39.084988",
+      "timestamp": "2025-08-09T17:59:52.451839",
       "response_data": {
         "message": "Report export initiated for sales_overview",
-        "export_id": "92bb1aaa-b310-4537-9353-3bac57bc1379",
+        "export_id": "179db294-80cd-4573-a534-8c152beef746",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/92bb1aaa-b310-4537-9353-3bac57bc1379",
-        "estimated_completion": "2025-08-09T17:56:09.041848"
+        "download_url": "/api/reports/download/179db294-80cd-4573-a534-8c152beef746",
+        "estimated_completion": "2025-08-09T18:00:22.409172"
       }
     },
     {
       "test": "Export Functionality - sales_overview Excel",
       "success": true,
       "details": "Excel export initiated for sales_overview",
-      "timestamp": "2025-08-09T17:55:39.132901",
+      "timestamp": "2025-08-09T17:59:52.458780",
       "response_data": {
         "message": "Report export initiated for sales_overview",
-        "export_id": "9ea91ce4-40cc-40b6-8a3f-2ba7da295179",
+        "export_id": "64edf100-94ea-4410-85c8-9a8060e1ea1f",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/9ea91ce4-40cc-40b6-8a3f-2ba7da295179",
-        "estimated_completion": "2025-08-09T17:56:09.089292"
+        "download_url": "/api/reports/download/64edf100-94ea-4410-85c8-9a8060e1ea1f",
+        "estimated_completion": "2025-08-09T18:00:22.456217"
       }
     },
     {
       "test": "Export Functionality - financial_summary PDF",
       "success": true,
       "details": "PDF export initiated for financial_summary",
-      "timestamp": "2025-08-09T17:55:39.139395",
+      "timestamp": "2025-08-09T17:59:52.465436",
       "response_data": {
         "message": "Report export initiated for financial_summary",
-        "export_id": "7e220682-fcb4-4245-8106-72579467c58f",
+        "export_id": "1756c55c-d9da-4c87-888d-481fd2adb747",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/7e220682-fcb4-4245-8106-72579467c58f",
-        "estimated_completion": "2025-08-09T17:56:09.136834"
+        "download_url": "/api/reports/download/1756c55c-d9da-4c87-888d-481fd2adb747",
+        "estimated_completion": "2025-08-09T18:00:22.462932"
       }
     },
     {
       "test": "Export Functionality - financial_summary Excel",
       "success": true,
       "details": "Excel export initiated for financial_summary",
-      "timestamp": "2025-08-09T17:55:39.145855",
+      "timestamp": "2025-08-09T17:59:52.514047",
       "response_data": {
         "message": "Report export initiated for financial_summary",
-        "export_id": "1a087cf5-dc03-4d41-93c1-a46b62ca400f",
+        "export_id": "81b1059d-fab1-432f-808a-315c8ac1746a",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/1a087cf5-dc03-4d41-93c1-a46b62ca400f",
-        "estimated_completion": "2025-08-09T17:56:09.143480"
+        "download_url": "/api/reports/download/81b1059d-fab1-432f-808a-315c8ac1746a",
+        "estimated_completion": "2025-08-09T18:00:22.469456"
       }
     },
     {
       "test": "Export Functionality - customer_analysis PDF",
       "success": true,
       "details": "PDF export initiated for customer_analysis",
-      "timestamp": "2025-08-09T17:55:39.193034",
+      "timestamp": "2025-08-09T17:59:52.520893",
       "response_data": {
         "message": "Report export initiated for customer_analysis",
-        "export_id": "6f6de12e-c116-42d4-b5d8-a13f808bfe34",
+        "export_id": "4242f021-1373-4609-a68c-518f1e9a4fd2",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/6f6de12e-c116-42d4-b5d8-a13f808bfe34",
-        "estimated_completion": "2025-08-09T17:56:09.149759"
+        "download_url": "/api/reports/download/4242f021-1373-4609-a68c-518f1e9a4fd2",
+        "estimated_completion": "2025-08-09T18:00:22.518317"
       }
     },
     {
       "test": "Export Functionality - customer_analysis Excel",
       "success": true,
       "details": "Excel export initiated for customer_analysis",
-      "timestamp": "2025-08-09T17:55:39.242108",
+      "timestamp": "2025-08-09T17:59:52.527309",
       "response_data": {
         "message": "Report export initiated for customer_analysis",
-        "export_id": "e60430b1-c14b-439d-951c-b9290624e531",
+        "export_id": "c803ec5d-6df5-4471-8a7b-6397ed57dfa5",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/e60430b1-c14b-439d-951c-b9290624e531",
-        "estimated_completion": "2025-08-09T17:56:09.198430"
+        "download_url": "/api/reports/download/c803ec5d-6df5-4471-8a7b-6397ed57dfa5",
+        "estimated_completion": "2025-08-09T18:00:22.524819"
       }
     },
     {
       "test": "Export Functionality - inventory_report PDF",
       "success": true,
       "details": "PDF export initiated for inventory_report",
-      "timestamp": "2025-08-09T17:55:39.249333",
+      "timestamp": "2025-08-09T17:59:52.574061",
       "response_data": {
         "message": "Report export initiated for inventory_report",
-        "export_id": "493630bf-994d-40da-8658-2723bf58e26c",
+        "export_id": "d846faaa-eaf7-47ae-a702-ca0dfda43cb5",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/493630bf-994d-40da-8658-2723bf58e26c",
-        "estimated_completion": "2025-08-09T17:56:09.246658"
+        "download_url": "/api/reports/download/d846faaa-eaf7-47ae-a702-ca0dfda43cb5",
+        "estimated_completion": "2025-08-09T18:00:22.531045"
       }
     },
     {
       "test": "Export Functionality - inventory_report Excel",
       "success": true,
       "details": "Excel export initiated for inventory_report",
-      "timestamp": "2025-08-09T17:55:39.297377",
+      "timestamp": "2025-08-09T17:59:52.580815",
       "response_data": {
         "message": "Report export initiated for inventory_report",
-        "export_id": "12487dc2-22f1-4fb2-8615-48d31bb4f8bb",
+        "export_id": "5667925b-a7fe-4585-a3b9-721b88cac4b3",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/12487dc2-22f1-4fb2-8615-48d31bb4f8bb",
-        "estimated_completion": "2025-08-09T17:56:09.253672"
+        "download_url": "/api/reports/download/5667925b-a7fe-4585-a3b9-721b88cac4b3",
+        "estimated_completion": "2025-08-09T18:00:22.577982"
       }
     },
     {
       "test": "Export Functionality - performance_metrics PDF",
       "success": true,
       "details": "PDF export initiated for performance_metrics",
-      "timestamp": "2025-08-09T17:55:39.304253",
+      "timestamp": "2025-08-09T17:59:52.628289",
       "response_data": {
         "message": "Report export initiated for performance_metrics",
-        "export_id": "3dc8c7b2-cee3-41cc-bd89-d8d589aefd31",
+        "export_id": "b780a9b1-96bd-4e31-9f9d-cff72ffceab4",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/3dc8c7b2-cee3-41cc-bd89-d8d589aefd31",
-        "estimated_completion": "2025-08-09T17:56:09.301709"
+        "download_url": "/api/reports/download/b780a9b1-96bd-4e31-9f9d-cff72ffceab4",
+        "estimated_completion": "2025-08-09T18:00:22.584989"
       }
     },
     {
       "test": "Export Functionality - performance_metrics Excel",
       "success": true,
       "details": "Excel export initiated for performance_metrics",
-      "timestamp": "2025-08-09T17:55:39.351379",
+      "timestamp": "2025-08-09T17:59:52.635020",
       "response_data": {
         "message": "Report export initiated for performance_metrics",
-        "export_id": "3d5c26fc-47d6-4dfc-94c8-4c6cc54fa426",
+        "export_id": "24a14341-7b18-4bb1-9ee1-b933afbb70d8",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/3d5c26fc-47d6-4dfc-94c8-4c6cc54fa426",
-        "estimated_completion": "2025-08-09T17:56:09.308546"
+        "download_url": "/api/reports/download/24a14341-7b18-4bb1-9ee1-b933afbb70d8",
+        "estimated_completion": "2025-08-09T18:00:22.632291"
       }
     },
     {
       "test": "Export Functionality - Download",
       "success": true,
       "details": "Download endpoint working",
-      "timestamp": "2025-08-09T17:55:39.358171",
+      "timestamp": "2025-08-09T17:59:52.641818",
       "response_data": {
         "message": "File download would start here",
         "export_id": "test-export-id-123",
@@ -947,27 +947,27 @@
       "test": "Reporting Error Handling - Invalid Report Type",
       "success": false,
       "details": "Expected error status, got 200",
-      "timestamp": "2025-08-09T17:55:39.364513",
+      "timestamp": "2025-08-09T17:59:52.648440",
       "response_data": null
     },
     {
       "test": "Error Handling",
       "success": true,
       "details": "404 returned for invalid endpoint",
-      "timestamp": "2025-08-09T17:55:39.411372",
+      "timestamp": "2025-08-09T17:59:52.696970",
       "response_data": null
     },
     {
       "test": "PoS Health Check",
       "success": true,
-      "details": "PoS API healthy. Products: 0, Customers: 0",
-      "timestamp": "2025-08-09T17:55:39.462538",
+      "details": "PoS API healthy. Products: 2, Customers: 2",
+      "timestamp": "2025-08-09T17:59:52.706586",
       "response_data": {
         "status": "healthy",
-        "timestamp": "2025-08-09T17:55:39.418480",
+        "timestamp": "2025-08-09T17:59:52.704074",
         "database": "connected",
-        "products_available": 0,
-        "customers_available": 0,
+        "products_available": 2,
+        "customers_available": 2,
         "transactions_24h": 0,
         "api_version": "1.0.0"
       }
@@ -975,72 +975,103 @@
     {
       "test": "PoS Products Sync - Default",
       "success": true,
-      "details": "Empty products list (valid for new system)",
-      "timestamp": "2025-08-09T17:55:39.472152",
-      "response_data": []
+      "details": "Retrieved 2 products for PoS",
+      "timestamp": "2025-08-09T17:59:52.753931",
+      "response_data": {
+        "count": 2,
+        "sample": {
+          "_id": "68978bf7fb36f8c7c2b0dc94",
+          "id": "68978bd0b327d561b2a1a2db",
+          "active": true,
+          "barcode": "123456789001",
+          "category": "Electronics",
+          "description": "High quality product A",
+          "image_url": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300",
+          "name": "Product A",
+          "price": 100.0,
+          "sku": "PROD-A-001",
+          "stock_quantity": 50,
+          "synced_from_main": true,
+          "updated_at": "2025-08-09T17:56:32.870000"
+        }
+      }
     },
     {
       "test": "PoS Products Sync - Search",
       "success": true,
-      "details": "Product search returned 0 results",
-      "timestamp": "2025-08-09T17:55:39.522005",
+      "details": "Product search returned 2 results",
+      "timestamp": "2025-08-09T17:59:52.761708",
       "response_data": {
-        "count": 0
+        "count": 2
       }
     },
     {
       "test": "PoS Products Sync - Category Filter",
       "success": true,
-      "details": "Category filter returned 0 results",
-      "timestamp": "2025-08-09T17:55:39.572017",
+      "details": "Category filter returned 1 results",
+      "timestamp": "2025-08-09T17:59:52.810259",
       "response_data": {
-        "count": 0
+        "count": 1
       }
     },
     {
       "test": "PoS Products Sync - Limit",
       "success": true,
-      "details": "Limit parameter working, got 0 products",
-      "timestamp": "2025-08-09T17:55:39.621920",
+      "details": "Limit parameter working, got 2 products",
+      "timestamp": "2025-08-09T17:59:52.818436",
       "response_data": {
-        "count": 0
+        "count": 2
       }
     },
     {
       "test": "PoS Customers Sync - Default",
       "success": true,
-      "details": "Empty customers list (valid for new system)",
-      "timestamp": "2025-08-09T17:55:39.630285",
-      "response_data": []
+      "details": "Retrieved 2 customers for PoS",
+      "timestamp": "2025-08-09T17:59:52.826660",
+      "response_data": {
+        "count": 2,
+        "sample": {
+          "_id": "68978c02fb36f8c7c2b0dca2",
+          "id": "68978bd0b327d561b2a1a2d8",
+          "address": "456 Customer Ave, City, Country",
+          "email": "contact@abccorp.com",
+          "last_purchase": "2025-08-04T17:56:32.869000",
+          "loyalty_points": 150,
+          "name": "ABC Corp",
+          "phone": "+1234567891",
+          "synced_from_main": true,
+          "updated_at": "2025-08-09T17:56:32.869000"
+        }
+      }
     },
     {
       "test": "PoS Customers Sync - Search",
       "success": true,
-      "details": "Customer search returned 0 results",
-      "timestamp": "2025-08-09T17:55:39.637956",
+      "details": "Customer search returned 1 results",
+      "timestamp": "2025-08-09T17:59:52.875148",
       "response_data": {
-        "count": 0
+        "count": 1
       }
     },
     {
       "test": "PoS Customers Sync - Limit",
       "success": true,
-      "details": "Limit parameter working, got 0 customers",
-      "timestamp": "2025-08-09T17:55:39.685993",
+      "details": "Limit parameter working, got 2 customers",
+      "timestamp": "2025-08-09T17:59:52.883012",
       "response_data": {
-        "count": 0
+        "count": 2
       }
     },
     {
       "test": "PoS Full Sync",
       "success": true,
-      "details": "Full sync successful. Products: 0, Customers: 0",
-      "timestamp": "2025-08-09T17:55:39.711354",
+      "details": "Full sync successful. Products: 2, Customers: 2",
+      "timestamp": "2025-08-09T17:59:52.897061",
       "response_data": {
         "success": true,
-        "sync_timestamp": "2025-08-09T17:55:39.690713",
-        "products_updated": 0,
-        "customers_updated": 0,
+        "sync_timestamp": "2025-08-09T17:59:52.887274",
+        "products_updated": 2,
+        "customers_updated": 2,
         "transactions_processed": 0,
         "errors": []
       }
@@ -1049,32 +1080,35 @@
       "test": "PoS Sync Status",
       "success": true,
       "details": "Sync status retrieved for device test-pos-device-001: completed",
-      "timestamp": "2025-08-09T17:55:39.718751",
+      "timestamp": "2025-08-09T17:59:52.947020",
       "response_data": {
         "device_id": "test-pos-device-001",
-        "last_sync": "2025-08-09T17:55:39.690000",
+        "last_sync": "2025-08-09T17:59:52.887000",
         "status": "completed",
-        "products_updated": 0,
-        "customers_updated": 0,
+        "products_updated": 2,
+        "customers_updated": 2,
         "errors": [],
-        "completed_at": "2025-08-09T17:55:39.707000"
+        "completed_at": "2025-08-09T17:59:52.893000"
       }
     },
     {
       "test": "PoS Categories",
       "success": true,
-      "details": "Retrieved 0 categories",
-      "timestamp": "2025-08-09T17:55:39.766904",
+      "details": "Retrieved 2 categories",
+      "timestamp": "2025-08-09T17:59:52.954886",
       "response_data": {
-        "categories": [],
-        "count": 0
+        "categories": [
+          "Electronics",
+          "Home & Garden"
+        ],
+        "count": 2
       }
     },
     {
       "test": "PoS Transaction Processing",
       "success": true,
       "details": "Transaction endpoint working (failed due to test data limitations)",
-      "timestamp": "2025-08-09T17:55:39.774670",
+      "timestamp": "2025-08-09T17:59:52.962044",
       "response_data": {
         "detail": "Failed to process transaction: 'test-product-id' is not a valid ObjectId, it must be a 12-byte input or a 24-character hex string"
       }
