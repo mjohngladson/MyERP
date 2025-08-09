@@ -48,6 +48,11 @@ async function initializeApp() {
     await initDatabase();
     console.log('✅ Database initialized');
 
+    // Initialize sample data
+    const { initializeSampleData } = require('./src/data/sampleData');
+    const { getDatabase } = require('./src/database/sqlite');
+    await initializeSampleData(getDatabase());
+
     // Initialize sync manager
     syncManager = new SyncManager();
     console.log('✅ Sync manager initialized');
