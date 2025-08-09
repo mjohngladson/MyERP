@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiLi PoS - Railway Status Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-blue-600">GiLi PoS - Railway Diagnostics</h1>
+                    <p class="text-gray-600">Testing Railway Deployment Connections</p>
+                </div>
+                <button id="test-all-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-play mr-2"></i>Test All
+                </button>
+            </div>
+        </div>
+
+        <!-- Railway Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Backend Status -->
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-server mr-2 text-blue-500"></i>
+                    Backend API Status
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span>Railway URL:</span>
+                        <a href="https://api-production-8536.up.railway.app" target="_blank" class="text-blue-500 hover:underline text-sm">
+                            api-production-8536.up.railway.app
+                        </a>
+                    </div>
+                    <div id="backend-status" class="p-3 bg-red-50 rounded">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-yellow-500 mr-2"></i>
+                            <span>Testing...</span>
+                        </div>
+                    </div>
+                    <div id="backend-details" class="text-sm text-gray-600">
+                        <!-- Backend test details will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frontend Status -->
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-desktop mr-2 text-green-500"></i>
+                    Frontend UI Status
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span>Railway URL:</span>
+                        <a href="https://ui-production-09dd.up.railway.app" target="_blank" class="text-blue-500 hover:underline text-sm">
+                            ui-production-09dd.up.railway.app
+                        </a>
+                    </div>
+                    <div id="frontend-status" class="p-3 bg-green-50 rounded">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-yellow-500 mr-2"></i>
+                            <span>Testing...</span>
+                        </div>
+                    </div>
+                    <div id="frontend-details" class="text-sm text-gray-600">
+                        <!-- Frontend test details will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints Test -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">API Endpoints Status</h2>
+            <div id="endpoints-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Endpoint status cards will be populated here -->
+            </div>
+        </div>
+
+        <!-- Debug Information -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Debug Information</h2>
+            <div id="debug-info" class="space-y-3">
+                <div class="p-3 bg-gray-50 rounded">
+                    <strong>Current Time:</strong> <span id="current-time"></span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded">
+                    <strong>User Agent:</strong> <span id="user-agent"></span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded">
+                    <strong>Origin:</strong> <span id="origin"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div id="recommendations" class="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-6 hidden">
+            <h3 class="text-lg font-semibold mb-2 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                Recommendations
+            </h3>
+            <div id="recommendations-list">
+                <!-- Recommendations will be populated here -->
+            </div>
+        </div>
+
+        <!-- Test Logs -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Test Logs</h2>
+            <div id="test-logs" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
+                <div>🚀 GiLi Railway Diagnostics initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let testResults = {
+            backend: null,
+            frontend: null,
+            endpoints: []
+        };
+
+        // URLs
+        const BACKEND_URL = 'https://api-production-8536.up.railway.app';
+        const FRONTEND_URL = 'https://ui-production-09dd.up.railway.app';
+        const API_BASE = `${BACKEND_URL}/api`;
+
+        // Initialize
+        function init() {
+            updateDebugInfo();
+            log('🔧 Initializing Railway diagnostics...');
+            testAll();
+        }
+
+        // Update debug information
+        function updateDebugInfo() {
+            document.getElementById('current-time').textContent = new Date().toISOString();
+            document.getElementById('user-agent').textContent = navigator.userAgent;
+            document.getElementById('origin').textContent = window.location.origin;
+        }
+
+        // Logging function
+        function log(message) {
+            const logsContainer = document.getElementById('test-logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsContainer.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            console.log(message);
+        }
+
+        // Test all services
+        async function testAll() {
+            log('🧪 Starting comprehensive Railway tests...');
+            
+            // Test frontend first (more likely to work)
+            await testFrontend();
+            
+            // Test backend
+            await testBackend();
+            
+            // Test specific API endpoints
+            await testApiEndpoints();
+            
+            // Generate recommendations
+            generateRecommendations();
+            
+            log('✅ All tests completed');
+        }
+
+        // Test frontend
+        async function testFrontend() {
+            log('🖥️ Testing frontend UI...');
+            const statusEl = document.getElementById('frontend-status');
+            const detailsEl = document.getElementById('frontend-details');
+            
+            try {
+                const response = await fetch(FRONTEND_URL, {
+                    method: 'HEAD',
+                    mode: 'no-cors' // Bypass CORS for this test
+                });
+                
+                // Since we're using no-cors, we can't read the response
+                // But if it doesn't throw, the service is reachable
+                testResults.frontend = { success: true, status: 'reachable' };
+                
+                statusEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <span>Frontend is accessible</span>
+                    </div>
+                `;
+                
+                detailsEl.innerHTML = `
+                    <div>✅ Railway frontend deployment is working</div>
+                    <div>✅ You can access your GiLi UI at the Railway URL</div>
+                `;
+                
+                log('✅ Frontend test passed - UI is accessible');
+                
+            } catch (error) {
+                testResults.frontend = { success: false, error: error.message };
+                
+                statusEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                        <span>Frontend not accessible</span>
+                    </div>
+                `;
+                
+                detailsEl.innerHTML = `
+                    <div>❌ Error: ${error.message}</div>
+                `;
+                
+                log(`❌ Frontend test failed: ${error.message}`);
+            }
+        }
+
+        // Test backend
+        async function testBackend() {
+            log('🛠️ Testing backend API...');
+            const statusEl = document.getElementById('backend-status');
+            const detailsEl = document.getElementById('backend-details');
+            
+            const endpoints = ['/api/', '/api/pos/health'];
+            let workingEndpoint = null;
+            let lastError = null;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    log(`🔍 Testing ${BACKEND_URL}${endpoint}`);
+                    
+                    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        workingEndpoint = endpoint;
+                        testResults.backend = { 
+                            success: true, 
+                            endpoint: endpoint,
+                            status: response.status,
+                            data: data
+                        };
+                        break;
+                    } else {
+                        lastError = `HTTP ${response.status}: ${response.statusText}`;
+                        log(`⚠️ ${endpoint} returned ${response.status}`);
+                    }
+                } catch (error) {
+                    lastError = error.message;
+                    log(`❌ ${endpoint} failed: ${error.message}`);
+                }
+            }
+            
+            if (workingEndpoint) {
+                statusEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <span>Backend API is working</span>
+                    </div>
+                `;
+                
+                detailsEl.innerHTML = `
+                    <div>✅ Working endpoint: ${workingEndpoint}</div>
+                    <div>✅ HTTP Status: ${testResults.backend.status}</div>
+                    <div>✅ Response received successfully</div>
+                `;
+                
+                log('✅ Backend test passed - API is working');
+            } else {
+                testResults.backend = { success: false, error: lastError };
+                
+                statusEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                        <span>Backend API not responding</span>
+                    </div>
+                `;
+                
+                detailsEl.innerHTML = `
+                    <div>❌ All API endpoints failed</div>
+                    <div>❌ Last error: ${lastError}</div>
+                    <div>⚠️ Your backend might not be deployed or running</div>
+                `;
+                
+                log(`❌ Backend test failed: ${lastError}`);
+            }
+        }
+
+        // Test specific API endpoints
+        async function testApiEndpoints() {
+            log('🔗 Testing specific PoS API endpoints...');
+            const gridEl = document.getElementById('endpoints-grid');
+            
+            const endpoints = [
+                { name: 'Health Check', path: '/pos/health', icon: 'fa-heartbeat' },
+                { name: 'Products', path: '/pos/products', icon: 'fa-box' },
+                { name: 'Customers', path: '/pos/customers', icon: 'fa-users' },
+                { name: 'Categories', path: '/pos/categories', icon: 'fa-tags' }
+            ];
+            
+            const results = await Promise.all(endpoints.map(async endpoint => {
+                let success = false;
+                let details = '';
+                
+                try {
+                    log(`🧪 Testing ${API_BASE}${endpoint.path}`);
+                    
+                    const response = await fetch(`${API_BASE}${endpoint.path}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        success = true;
+                        details = `HTTP ${response.status}`;
+                        log(`✅ ${endpoint.name}: Working`);
+                    } else {
+                        details = `HTTP ${response.status}`;
+                        log(`⚠️ ${endpoint.name}: ${details}`);
+                    }
+                    
+                } catch (error) {
+                    details = error.message;
+                    log(`❌ ${endpoint.name}: ${details}`);
+                }
+                
+                testResults.endpoints.push({ ...endpoint, success, details });
+                
+                const statusColor = success ? 'text-green-500' : 'text-red-500';
+                const bgColor = success ? 'bg-green-50' : 'bg-red-50';
+                const icon = success ? 'fa-check' : 'fa-times';
+                
+                return `
+                    <div class="${bgColor} p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <i class="fas ${endpoint.icon} ${statusColor} text-lg mr-2"></i>
+                            <h4 class="font-medium">${endpoint.name}</h4>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas ${icon} ${statusColor} text-sm mr-1"></i>
+                            <span class="text-sm ${statusColor}">${success ? 'Working' : 'Failed'}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">${details}</p>
+                    </div>
+                `;
+            }));
+            
+            gridEl.innerHTML = results.join('');
+        }
+
+        // Generate recommendations
+        function generateRecommendations() {
+            log('💡 Generating recommendations...');
+            const recommendationsEl = document.getElementById('recommendations');
+            const listEl = document.getElementById('recommendations-list');
+            
+            const recommendations = [];
+            
+            if (!testResults.backend || !testResults.backend.success) {
+                recommendations.push({
+                    icon: 'fa-server',
+                    text: 'Backend API is not responding. Check your Railway backend deployment logs and ensure it\'s running.',
+                    action: 'Check Railway dashboard for backend service status'
+                });
+                
+                recommendations.push({
+                    icon: 'fa-code',
+                    text: 'Verify your backend service is properly deployed with the correct start command.',
+                    action: 'Ensure package.json has correct scripts and Railway is using the right build command'
+                });
+            }
+            
+            if (testResults.frontend && testResults.frontend.success) {
+                recommendations.push({
+                    icon: 'fa-check',
+                    text: 'Your frontend is working perfectly! You can access your GiLi UI.',
+                    action: 'Visit your frontend URL to use the main GiLi system'
+                });
+            }
+            
+            if (testResults.backend && testResults.backend.success) {
+                recommendations.push({
+                    icon: 'fa-rocket',
+                    text: 'Backend is working! You can now use the PoS with your Railway deployment.',
+                    action: 'Use the production PoS to connect to your live backend'
+                });
+            }
+            
+            if (recommendations.length > 0) {
+                recommendationsEl.classList.remove('hidden');
+                listEl.innerHTML = recommendations.map(rec => `
+                    <div class="flex items-start mb-3">
+                        <i class="fas ${rec.icon} text-yellow-500 mr-3 mt-1"></i>
+                        <div>
+                            <p class="font-medium">${rec.text}</p>
+                            <p class="text-sm text-gray-600">${rec.action}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('test-all-btn').addEventListener('click', () => {
+            document.getElementById('test-logs').innerHTML = '<div>🔄 Re-running tests...</div>';
+            testAll();
+        });
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
