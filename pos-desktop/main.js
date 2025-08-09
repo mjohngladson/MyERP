@@ -55,6 +55,7 @@ async function initializeApp() {
 
     // Initialize sync manager
     syncManager = new SyncManager();
+    await syncManager.initialize();
     console.log('✅ Sync manager initialized');
 
     // Initialize hardware manager
