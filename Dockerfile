@@ -2,7 +2,7 @@ FROM node:18-alpine as builder
 
 WORKDIR /app
 
-# Copy frontend directory structure
+# Copy frontend directory
 COPY frontend/ ./frontend/
 
 # Ensure .npmrc exists with correct configuration
@@ -13,9 +13,6 @@ RUN echo 'legacy-peer-deps=true' > ./frontend/.npmrc && \
 
 # Install frontend dependencies
 RUN cd frontend && npm install --legacy-peer-deps
-
-# Copy frontend source code
-COPY frontend/ ./frontend/
 
 # Set environment variables for build
 ENV NODE_OPTIONS="--openssl-legacy-provider"
