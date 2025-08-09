@@ -3,10 +3,7 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Change to frontend directory
-WORKDIR /app/frontend
-
-# Copy package files from frontend
+# Copy package files from frontend directory
 COPY frontend/package.json frontend/package-lock.json ./
 
 # Create .npmrc for dependency resolution
