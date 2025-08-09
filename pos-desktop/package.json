@@ -6,10 +6,10 @@
   "scripts": {
     "start": "electron production-main.js --no-sandbox --disable-dev-shm-usage",
     "dev": "NODE_ENV=development electron main.js --dev --no-sandbox --disable-dev-shm-usage",
-    "build": "electron-builder --config build-config.js",
-    "build-win": "electron-builder --win --config build-config.js",
-    "build-portable": "electron-builder --win portable --config build-config.js",
-    "build-all": "electron-builder --win --linux --config build-config.js",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-portable": "electron-builder --win portable",
+    "build-all": "electron-builder --win --linux",
     "clean": "rm -rf dist/ && rm -rf node_modules/ && npm install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "electron-builder install-app-deps"
