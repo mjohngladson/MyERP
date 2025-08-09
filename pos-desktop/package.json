@@ -4,8 +4,8 @@
   "description": "GiLi Point of Sale Desktop Application",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
+    "start": "electron . --no-sandbox --disable-dev-shm-usage",
+    "dev": "electron . --dev --no-sandbox --disable-dev-shm-usage",
     "build": "electron-builder",
     "build-win": "electron-builder --win",
     "postinstall": "electron-builder install-app-deps"
