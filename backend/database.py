@@ -15,6 +15,10 @@ db_name = os.environ.get('DB_NAME', 'test_database')
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
 
+def get_database():
+    """Get database instance for PoS integration"""
+    return db
+
 # Collections
 users_collection = db.users
 companies_collection = db.companies
