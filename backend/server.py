@@ -12,6 +12,7 @@ from datetime import datetime
 
 # Import routers
 from routers import dashboard, auth, sales, search, reporting
+from routers.pos_integration import get_pos_router
 from database import init_sample_data
 
 ROOT_DIR = Path(__file__).parent
