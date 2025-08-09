@@ -35,11 +35,7 @@ RUN echo 'server { \
     root /usr/share/nginx/html; \
     index index.html index.htm; \
     location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location /api { \
-        # This will be handled by Railway routing \
-        proxy_pass $BACKEND_URL; \
+        try_files $$uri $$uri/ /index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
