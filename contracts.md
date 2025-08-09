@@ -1,4 +1,4 @@
-# ERPNext Clone - Backend Integration Contracts
+# GiLi - Backend Integration Contracts
 
 ## API Endpoints to Implement
 
