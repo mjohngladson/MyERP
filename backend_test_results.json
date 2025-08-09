@@ -1,12 +1,178 @@
 {
-  "health_check": {
-    "endpoint": "GET /api/",
-    "status": 200,
-    "success": true,
-    "details": "API is running: GiLi API is running",
-    "timestamp": "2025-08-08T23:44:56.708525",
-    "response_data": {
-        "message": "GiLi API is running"
+  "summary": {
+    "passed": 0,
+    "total": 24,
+    "success_rate": "0.0%",
+    "timestamp": "2025-08-09T17:54:31.776452"
+  },
+  "detailed_results": [
+    {
+      "test": "Health Check",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.655497",
+      "response_data": null
+    },
+    {
+      "test": "Dashboard Stats",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.662739",
+      "response_data": null
+    },
+    {
+      "test": "Dashboard Transactions",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.670269",
+      "response_data": null
+    },
+    {
+      "test": "Auth Me",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.675876",
+      "response_data": null
+    },
+    {
+      "test": "Sales Orders",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.681944",
+      "response_data": null
+    },
+    {
+      "test": "Sales Customers",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.687213",
+      "response_data": null
+    },
+    {
+      "test": "Database Initialization",
+      "success": false,
+      "details": "Sample data missing - customers: False, transactions: False, stats: False",
+      "timestamp": "2025-08-09T17:54:31.701052",
+      "response_data": null
+    },
+    {
+      "test": "Search Suggestions - Short Query",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.705654",
+      "response_data": null
+    },
+    {
+      "test": "Global Search - Short Query",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.709786",
+      "response_data": null
+    },
+    {
+      "test": "Sales Overview Report - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.713792",
+      "response_data": null
+    },
+    {
+      "test": "Financial Summary Report - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.718082",
+      "response_data": null
+    },
+    {
+      "test": "Customer Analysis Report - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.722190",
+      "response_data": null
+    },
+    {
+      "test": "Inventory Report - Basic",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.726240",
+      "response_data": null
+    },
+    {
+      "test": "Performance Metrics Report - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.730912",
+      "response_data": null
+    },
+    {
+      "test": "Export Functionality - sales_overview PDF",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.735745",
+      "response_data": null
+    },
+    {
+      "test": "Reporting Error Handling - Invalid Report Type",
+      "success": false,
+      "details": "Expected error status, got 502",
+      "timestamp": "2025-08-09T17:54:31.739828",
+      "response_data": null
+    },
+    {
+      "test": "Error Handling",
+      "success": false,
+      "details": "Expected 404, got 502",
+      "timestamp": "2025-08-09T17:54:31.744005",
+      "response_data": null
+    },
+    {
+      "test": "PoS Health Check",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.748835",
+      "response_data": null
+    },
+    {
+      "test": "PoS Products Sync - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.752881",
+      "response_data": null
+    },
+    {
+      "test": "PoS Customers Sync - Default",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.757336",
+      "response_data": null
+    },
+    {
+      "test": "PoS Full Sync",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.761789",
+      "response_data": null
+    },
+    {
+      "test": "PoS Sync Status",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.765782",
+      "response_data": null
+    },
+    {
+      "test": "PoS Categories",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.770148",
+      "response_data": null
+    },
+    {
+      "test": "PoS Transaction Processing",
+      "success": false,
+      "details": "HTTP 502",
+      "timestamp": "2025-08-09T17:54:31.776206",
+      "response_data": null
     }
-  }
+  ]
 }
