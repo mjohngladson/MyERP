@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Deployment Verification Test for ERPNext Backend API
+Deployment Verification Test for GiLi Backend API
 Tests the 6 core endpoints requested in the review after deployment fixes
 """
 
