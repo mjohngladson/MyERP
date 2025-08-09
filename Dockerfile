@@ -3,10 +3,13 @@ FROM node:18-alpine as builder
 WORKDIR /app
 
 # Copy frontend package files first for better caching
-COPY frontend/package*.json ./frontend/
+COPY frontend/package.json frontend/package-lock.json* ./frontend/
 
-# Copy .npmrc if it exists
-COPY frontend/.npmrc ./frontend/
+# Create .npmrc file with necessary config
+RUN echo 'legacy-peer-deps=true' > ./frontend/.npmrc && \
+    echo 'auto-install-peers=true' >> ./frontend/.npmrc && \
+    echo 'fund=false' >> ./frontend/.npmrc && \
+    echo 'audit=false' >> ./frontend/.npmrc
 
 # Install frontend dependencies
 RUN cd frontend && npm install --legacy-peer-deps
