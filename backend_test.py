@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Suite for ERPNext Clone
+Backend API Testing Suite for GiLi
 Tests all backend endpoints and verifies functionality
 """
 
