@@ -1,4 +1,4 @@
-// Mock data for ERPNext clone
+// Mock data for GiLi system
 
 export const mockModules = [
   {
