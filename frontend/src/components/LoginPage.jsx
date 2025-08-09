@@ -41,7 +41,7 @@ const LoginPage = () => {
           <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Building className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">ERPNext</h1>
+          <h1 className="text-3xl font-bold text-gray-800">GiLi</h1>
           <p className="text-gray-600 mt-2">Sign in to your ERP account</p>
         </div>
 
