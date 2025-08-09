@@ -3,7 +3,7 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 // Enable CORS
 app.use(cors());
@@ -21,7 +21,8 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'healthy', 
         message: 'GiLi PoS Web Server running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        port: PORT
     });
 });
 
