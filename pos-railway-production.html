@@ -165,34 +165,51 @@
             console.log('✅ GiLi PoS Production initialized');
         }
 
-        // Check Railway backend connection
+        // Check Railway backend connection - try both URLs
         async function checkConnection() {
             try {
-                updateConnectionStatus('syncing', 'Connecting to Railway...');
+                updateConnectionStatus('syncing', 'Testing Railway backends...');
                 
-                const response = await fetch(`${API_BASE}/health`, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                // Try each backend URL until we find one that works
+                for (const backend of BACKEND_URLS) {
+                    try {
+                        console.log(`🔍 Testing ${backend.name}: ${backend.url}`);
+                        
+                        const response = await fetch(`${backend.url}/api/pos/health`, {
+                            method: 'GET',
+                            mode: 'cors',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            if (data.status === 'healthy') {
+                                isOnline = true;
+                                WORKING_BACKEND = backend;
+                                API_BASE = `${backend.url}/api/pos`;
+                                updateConnectionStatus('online', `${backend.name} Railway Connected (${data.products_available} products)`);
+                                console.log(`✅ ${backend.name} Railway backend connected:`, data);
+                                return; // Success - exit the loop
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`❌ ${backend.name} backend failed:`, error.message);
+                        continue; // Try next backend
                     }
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'healthy') {
-                    isOnline = true;
-                    updateConnectionStatus('online', `Railway Connected (${data.products_available} products)`);
-                    console.log('✅ Railway backend connected:', data);
-                } else {
-                    throw new Error('Backend not healthy');
                 }
+                
+                // If we get here, no backend worked
+                throw new Error('All Railway backends failed to respond');
+                
             } catch (error) {
                 isOnline = false;
                 updateConnectionStatus('offline', 'Railway Connection Failed');
-                console.error('❌ Railway connection failed:', error);
-                showErrorModal(`Failed to connect to Railway backend: ${error.message}`);
+                console.error('❌ All Railway backends failed:', error);
+                showErrorModal(`Failed to connect to Railway backend: ${error.message}. Please check your Railway deployment status.`);
             }
         }
 
