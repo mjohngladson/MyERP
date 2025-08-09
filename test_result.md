@@ -498,7 +498,7 @@ frontend:
           comment: "Need to test sidebar navigation - verify all modules (Sales, Buying, Stock, Accounts, CRM, Projects, Manufacturing, HR) are displayed and clickable"
         - working: true
           agent: "testing"
-          comment: "✅ Sidebar navigation working perfectly. All 8 modules are visible and properly displayed: Sales, Buying, Stock, Accounts, CRM, Projects, Manufacturing, and HR. ERPNext title is visible, modules have proper icons and colors, and all are clickable. Professional ERPNext-style design maintained."
+          comment: "✅ Sidebar navigation working perfectly. All 8 modules are visible and properly displayed: Sales, Buying, Stock, Accounts, CRM, Projects, Manufacturing, and HR. GiLi title is visible, modules have proper icons and colors, and all are clickable. Professional GiLi-style design maintained."
 
   - task: "Sidebar Module Expansion"
     implemented: true
