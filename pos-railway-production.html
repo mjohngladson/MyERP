@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiLi PoS - Live Production</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-blue-600">GiLi Point of Sale</h1>
+                    <p class="text-gray-600">Production PoS - Connected to Railway</p>
+                    <p class="text-sm text-green-600">
+                        <i class="fas fa-cloud mr-1"></i>
+                        Backend: api-production-8536.up.railway.app
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div id="connection-status" class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                        <span id="connection-text" class="text-sm">Checking...</span>
+                    </div>
+                    <button id="sync-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-sync mr-2"></i>Sync
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Products Panel -->
+            <div class="lg:col-span-2">
+                <div class="bg-white shadow-lg rounded-lg">
+                    <div class="p-4 border-b">
+                        <h2 class="text-xl font-semibold">Products</h2>
+                        <div class="mt-3">
+                            <input type="text" id="product-search" placeholder="Search products..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    <div id="products-grid" class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                        <div class="text-center py-8 col-span-full">
+                            <i class="fas fa-spinner fa-spin text-2xl text-blue-500 mb-2"></i>
+                            <p class="text-gray-500">Loading products from Railway...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Panel -->
+            <div class="bg-white shadow-lg rounded-lg">
+                <div class="p-4 border-b">
+                    <h2 class="text-xl font-semibold">Cart</h2>
+                </div>
+                <div id="cart-items" class="p-4 space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-gray-500 text-center py-8">Cart is empty</p>
+                </div>
+                <div class="p-4 border-t bg-gray-50">
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Tax (18%):</span>
+                            <span id="tax">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg">
+                            <span>Total:</span>
+                            <span id="total">₹0.00</span>
+                        </div>
+                        <button id="checkout-btn" class="w-full bg-green-500 text-white py-2 px-4 rounded mt-3 hover:bg-green-600 disabled:bg-gray-400" disabled>
+                            <i class="fas fa-credit-card mr-2"></i>Checkout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Railway Integration Status -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mt-6">
+            <h3 class="text-lg font-semibold mb-4">Railway Backend Integration Status</h3>
+            <div id="integration-status" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Status cards will be populated here -->
+            </div>
+        </div>
+
+        <!-- Deployment Info -->
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mt-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>Production Deployment:</strong> This PoS is connected to your live Railway services.
+                        <br>API: <code>https://api-production-8536.up.railway.app</code>
+                        <br>UI: <code>https://ui-production-09dd.up.railway.app</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div class="text-center">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Transaction Successful!</h3>
+                <p id="success-message" class="text-gray-600 mb-4"></p>
+                <button id="close-modal" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div class="text-center">
+                <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">Connection Error</h3>
+                <p id="error-message" class="text-gray-600 mb-4"></p>
+                <button id="close-error-modal" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let cart = [];
+        let products = [];
+        let isOnline = false;
+
+        // Production Railway URLs
+        const API_BASE = 'https://api-production-8536.up.railway.app/api/pos';
+        const UI_BASE = 'https://ui-production-09dd.up.railway.app';
+
+        console.log('🚀 Initializing GiLi PoS Production...');
+        console.log('📡 API URL:', API_BASE);
+
+        // Initialize the app
+        async function init() {
+            console.log('🚀 Connecting to Railway deployments...');
+            
+            await checkConnection();
+            await loadProducts();
+            await loadIntegrationStatus();
+            
+            setupEventListeners();
+            
+            console.log('✅ GiLi PoS Production initialized');
+        }
+
+        // Check Railway backend connection
+        async function checkConnection() {
+            try {
+                updateConnectionStatus('syncing', 'Connecting to Railway...');
+                
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    isOnline = true;
+                    updateConnectionStatus('online', `Railway Connected (${data.products_available} products)`);
+                    console.log('✅ Railway backend connected:', data);
+                } else {
+                    throw new Error('Backend not healthy');
+                }
+            } catch (error) {
+                isOnline = false;
+                updateConnectionStatus('offline', 'Railway Connection Failed');
+                console.error('❌ Railway connection failed:', error);
+                showErrorModal(`Failed to connect to Railway backend: ${error.message}`);
+            }
+        }
+
+        // Update connection status display
+        function updateConnectionStatus(status, text) {
+            const statusEl = document.getElementById('connection-status');
+            const textEl = document.getElementById('connection-text');
+            
+            statusEl.className = 'w-3 h-3 rounded-full mr-2 ' + 
+                (status === 'online' ? 'bg-green-500' : 
+                 status === 'syncing' ? 'bg-blue-500' : 'bg-red-500');
+            textEl.textContent = text;
+        }
+
+        // Load products from Railway
+        async function loadProducts() {
+            if (!isOnline) {
+                displayProducts([]);
+                return;
+            }
+
+            try {
+                console.log('📦 Loading products from Railway...');
+                
+                const response = await fetch(`${API_BASE}/products`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                products = await response.json();
+                displayProducts(products);
+                console.log(`✅ Loaded ${products.length} products from Railway`);
+            } catch (error) {
+                console.error('❌ Failed to load products:', error);
+                displayProducts([]);
+                showErrorModal(`Failed to load products: ${error.message}`);
+            }
+        }
+
+        // Display products
+        function displayProducts(productList) {
+            const grid = document.getElementById('products-grid');
+            
+            if (productList.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">No products available from Railway backend</p>';
+                return;
+            }
+            
+            grid.innerHTML = productList.map(product => `
+                <div class="product-card border rounded-lg p-3 hover:shadow-md cursor-pointer transition-shadow transform hover:scale-105"
+                     onclick="addToCart('${product.id}')">
+                    <div class="text-center">
+                        <i class="fas fa-box text-2xl text-blue-500 mb-2"></i>
+                        <h4 class="font-medium text-sm truncate">${product.name}</h4>
+                        <p class="text-xs text-gray-500 truncate">${product.sku || product.item_code}</p>
+                        <p class="text-lg font-bold text-green-600 mt-1">₹${product.price || product.unit_price}</p>
+                        <p class="text-xs text-gray-400">Stock: ${product.stock_quantity || product.stock_qty}</p>
+                        <p class="text-xs text-blue-500">${product.category || 'General'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add product to cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    ...product,
+                    quantity: 1,
+                    price: product.price || product.unit_price
+                });
+            }
+            
+            updateCartDisplay();
+        }
+
+        // Update cart display
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cart-items');
+            const subtotalEl = document.getElementById('subtotal');
+            const taxEl = document.getElementById('tax');
+            const totalEl = document.getElementById('total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-gray-500 text-center py-8">Cart is empty</p>';
+                subtotalEl.textContent = '₹0.00';
+                taxEl.textContent = '₹0.00';
+                totalEl.textContent = '₹0.00';
+                checkoutBtn.disabled = true;
+                return;
+            }
+            
+            let subtotal = 0;
+            
+            cartItems.innerHTML = cart.map(item => {
+                const lineTotal = item.price * item.quantity;
+                subtotal += lineTotal;
+                
+                return `
+                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div class="flex-1">
+                            <p class="font-medium text-sm">${item.name}</p>
+                            <p class="text-xs text-gray-500">${item.quantity} × ₹${item.price}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold">₹${lineTotal.toFixed(2)}</span>
+                            <button onclick="removeFromCart('${item.id}')" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            const tax = subtotal * 0.18; // 18% tax
+            const total = subtotal + tax;
+            
+            subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
+            taxEl.textContent = `₹${tax.toFixed(2)}`;
+            totalEl.textContent = `₹${total.toFixed(2)}`;
+            checkoutBtn.disabled = false;
+        }
+
+        // Remove from cart
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartDisplay();
+        }
+
+        // Process checkout with Railway backend
+        async function processCheckout() {
+            if (cart.length === 0 || !isOnline) return;
+            
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const taxAmount = subtotal * 0.18;
+            const total = subtotal + taxAmount;
+            
+            const transaction = {
+                pos_transaction_id: `POS-RAILWAY-${Date.now()}`,
+                store_location: 'Railway PoS',
+                cashier_id: 'railway-pos-user',
+                customer_id: null,
+                items: cart.map(item => ({
+                    product_id: item.id,
+                    product_name: item.name,
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                    discount_percent: 0,
+                    line_total: item.price * item.quantity
+                })),
+                subtotal: subtotal,
+                tax_amount: taxAmount,
+                discount_amount: 0,
+                total_amount: total,
+                payment_method: 'cash',
+                payment_details: {},
+                status: 'completed',
+                transaction_timestamp: new Date().toISOString(),
+                pos_device_id: 'railway-pos-web',
+                receipt_number: `R-RAILWAY-${Date.now()}`
+            };
+            
+            try {
+                updateConnectionStatus('syncing', 'Processing transaction...');
+                
+                console.log('💳 Sending transaction to Railway:', transaction);
+                
+                const response = await fetch(`${API_BASE}/transactions`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(transaction)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Clear cart
+                    cart = [];
+                    updateCartDisplay();
+                    
+                    // Show success modal
+                    showSuccessModal(`Transaction processed successfully on Railway!\nSales Order ID: ${result.sales_order_id}\nTransaction synced to GiLi backend.`);
+                    
+                    updateConnectionStatus('online', 'Transaction completed');
+                    
+                    console.log('✅ Transaction successful:', result);
+                } else {
+                    throw new Error(result.message || 'Transaction failed');
+                }
+                
+            } catch (error) {
+                console.error('❌ Checkout failed:', error);
+                showErrorModal(`Transaction failed: ${error.message}`);
+                updateConnectionStatus('online', 'Transaction failed');
+            }
+        }
+
+        // Show success modal
+        function showSuccessModal(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        // Show error modal
+        function showErrorModal(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        // Load Railway integration status
+        async function loadIntegrationStatus() {
+            const statusContainer = document.getElementById('integration-status');
+            
+            const endpoints = [
+                { name: 'Health Check', url: '/health', icon: 'fa-heartbeat' },
+                { name: 'Products API', url: '/products', icon: 'fa-box' },
+                { name: 'Customers API', url: '/customers', icon: 'fa-users' },
+                { name: 'Sync API', url: '/categories', icon: 'fa-sync' }
+            ];
+            
+            const statusCards = await Promise.all(endpoints.map(async endpoint => {
+                let status = 'error';
+                let message = 'Failed';
+                let details = '';
+                
+                try {
+                    const response = await fetch(`${API_BASE}${endpoint.url}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        status = 'success';
+                        message = 'Working';
+                        details = `${response.status}`;
+                    } else {
+                        details = `HTTP ${response.status}`;
+                    }
+                } catch (error) {
+                    details = error.message;
+                }
+                
+                const statusColor = status === 'success' ? 'text-green-500' : 'text-red-500';
+                const bgColor = status === 'success' ? 'bg-green-50' : 'bg-red-50';
+                
+                return `
+                    <div class="${bgColor} p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas ${endpoint.icon} ${statusColor} text-xl mr-3"></i>
+                            <div>
+                                <h4 class="font-medium">${endpoint.name}</h4>
+                                <p class="text-sm ${statusColor}">${message}</p>
+                                <p class="text-xs text-gray-500">${details}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }));
+            
+            statusContainer.innerHTML = statusCards.join('');
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('product-search').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const filtered = products.filter(product => 
+                    product.name.toLowerCase().includes(query) ||
+                    (product.sku && product.sku.toLowerCase().includes(query)) ||
+                    (product.item_code && product.item_code.toLowerCase().includes(query))
+                );
+                displayProducts(filtered);
+            });
+            
+            // Sync button
+            document.getElementById('sync-btn').addEventListener('click', async () => {
+                updateConnectionStatus('syncing', 'Syncing with Railway...');
+                await checkConnection();
+                await loadProducts();
+                await loadIntegrationStatus();
+            });
+            
+            // Checkout button
+            document.getElementById('checkout-btn').addEventListener('click', processCheckout);
+            
+            // Modal close buttons
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-error-modal').addEventListener('click', () => {
+                document.getElementById('error-modal').classList.add('hidden');
+            });
+        }
+
+        // Start the app
+        init();
+        
+        // Periodic connection check
+        setInterval(async () => {
+            if (!isOnline) {
+                await checkConnection();
+            }
+        }, 30000); // Check every 30 seconds
+        
+        console.log('🚀 GiLi PoS Production ready!');
+    </script>
+</body>
+</html>
