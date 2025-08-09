@@ -447,12 +447,19 @@
         async function loadIntegrationStatus() {
             const statusContainer = document.getElementById('integration-status');
             
+            if (!API_BASE) {
+                statusContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 p-8">No working backend found</div>';
+                return;
+            }
+            
             const endpoints = [
                 { name: 'Health Check', url: '/health', icon: 'fa-heartbeat' },
                 { name: 'Products API', url: '/products', icon: 'fa-box' },
                 { name: 'Customers API', url: '/customers', icon: 'fa-users' },
                 { name: 'Sync API', url: '/categories', icon: 'fa-sync' }
             ];
+            
+            console.log(`🔧 Testing integration status via ${WORKING_BACKEND.name}`);
             
             const statusCards = await Promise.all(endpoints.map(async endpoint => {
                 let status = 'error';
@@ -472,7 +479,7 @@
                     if (response.ok) {
                         status = 'success';
                         message = 'Working';
-                        details = `${response.status}`;
+                        details = `${response.status} (${WORKING_BACKEND.name})`;
                     } else {
                         details = `HTTP ${response.status}`;
                     }
