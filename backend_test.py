@@ -1308,7 +1308,15 @@ class BackendTester:
             self.test_performance_metrics_report,
             self.test_export_functionality,
             self.test_reporting_error_handling,
-            self.test_error_handling
+            self.test_error_handling,
+            # PoS Integration Tests
+            self.test_pos_health_check,
+            self.test_pos_products_sync,
+            self.test_pos_customers_sync,
+            self.test_pos_full_sync,
+            self.test_pos_sync_status,
+            self.test_pos_categories,
+            self.test_pos_transaction_processing
         ]
         
         passed = 0
