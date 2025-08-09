@@ -171,7 +171,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
           {/* Footer */}
           <div className="p-4 border-t border-gray-200">
             <div className="text-xs text-gray-500 text-center">
-              ERPNext v15.0
+              GiLi v1.0
             </div>
           </div>
         </div>
