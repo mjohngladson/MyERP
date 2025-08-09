@@ -141,9 +141,13 @@
         let products = [];
         let isOnline = false;
 
-        // Production Railway URLs
-        const API_BASE = 'https://api-production-8536.up.railway.app/api/pos';
-        const UI_BASE = 'https://ui-production-09dd.up.railway.app';
+        // Production Railway URLs - will auto-detect which one works
+        const BACKEND_URLS = [
+            { name: 'External', url: 'https://api-production-8536.up.railway.app' },
+            { name: 'Internal', url: 'https://myerp.railway.internal' }
+        ];
+        let API_BASE = null;
+        let WORKING_BACKEND = null;
 
         console.log('🚀 Initializing GiLi PoS Production...');
         console.log('📡 API URL:', API_BASE);
