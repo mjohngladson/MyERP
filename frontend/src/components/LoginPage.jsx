@@ -28,7 +28,7 @@ const LoginPage = () => {
   };
 
   const demoCredentials = [
-    { email: 'admin@erpnext.com', password: 'admin123', role: 'System Manager' },
+    { email: 'admin@gili.com', password: 'admin123', role: 'System Manager' },
     { email: 'john.doe@company.com', password: 'john123', role: 'Sales Manager' },
     { email: 'jane.smith@company.com', password: 'jane123', role: 'Purchase Manager' }
   ];
