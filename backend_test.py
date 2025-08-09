@@ -983,7 +983,7 @@ class BackendTester:
 
     async def run_all_tests(self):
         """Run all backend tests"""
-        print(f"🚀 Starting Backend API Tests for ERPNext Clone")
+        print(f"🚀 Starting Backend API Tests for GiLi")
         print(f"📍 Testing URL: {self.base_url}")
         print("=" * 60)
         
