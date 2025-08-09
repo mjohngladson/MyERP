@@ -2,7 +2,7 @@
   "name": "gili-pos",
   "version": "1.0.0",
   "description": "GiLi Point of Sale Desktop Application",
-  "main": "main.js",
+  "main": "production-main.js",
   "scripts": {
     "start": "electron . --no-sandbox --disable-dev-shm-usage",
     "dev": "electron . --dev --no-sandbox --disable-dev-shm-usage",
