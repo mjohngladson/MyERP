@@ -45,18 +45,16 @@ const buildConfig = {
                 arch: ["x64"]
             }
         ],
-        icon: "build-resources/icon.ico",
         publisherName: "GiLi Team",
         verifyUpdateCodeSignature: false,
         artifactName: "${productName}-${version}-${os}-${arch}.${ext}",
         
-        // Windows file properties
-        fileAssociation: {
+        // Windows file associations (fixed property name)
+        fileAssociations: [{
             ext: "gilipos",
             name: "GiLi PoS Data File",
-            description: "GiLi Point of Sale data file",
-            icon: "build-resources/file-icon.ico"
-        }
+            description: "GiLi Point of Sale data file"
+        }]
     },
     
     // NSIS installer configuration
@@ -64,9 +62,6 @@ const buildConfig = {
         oneClick: false,
         allowElevation: true,
         allowToChangeInstallationDirectory: true,
-        installerIcon: "build-resources/installer-icon.ico",
-        uninstallerIcon: "build-resources/uninstaller-icon.ico",
-        installerHeaderIcon: "build-resources/header-icon.ico",
         createDesktopShortcut: true,
         createStartMenuShortcut: true,
         shortcutName: "GiLi PoS",
@@ -105,7 +100,7 @@ const buildConfig = {
     // Compression settings
     compression: "maximum",
     
-    // Build hooks
+    // Build hooks (removed afterBuild - using afterAllArtifactBuild instead)
     beforeBuild: async (context) => {
         console.log('🔨 Preparing production build...');
         
@@ -135,7 +130,7 @@ const buildConfig = {
         console.log('✅ Build preparation completed');
     },
     
-    afterBuild: async (context) => {
+    afterAllArtifactBuild: async (context) => {
         console.log('🎉 Build completed successfully!');
         
         // Generate checksums
@@ -154,12 +149,13 @@ const buildConfig = {
             checksums[file] = hash;
         }
         
-        fs.writeFileSync(
-            path.join(outputPath, 'checksums.json'),
-            JSON.stringify(checksums, null, 2)
-        );
-        
-        console.log('✅ Checksums generated');
+        if (files.length > 0) {
+            fs.writeFileSync(
+                path.join(outputPath, 'checksums.json'),
+                JSON.stringify(checksums, null, 2)
+            );
+            console.log('✅ Checksums generated');
+        }
     }
 };
 
