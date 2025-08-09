@@ -225,66 +225,84 @@
             }
         }
 
-        // Test backend
+        // Test backend with both URLs
         async function testBackend() {
-            log('🛠️ Testing backend API...');
+            log('🛠️ Testing backend API (both internal and external URLs)...');
             const statusEl = document.getElementById('backend-status');
             const detailsEl = document.getElementById('backend-details');
             
-            const endpoints = ['/api/', '/api/pos/health'];
-            let workingEndpoint = null;
-            let lastError = null;
+            const backendUrls = [
+                { name: 'External URL', url: BACKEND_EXTERNAL },
+                { name: 'Internal URL', url: BACKEND_INTERNAL }
+            ];
             
-            for (const endpoint of endpoints) {
-                try {
-                    log(`🔍 Testing ${BACKEND_URL}${endpoint}`);
-                    
-                    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
+            let workingBackend = null;
+            let testResults = [];
+            
+            for (const backend of backendUrls) {
+                const endpoints = ['/api/', '/api/pos/health'];
+                let backendResult = { name: backend.name, url: backend.url, working: false, details: [] };
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        log(`🔍 Testing ${backend.name}: ${backend.url}${endpoint}`);
+                        
+                        const response = await fetch(`${backend.url}${endpoint}`, {
+                            method: 'GET',
+                            mode: 'cors',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            backendResult.working = true;
+                            backendResult.details.push(`✅ ${endpoint}: HTTP ${response.status} - Working`);
+                            workingBackend = backend.url;
+                            API_BASE = `${backend.url}/api`;
+                            log(`✅ ${backend.name} ${endpoint}: Working!`);
+                        } else {
+                            backendResult.details.push(`⚠️ ${endpoint}: HTTP ${response.status} - ${response.statusText}`);
+                            log(`⚠️ ${backend.name} ${endpoint}: ${response.status}`);
                         }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        workingEndpoint = endpoint;
-                        testResults.backend = { 
-                            success: true, 
-                            endpoint: endpoint,
-                            status: response.status,
-                            data: data
-                        };
-                        break;
-                    } else {
-                        lastError = `HTTP ${response.status}: ${response.statusText}`;
-                        log(`⚠️ ${endpoint} returned ${response.status}`);
+                    } catch (error) {
+                        backendResult.details.push(`❌ ${endpoint}: ${error.message}`);
+                        log(`❌ ${backend.name} ${endpoint}: ${error.message}`);
                     }
-                } catch (error) {
-                    lastError = error.message;
-                    log(`❌ ${endpoint} failed: ${error.message}`);
                 }
+                
+                testResults.push(backendResult);
             }
             
-            if (workingEndpoint) {
+            if (workingBackend) {
+                const workingBackendInfo = testResults.find(r => r.working);
+                testResults.backend = { success: true, url: workingBackend };
+                
                 statusEl.innerHTML = `
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                        <span>Backend API is working</span>
+                        <span>Backend API is working (${workingBackendInfo.name})</span>
                     </div>
                 `;
                 
                 detailsEl.innerHTML = `
-                    <div>✅ Working endpoint: ${workingEndpoint}</div>
-                    <div>✅ HTTP Status: ${testResults.backend.status}</div>
-                    <div>✅ Response received successfully</div>
+                    <div class="space-y-2">
+                        ${testResults.map(result => `
+                            <div class="p-2 ${result.working ? 'bg-green-50' : 'bg-red-50'} rounded">
+                                <strong>${result.name}:</strong> <code class="text-sm">${result.url}</code>
+                                <div class="mt-1 text-sm">
+                                    ${result.details.join('<br>')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
                 `;
                 
-                log('✅ Backend test passed - API is working');
+                log(`✅ Backend working via: ${workingBackendInfo.name}`);
             } else {
-                testResults.backend = { success: false, error: lastError };
+                testResults.backend = { success: false, error: 'Both internal and external URLs failed' };
                 
                 statusEl.innerHTML = `
                     <div class="flex items-center">
@@ -294,12 +312,22 @@
                 `;
                 
                 detailsEl.innerHTML = `
-                    <div>❌ All API endpoints failed</div>
-                    <div>❌ Last error: ${lastError}</div>
-                    <div>⚠️ Your backend might not be deployed or running</div>
+                    <div class="space-y-2">
+                        ${testResults.map(result => `
+                            <div class="p-2 bg-red-50 rounded">
+                                <strong>${result.name}:</strong> <code class="text-sm">${result.url}</code>
+                                <div class="mt-1 text-sm">
+                                    ${result.details.join('<br>')}
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="p-2 bg-yellow-50 rounded">
+                            <strong>💡 Tip:</strong> If internal URL works, there might be an external URL configuration issue in Railway.
+                        </div>
+                    </div>
                 `;
                 
-                log(`❌ Backend test failed: ${lastError}`);
+                log('❌ Both backend URLs failed');
             }
         }
 
