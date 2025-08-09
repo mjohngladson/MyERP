@@ -230,7 +230,7 @@ class DeploymentVerificationTester:
         
         if passed == total:
             print("🎉 ✅ ALL CORE ENDPOINTS WORKING! Backend deployment successful.")
-            print("🚀 The ERPNext backend API is fully functional after deployment fixes.")
+            print("🚀 The GiLi backend API is fully functional after deployment fixes.")
         else:
             print(f"⚠️  {total - passed} endpoints failed. Backend needs attention.")
         
