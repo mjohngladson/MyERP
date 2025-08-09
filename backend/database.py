@@ -105,20 +105,36 @@ async def init_sample_data():
             "name": "Product A",
             "description": "High quality product A",
             "item_code": "PROD-A-001",
+            "barcode": "123456789001",
             "unit_price": 100.0,
             "stock_qty": 50,
+            "stock_quantity": 50,  # For PoS compatibility
+            "price": 100.0,  # For PoS compatibility
+            "category": "Electronics",
+            "image": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300",
+            "image_url": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300",
+            "active": True,
             "company_id": company_id,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         },
         {
             "id": str(uuid.uuid4()),
             "name": "Product B",
             "description": "Premium product B",
             "item_code": "PROD-B-001",
+            "barcode": "123456789002",
             "unit_price": 200.0,
             "stock_qty": 30,
+            "stock_quantity": 30,  # For PoS compatibility
+            "price": 200.0,  # For PoS compatibility
+            "category": "Home & Garden",
+            "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
+            "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
+            "active": True,
             "company_id": company_id,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
     ]
     await items_collection.insert_many(items_data)
