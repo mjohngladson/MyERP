@@ -22,6 +22,11 @@ app.get('/local', (req, res) => {
     res.sendFile(path.join(__dirname, 'pos-web-demo.html'));
 });
 
+// Serve the diagnostics page
+app.get('/diagnostics', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pos-railway-diagnostics.html'));
+});
+
 // Health check for the web demo server
 app.get('/health', (req, res) => {
     res.json({ 
