@@ -357,7 +357,7 @@
 
         // Process checkout with Railway backend
         async function processCheckout() {
-            if (cart.length === 0 || !isOnline) return;
+            if (cart.length === 0 || !isOnline || !API_BASE) return;
             
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const taxAmount = subtotal * 0.18;
@@ -365,7 +365,7 @@
             
             const transaction = {
                 pos_transaction_id: `POS-RAILWAY-${Date.now()}`,
-                store_location: 'Railway PoS',
+                store_location: `Railway PoS (${WORKING_BACKEND.name})`,
                 cashier_id: 'railway-pos-user',
                 customer_id: null,
                 items: cart.map(item => ({
@@ -389,9 +389,9 @@
             };
             
             try {
-                updateConnectionStatus('syncing', 'Processing transaction...');
+                updateConnectionStatus('syncing', `Processing via ${WORKING_BACKEND.name}...`);
                 
-                console.log('💳 Sending transaction to Railway:', transaction);
+                console.log(`💳 Sending transaction to Railway (${WORKING_BACKEND.name}):`, transaction);
                 
                 const response = await fetch(`${API_BASE}/transactions`, {
                     method: 'POST',
@@ -415,9 +415,9 @@
                     updateCartDisplay();
                     
                     // Show success modal
-                    showSuccessModal(`Transaction processed successfully on Railway!\nSales Order ID: ${result.sales_order_id}\nTransaction synced to GiLi backend.`);
+                    showSuccessModal(`Transaction processed successfully on Railway (${WORKING_BACKEND.name})!\nSales Order ID: ${result.sales_order_id}\nTransaction synced to GiLi backend.`);
                     
-                    updateConnectionStatus('online', 'Transaction completed');
+                    updateConnectionStatus('online', `${WORKING_BACKEND.name} Railway Connected`);
                     
                     console.log('✅ Transaction successful:', result);
                 } else {
@@ -427,7 +427,7 @@
             } catch (error) {
                 console.error('❌ Checkout failed:', error);
                 showErrorModal(`Transaction failed: ${error.message}`);
-                updateConnectionStatus('online', 'Transaction failed');
+                updateConnectionStatus('online', `${WORKING_BACKEND.name} Railway Connected`);
             }
         }
 
