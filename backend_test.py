@@ -47,7 +47,7 @@ class BackendTester:
             async with self.session.get(f"{self.base_url}/api/") as response:
                 if response.status == 200:
                     data = await response.json()
-                    if "message" in data and "ERPNext Clone API" in data["message"]:
+                    if "message" in data and "GiLi API" in data["message"]:
                         self.log_test("Health Check", True, "API is running", data)
                         return True
                     else:
