@@ -1,4 +1,4 @@
-// Data Synchronization Manager
+// Frontend Data Synchronization - Integrated with GiLi Backend
 const { ipcRenderer } = require('electron');
 
 class SyncManager {
@@ -6,12 +6,16 @@ class SyncManager {
         this.isOnline = false;
         this.lastSyncTime = null;
         this.syncInProgress = false;
-        this.serverUrl = 'http://localhost:8001';
+        this.serverUrl = 'http://localhost:8001'; // Will be loaded from config
         this.syncInterval = 5 * 60 * 1000; // 5 minutes
         this.autoSyncTimer = null;
+        this.deviceId = null;
     }
     
     async init() {
+        // Get device ID from main process
+        this.deviceId = await ipcRenderer.invoke('pos:get-device-id');
+        
         // Check initial connection status
         await this.checkConnection();
         
@@ -20,34 +24,71 @@ class SyncManager {
         
         // Listen for connection changes
         window.addEventListener('online', () => {
-            this.isOnline = true;
-            this.checkConnection();
+            console.log('🌐 Network connection restored');
+            this.handleConnectionRestore();
         });
         
         window.addEventListener('offline', () => {
-            this.isOnline = false;
-            this.stopAutoSync();
+            console.log('📡 Network connection lost - entering offline mode');
+            this.handleConnectionLoss();
+        });
+        
+        // Listen for sync status updates from main process
+        ipcRenderer.on('sync-status-changed', (event, status) => {
+            this.updateSyncStatus(status);
         });
     }
     
     async checkConnection() {
         try {
-            const response = await fetch(`${this.serverUrl}/api/`, {
-                method: 'GET',
-                timeout: 5000
-            });
-            
-            this.isOnline = response.ok;
+            const status = await ipcRenderer.invoke('pos:check-connection');
+            this.isOnline = status.online;
             
             if (this.isOnline) {
+                console.log('✅ GiLi backend connection active');
+                this.showSyncStatus('Online', 'success');
                 this.startAutoSync();
+            } else {
+                console.log('⚠️ GiLi backend not available - offline mode');
+                this.showSyncStatus('Offline', 'warning');
+                this.stopAutoSync();
             }
+            
+            return this.isOnline;
         } catch (error) {
             this.isOnline = false;
-            this.stopAutoSync();
+            this.showSyncStatus('Connection Error', 'error');
+            return false;
         }
+    }
+    
+    async handleConnectionRestore() {
+        this.isOnline = true;
+        this.showSyncStatus('Online', 'success');
+        this.startAutoSync();
         
-        return this.isOnline;
+        // Automatically sync pending data
+        setTimeout(async () => {
+            if (!this.syncInProgress) {
+                await this.syncAll();
+            }
+        }, 2000);
+        
+        // Notify user
+        if (typeof app !== 'undefined' && app.showNotification) {
+            app.showNotification('Connection restored - syncing data', 'info');
+        }
+    }
+    
+    async handleConnectionLoss() {
+        this.isOnline = false;
+        this.showSyncStatus('Offline', 'warning');
+        this.stopAutoSync();
+        
+        // Notify user
+        if (typeof app !== 'undefined' && app.showNotification) {
+            app.showNotification('Working offline - transactions will be synced when connection is restored', 'warning');
+        }
     }
     
     startAutoSync() {
@@ -57,9 +98,15 @@ class SyncManager {
         
         this.autoSyncTimer = setInterval(async () => {
             if (this.isOnline && !this.syncInProgress) {
-                await this.syncAll();
+                try {
+                    await this.syncAll();
+                } catch (error) {
+                    console.warn('Auto-sync failed:', error);
+                }
             }
         }, this.syncInterval);
+        
+        console.log(`🔄 Auto-sync enabled (every ${this.syncInterval / 60000} minutes)`);
     }
     
     stopAutoSync() {
@@ -67,6 +114,7 @@ class SyncManager {
             clearInterval(this.autoSyncTimer);
             this.autoSyncTimer = null;
         }
+        console.log('⏹️ Auto-sync disabled');
     }
     
     async syncAll() {
@@ -76,329 +124,261 @@ class SyncManager {
         }
         
         this.syncInProgress = true;
+        this.showSyncStatus('Syncing...', 'info');
         
         try {
-            console.log('🔄 Starting data synchronization...');
+            console.log('🔄 Starting GiLi PoS synchronization...');
             
-            const results = {
-                products: await this.syncProducts(),
-                customers: await this.syncCustomers(),
-                transactions: await this.syncTransactions(),
-                timestamp: new Date().toISOString()
-            };
+            const result = await ipcRenderer.invoke('pos:sync-all');
             
-            // Check if all syncs were successful
-            const success = Object.values(results).every(result => 
-                result && result.success !== false
-            );
-            
-            if (success) {
-                this.lastSyncTime = results.timestamp;
-                console.log('✅ Synchronization completed successfully');
-                return { success: true, results: results };
+            if (result.success) {
+                this.lastSyncTime = result.timestamp;
+                this.showSyncStatus('Online', 'success');
+                
+                // Show success notification
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    const message = `Sync completed successfully
+📦 Products: ${result.products_updated || 0}
+👥 Customers: ${result.customers_updated || 0}
+💰 Transactions: ${result.transactions_processed || 0}`;
+                    app.showNotification(message, 'success');
+                }
+                
+                // Refresh product display if needed
+                if (result.products_updated > 0 && typeof app !== 'undefined' && app.loadProducts) {
+                    await app.loadProducts();
+                }
+                
+                // Refresh customer list if needed
+                if (result.customers_updated > 0 && typeof app !== 'undefined' && app.loadCustomers) {
+                    await app.loadCustomers();
+                }
+                
+                console.log('✅ GiLi PoS synchronization completed');
+                return result;
+                
             } else {
-                console.error('❌ Some synchronization operations failed');
-                return { success: false, results: results };
+                this.showSyncStatus('Sync Error', 'error');
+                
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    app.showNotification('Sync failed: ' + (result.error || 'Unknown error'), 'error');
+                }
+                
+                return result;
             }
             
         } catch (error) {
             console.error('❌ Synchronization failed:', error);
+            this.showSyncStatus('Sync Error', 'error');
+            
+            if (typeof app !== 'undefined' && app.showNotification) {
+                app.showNotification('Sync failed: ' + error.message, 'error');
+            }
+            
             return { success: false, error: error.message };
+            
         } finally {
             this.syncInProgress = false;
         }
     }
     
-    async syncProducts() {
+    showSyncStatus(text, type) {
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        
+        if (statusIndicator && statusText) {
+            // Update indicator color
+            statusIndicator.className = 'w-3 h-3 rounded-full';
+            switch (type) {
+                case 'success':
+                    statusIndicator.classList.add('bg-green-500');
+                    break;
+                case 'warning':
+                    statusIndicator.classList.add('bg-yellow-500');
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('bg-red-500');
+                    break;
+                case 'info':
+                    statusIndicator.classList.add('bg-blue-500');
+                    break;
+                default:
+                    statusIndicator.classList.add('bg-gray-500');
+            }
+            
+            // Update status text
+            statusText.textContent = text;
+            
+            // Add last sync time if available
+            if (this.lastSyncTime && type === 'success') {
+                const syncTime = new Date(this.lastSyncTime);
+                statusText.textContent += ` (${syncTime.toLocaleTimeString()})`;
+            }
+        }
+    }
+    
+    updateSyncStatus(status) {
+        this.isOnline = status.online;
+        
+        if (status.online) {
+            this.showSyncStatus('Online', 'success');
+        } else {
+            this.showSyncStatus(status.message || 'Offline', 'warning');
+        }
+    }
+    
+    // Manual sync trigger
+    async manualSync() {
+        const syncBtn = document.getElementById('sync-btn');
+        
+        if (syncBtn) {
+            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+            syncBtn.disabled = true;
+        }
+        
         try {
-            console.log('🔄 Syncing products...');
+            const result = await this.syncAll();
+            return result;
+        } finally {
+            if (syncBtn) {
+                syncBtn.innerHTML = '<i class="fas fa-sync"></i> Sync';
+                syncBtn.disabled = false;
+            }
+        }
+    }
+    
+    // Get sync statistics for display
+    async getSyncStats() {
+        try {
+            const stats = await ipcRenderer.invoke('pos:get-sync-stats');
+            return {
+                deviceId: this.deviceId,
+                lastSync: this.lastSyncTime,
+                isOnline: this.isOnline,
+                pendingTransactions: stats.pendingTransactions || 0,
+                syncInProgress: this.syncInProgress,
+                autoSyncEnabled: !!this.autoSyncTimer,
+                serverUrl: this.serverUrl
+            };
+        } catch (error) {
+            return {
+                deviceId: this.deviceId,
+                lastSync: this.lastSyncTime,
+                isOnline: false,
+                error: error.message
+            };
+        }
+    }
+    
+    // Product search with GiLi backend
+    async searchProducts(query) {
+        try {
+            const products = await ipcRenderer.invoke('pos:search-products', query);
+            return products;
+        } catch (error) {
+            console.error('Product search failed:', error);
+            return [];
+        }
+    }
+    
+    // Customer search with GiLi backend
+    async searchCustomers(query) {
+        try {
+            const customers = await ipcRenderer.invoke('pos:search-customers', query);
+            return customers;
+        } catch (error) {
+            console.error('Customer search failed:', error);
+            return [];
+        }
+    }
+    
+    // Real-time inventory check
+    async checkInventory(productId, quantity) {
+        try {
+            const available = await ipcRenderer.invoke('pos:check-inventory', productId, quantity);
+            return available;
+        } catch (error) {
+            console.warn('Inventory check failed, assuming available:', error);
+            return true;
+        }
+    }
+    
+    // Create customer in GiLi system
+    async createCustomer(customerData) {
+        try {
+            const result = await ipcRenderer.invoke('pos:create-customer', customerData);
             
-            // Get local products that need syncing
-            const localProducts = await this.getUnsyncedLocalData('products');
-            
-            // Upload new/modified local products
-            for (const product of localProducts) {
-                if (!product.synced) {
-                    await this.uploadProduct(product);
+            if (result.success) {
+                if (typeof app !== 'undefined' && app.showNotification) {
+                    app.showNotification('Customer created successfully', 'success');
+                }
+                
+                // Refresh customer list
+                if (typeof app !== 'undefined' && app.loadCustomers) {
+                    await app.loadCustomers();
                 }
             }
             
-            // Download products from server
-            const serverProducts = await this.downloadProducts();
-            
-            // Update local database
-            await this.updateLocalProducts(serverProducts);
-            
-            console.log('✅ Products synced successfully');
-            return { success: true, count: serverProducts.length };
-            
+            return result;
         } catch (error) {
-            console.error('❌ Product sync failed:', error);
-            return { success: false, error: error.message };
+            console.error('Customer creation failed:', error);
+            throw error;
         }
     }
     
-    async syncCustomers() {
+    // Get detailed sync status
+    async getDetailedStatus() {
         try {
-            console.log('🔄 Syncing customers...');
-            
-            // Similar process for customers
-            const localCustomers = await this.getUnsyncedLocalData('customers');
-            
-            for (const customer of localCustomers) {
-                if (!customer.synced) {
-                    await this.uploadCustomer(customer);
+            const status = await ipcRenderer.invoke('pos:get-detailed-sync-status');
+            return {
+                ...status,
+                frontend: {
+                    isOnline: this.isOnline,
+                    lastSyncTime: this.lastSyncTime,
+                    syncInProgress: this.syncInProgress,
+                    autoSyncEnabled: !!this.autoSyncTimer,
+                    syncInterval: this.syncInterval
                 }
-            }
-            
-            const serverCustomers = await this.downloadCustomers();
-            await this.updateLocalCustomers(serverCustomers);
-            
-            console.log('✅ Customers synced successfully');
-            return { success: true, count: serverCustomers.length };
-            
+            };
         } catch (error) {
-            console.error('❌ Customer sync failed:', error);
-            return { success: false, error: error.message };
-        }
-    }
-    
-    async syncTransactions() {
-        try {
-            console.log('🔄 Syncing transactions...');
-            
-            // Upload unsynced transactions
-            const localTransactions = await this.getUnsyncedLocalData('transactions');
-            
-            for (const transaction of localTransactions) {
-                if (!transaction.synced) {
-                    await this.uploadTransaction(transaction);
+            return {
+                error: error.message,
+                frontend: {
+                    isOnline: this.isOnline,
+                    lastSyncTime: this.lastSyncTime,
+                    syncInProgress: this.syncInProgress
                 }
-            }
-            
-            console.log('✅ Transactions synced successfully');
-            return { success: true, count: localTransactions.length };
-            
-        } catch (error) {
-            console.error('❌ Transaction sync failed:', error);
-            return { success: false, error: error.message };
-        }
-    }
-    
-    async getUnsyncedLocalData(tableName) {
-        return await ipcRenderer.invoke('pos:get-unsynced-data', tableName);
-    }
-    
-    async uploadProduct(product) {
-        try {
-            const response = await fetch(`${this.serverUrl}/api/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: product.name,
-                    item_code: product.sku,
-                    barcode: product.barcode,
-                    standard_rate: product.price,
-                    item_group: product.category,
-                    description: product.description,
-                    stock_uom: 'Nos',
-                    is_stock_item: 1,
-                    include_item_in_manufacturing: 0
-                })
-            });
-            
-            if (response.ok) {
-                const serverProduct = await response.json();
-                // Mark as synced locally
-                await ipcRenderer.invoke('pos:mark-synced', 'products', product.id, serverProduct.name);
-                return serverProduct;
-            }
-        } catch (error) {
-            console.error('Error uploading product:', error);
-            throw error;
-        }
-    }
-    
-    async downloadProducts() {
-        try {
-            const response = await fetch(`${this.serverUrl}/api/items?fields=["name","item_code","barcode","standard_rate","item_group","description","stock_uom"]&limit_page_length=1000`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.data || [];
-            }
-            
-            throw new Error('Failed to download products');
-        } catch (error) {
-            console.error('Error downloading products:', error);
-            throw error;
-        }
-    }
-    
-    async updateLocalProducts(serverProducts) {
-        for (const serverProduct of serverProducts) {
-            const localProduct = {
-                id: serverProduct.name,
-                name: serverProduct.name,
-                sku: serverProduct.item_code,
-                barcode: serverProduct.barcode,
-                price: serverProduct.standard_rate || 0,
-                category: serverProduct.item_group,
-                description: serverProduct.description,
-                stock_quantity: 0, // Will be updated separately
-                synced: true,
-                server_id: serverProduct.name,
-                updated_at: new Date().toISOString()
             };
-            
-            await ipcRenderer.invoke('pos:upsert-product', localProduct);
         }
     }
     
-    async uploadCustomer(customer) {
-        try {
-            const response = await fetch(`${this.serverUrl}/api/customers`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    customer_name: customer.name,
-                    customer_type: 'Individual',
-                    territory: 'All Territories',
-                    customer_group: 'All Customer Groups'
-                })
-            });
-            
-            if (response.ok) {
-                const serverCustomer = await response.json();
-                await ipcRenderer.invoke('pos:mark-synced', 'customers', customer.id, serverCustomer.name);
-                return serverCustomer;
-            }
-        } catch (error) {
-            console.error('Error uploading customer:', error);
-            throw error;
+    // Force reconnection
+    async forceReconnect() {
+        console.log('🔄 Forcing reconnection to GiLi backend...');
+        
+        this.stopAutoSync();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const connected = await this.checkConnection();
+        
+        if (connected) {
+            this.startAutoSync();
+            console.log('✅ Reconnection successful');
+        } else {
+            console.log('❌ Reconnection failed');
         }
+        
+        return connected;
     }
     
-    async downloadCustomers() {
-        try {
-            const response = await fetch(`${this.serverUrl}/api/customers?fields=["name","customer_name","customer_type","territory"]&limit_page_length=1000`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.data || [];
-            }
-            
-            throw new Error('Failed to download customers');
-        } catch (error) {
-            console.error('Error downloading customers:', error);
-            throw error;
-        }
-    }
-    
-    async updateLocalCustomers(serverCustomers) {
-        for (const serverCustomer of serverCustomers) {
-            const localCustomer = {
-                id: serverCustomer.name,
-                name: serverCustomer.customer_name,
-                customer_type: serverCustomer.customer_type,
-                synced: true,
-                server_id: serverCustomer.name,
-                updated_at: new Date().toISOString()
-            };
-            
-            await ipcRenderer.invoke('pos:upsert-customer', localCustomer);
-        }
-    }
-    
-    async uploadTransaction(transaction) {
-        try {
-            // Convert PoS transaction to Sales Invoice format
-            const salesInvoice = {
-                customer: transaction.customer_id || 'Walk-In Customer',
-                posting_date: new Date(transaction.created_at).toISOString().split('T')[0],
-                posting_time: new Date(transaction.created_at).toTimeString().split(' ')[0],
-                items: transaction.items.map(item => ({
-                    item_code: item.product_id,
-                    item_name: item.product_name,
-                    qty: item.quantity,
-                    rate: item.unit_price,
-                    amount: item.line_total
-                })),
-                total_qty: transaction.items.reduce((sum, item) => sum + item.quantity, 0),
-                net_total: transaction.subtotal,
-                grand_total: transaction.total,
-                mode_of_payment: transaction.payment_method,
-                is_pos: 1,
-                pos_profile: 'Main'
-            };
-            
-            const response = await fetch(`${this.serverUrl}/api/sales-invoices`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(salesInvoice)
-            });
-            
-            if (response.ok) {
-                const serverTransaction = await response.json();
-                await ipcRenderer.invoke('pos:mark-synced', 'transactions', transaction.id, serverTransaction.name);
-                return serverTransaction;
-            }
-        } catch (error) {
-            console.error('Error uploading transaction:', error);
-            throw error;
-        }
-    }
-    
-    getSyncStatus() {
-        return {
-            online: this.isOnline,
-            lastSync: this.lastSyncTime,
-            syncInProgress: this.syncInProgress,
-            autoSyncEnabled: !!this.autoSyncTimer
-        };
-    }
-    
-    // Force sync of specific data type
-    async forceSyncProducts() {
-        return await this.syncProducts();
-    }
-    
-    async forceSyncCustomers() {
-        return await this.syncCustomers();
-    }
-    
-    async forceSyncTransactions() {
-        return await this.syncTransactions();
-    }
-    
-    // Conflict resolution
-    async resolveConflicts(conflictType, localData, serverData, resolution = 'server') {
-        try {
-            switch (resolution) {
-                case 'server':
-                    // Use server data
-                    await this.updateLocalData(conflictType, serverData);
-                    break;
-                case 'local':
-                    // Use local data
-                    await this.uploadLocalData(conflictType, localData);
-                    break;
-                case 'merge':
-                    // Merge data (custom logic based on data type)
-                    const merged = this.mergeData(localData, serverData);
-                    await this.updateBothSides(conflictType, merged);
-                    break;
-            }
-            
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
+    // Emergency offline mode toggle
+    toggleOfflineMode() {
+        if (this.isOnline) {
+            this.handleConnectionLoss();
+            console.log('📡 Manually switched to offline mode');
+        } else {
+            this.handleConnectionRestore();
+            console.log('🌐 Manually switched to online mode');
         }
     }
 }
