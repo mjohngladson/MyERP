@@ -133,7 +133,7 @@ const LoginPage = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            ERPNext Clone • Built with React & FastAPI
+            GiLi • Built with React & FastAPI
           </p>
         </div>
       </div>
