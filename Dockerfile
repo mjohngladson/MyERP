@@ -2,10 +2,10 @@ FROM node:18-alpine as builder
 
 WORKDIR /app
 
-# Copy frontend package files first for better caching
-COPY frontend/package.json frontend/package-lock.json* ./frontend/
+# Copy frontend directory structure
+COPY frontend/ ./frontend/
 
-# Create .npmrc file with necessary config
+# Ensure .npmrc exists with correct configuration
 RUN echo 'legacy-peer-deps=true' > ./frontend/.npmrc && \
     echo 'auto-install-peers=true' >> ./frontend/.npmrc && \
     echo 'fund=false' >> ./frontend/.npmrc && \
