@@ -199,7 +199,7 @@ class DeploymentVerificationTester:
 
     async def run_deployment_verification(self):
         """Run the 6 core endpoint tests requested in the review"""
-        print(f"🚀 ERPNext Backend Deployment Verification")
+        print(f"🚀 GiLi Backend Deployment Verification")
         print(f"📍 Testing URL: {self.base_url}")
         print(f"🎯 Testing 6 core endpoints after deployment fixes")
         print("=" * 70)
