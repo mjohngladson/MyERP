@@ -69,8 +69,12 @@ async def init_sample_data():
             "email": "contact@abccorp.com",
             "phone": "+1234567891",
             "address": "456 Customer Ave, City, Country",
+            "loyalty_points": 150,
+            "last_purchase": datetime.utcnow() - timedelta(days=5),
+            "active": True,
             "company_id": company_id,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         },
         {
             "id": str(uuid.uuid4()),
@@ -78,8 +82,12 @@ async def init_sample_data():
             "email": "info@defltd.com",
             "phone": "+1234567892",
             "address": "789 Client Road, City, Country",
+            "loyalty_points": 75,
+            "last_purchase": datetime.utcnow() - timedelta(days=15),
+            "active": True,
             "company_id": company_id,
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
     ]
     await customers_collection.insert_many(customers_data)
