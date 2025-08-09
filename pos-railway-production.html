@@ -226,13 +226,13 @@
 
         // Load products from Railway
         async function loadProducts() {
-            if (!isOnline) {
+            if (!isOnline || !API_BASE) {
                 displayProducts([]);
                 return;
             }
 
             try {
-                console.log('📦 Loading products from Railway...');
+                console.log(`📦 Loading products from Railway (${WORKING_BACKEND.name})...`);
                 
                 const response = await fetch(`${API_BASE}/products`, {
                     method: 'GET',
@@ -249,7 +249,7 @@
                 
                 products = await response.json();
                 displayProducts(products);
-                console.log(`✅ Loaded ${products.length} products from Railway`);
+                console.log(`✅ Loaded ${products.length} products from Railway (${WORKING_BACKEND.name})`);
             } catch (error) {
                 console.error('❌ Failed to load products:', error);
                 displayProducts([]);
