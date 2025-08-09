@@ -3,7 +3,7 @@ import { Eye, EyeOff, User, Lock, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('admin@erpnext.com');
+  const [email, setEmail] = useState('admin@gili.com');
   const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
