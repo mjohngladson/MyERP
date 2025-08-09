@@ -127,10 +127,13 @@
             endpoints: []
         };
 
-        // URLs
-        const BACKEND_URL = 'https://api-production-8536.up.railway.app';
+        // URLs to test
+        const BACKEND_EXTERNAL = 'https://api-production-8536.up.railway.app';
+        const BACKEND_INTERNAL = 'https://myerp.railway.internal'; // Internal Railway URL
         const FRONTEND_URL = 'https://ui-production-09dd.up.railway.app';
-        const API_BASE = `${BACKEND_URL}/api`;
+        
+        // Test both external and internal backends
+        let API_BASE = null;
 
         // Initialize
         function init() {
