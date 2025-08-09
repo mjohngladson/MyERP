@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
           {/* Header */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-800">ERPNext</h1>
+              <h1 className="text-xl font-bold text-gray-800">GiLi</h1>
               <button 
                 onClick={toggleSidebar}
                 className="lg:hidden p-2 hover:bg-gray-100 rounded-md"
