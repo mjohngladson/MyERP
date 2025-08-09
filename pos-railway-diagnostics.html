@@ -336,12 +336,19 @@
             log('🔗 Testing specific PoS API endpoints...');
             const gridEl = document.getElementById('endpoints-grid');
             
+            if (!API_BASE) {
+                gridEl.innerHTML = '<div class="col-span-full text-center text-gray-500 p-8">No working backend found. Cannot test API endpoints.</div>';
+                return;
+            }
+            
             const endpoints = [
                 { name: 'Health Check', path: '/pos/health', icon: 'fa-heartbeat' },
                 { name: 'Products', path: '/pos/products', icon: 'fa-box' },
                 { name: 'Customers', path: '/pos/customers', icon: 'fa-users' },
                 { name: 'Categories', path: '/pos/categories', icon: 'fa-tags' }
             ];
+            
+            log(`🧪 Using working backend: ${API_BASE}`);
             
             const results = await Promise.all(endpoints.map(async endpoint => {
                 let success = false;
