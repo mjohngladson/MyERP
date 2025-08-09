@@ -24,7 +24,7 @@ class NotificationType(str, Enum):
     INFO = "info"
 
 # Base Models
-class BaseModel(BaseModel):
+class BaseGiLiModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
