@@ -1,49 +1,48 @@
 FROM node:18-alpine as builder
 
+# Set working directory
 WORKDIR /app
 
-# Copy frontend directory
-COPY frontend/ ./frontend/
+# Copy package.json and package-lock.json first for better caching
+COPY frontend/package.json ./
+COPY frontend/package-lock.json ./
 
-# Ensure .npmrc exists with correct configuration
-RUN echo 'legacy-peer-deps=true' > ./frontend/.npmrc && \
-    echo 'auto-install-peers=true' >> ./frontend/.npmrc && \
-    echo 'fund=false' >> ./frontend/.npmrc && \
-    echo 'audit=false' >> ./frontend/.npmrc
+# Create .npmrc file for npm configuration
+RUN echo "legacy-peer-deps=true" > .npmrc && \
+    echo "auto-install-peers=true" >> .npmrc && \
+    echo "fund=false" >> .npmrc && \
+    echo "audit=false" >> .npmrc
 
-# Install frontend dependencies
-RUN cd frontend && npm install --legacy-peer-deps
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
-# Set environment variables for build
+# Copy all source files
+COPY frontend/ ./
+
+# Set build environment variables
 ENV NODE_OPTIONS="--openssl-legacy-provider"
 ENV GENERATE_SOURCEMAP=false
 
-# Build the frontend application
-RUN cd frontend && npm run build
+# Build the application
+RUN npm run build
 
-# Production stage - serve with nginx
+# Production stage - nginx
 FROM nginx:alpine
 
-# Copy built files from builder stage
-COPY --from=builder /app/frontend/build /usr/share/nginx/html
+# Copy built files
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Create a simple nginx config for SPA
+# Configure nginx for SPA
 RUN echo 'server { \
     listen 80; \
     server_name _; \
     root /usr/share/nginx/html; \
-    index index.html index.htm; \
+    index index.html; \
     location / { \
         try_files $$uri $$uri/ /index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Expose port
+# Expose port and start nginx
 EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
