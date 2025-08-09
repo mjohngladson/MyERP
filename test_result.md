@@ -281,7 +281,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ Health check endpoint GET /api/ working correctly. Returns proper JSON response with message 'ERPNext Clone API is running'. API is accessible and responding."
+          comment: "✅ Health check endpoint GET /api/ working correctly. Returns proper JSON response with message 'GiLi API is running'. API is accessible and responding."
 
   - task: "Dashboard Statistics API"
     implemented: true
