@@ -7,12 +7,12 @@
     "start": "electron production-main.js --no-sandbox --disable-dev-shm-usage",
     "dev": "NODE_ENV=development electron main.js --dev --no-sandbox --disable-dev-shm-usage",
     "build": "electron-builder",
-    "build-win": "electron-builder --win",
+    "build-dir": "electron-builder --dir",
     "build-portable": "electron-builder --win portable",
-    "build-all": "electron-builder --win --linux",
+    "package": "npm run create-package",
+    "create-package": "node create-package.js",
     "clean": "rm -rf dist/ && rm -rf node_modules/ && npm install",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "electron-builder install-app-deps"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["pos", "point-of-sale", "gili", "electron", "offline"],
   "author": "GiLi Team",
@@ -38,16 +38,15 @@
     },
     "files": [
       "**/*",
-      "!node_modules/**/*",
+      "!**/node_modules/**/*",
       "node_modules/sqlite3/**/*"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": "dir",
+      "artifactName": "GiLi-PoS-${version}-Windows.${ext}"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+    "portable": {
+      "artifactName": "GiLi-PoS-Portable-${version}.exe"
     }
   }
 }
