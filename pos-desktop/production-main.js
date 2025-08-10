@@ -633,6 +633,13 @@ function showSystemInfoDialog() {
     }
 }
 
+function showKeyboardShortcuts() {
+    // Show keyboard shortcuts dialog
+    if (mainWindow) {
+        mainWindow.webContents.send('menu-action', 'keyboard-shortcuts');
+    }
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
