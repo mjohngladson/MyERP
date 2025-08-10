@@ -14,7 +14,44 @@ async def get_sales_orders(limit: int = 20):
         cursor = sales_orders_collection.find().sort("created_at", -1).limit(limit)
         orders = await cursor.to_list(length=limit)
         
-        return [SalesOrder(**order) for order in orders]
+        # Transform data to match SalesOrder model
+        transformed_orders = []
+        for order in orders:
+            # Convert MongoDB ObjectId to string
+            if "_id" in order:
+                order["id"] = str(order["_id"])
+                del order["_id"]
+            
+            # Ensure required fields exist with defaults
+            order.setdefault("order_number", f"SO-{order.get('id', '').split('-')[0][:8]}")
+            order.setdefault("customer_id", "default_customer")
+            order.setdefault("customer_name", "Unknown Customer")
+            order.setdefault("total_amount", 0.0)
+            order.setdefault("status", "draft")
+            order.setdefault("items", [])
+            order.setdefault("company_id", "default_company")
+            
+            # Ensure items have proper structure
+            fixed_items = []
+            for item in order.get("items", []):
+                fixed_item = {
+                    "item_id": item.get("item_id", item.get("product_id", "unknown")),
+                    "item_name": item.get("item_name", item.get("product_name", "Unknown Item")),
+                    "quantity": item.get("quantity", 0),
+                    "rate": item.get("rate", item.get("unit_price", 0.0)),
+                    "amount": item.get("amount", item.get("line_total", 0.0))
+                }
+                fixed_items.append(fixed_item)
+            
+            order["items"] = fixed_items
+            
+            # Handle status mapping
+            if order.get("status") == "completed":
+                order["status"] = "delivered"
+            
+            transformed_orders.append(SalesOrder(**order))
+        
+        return transformed_orders
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching sales orders: {str(e)}")
 
