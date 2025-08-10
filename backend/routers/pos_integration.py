@@ -353,20 +353,39 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         
         # Update inventory
         for item in transaction.items:
-            await db.items.update_one(
-                {"_id": ObjectId(item["product_id"])},
-                {"$inc": {"stock_qty": -item["quantity"]}}
-            )
+            try:
+                # Try ObjectId first
+                await db.items.update_one(
+                    {"_id": ObjectId(item["product_id"])},
+                    {"$inc": {"stock_qty": -item["quantity"]}}
+                )
+            except:
+                # Try string id
+                await db.items.update_one(
+                    {"id": item["product_id"]},
+                    {"$inc": {"stock_qty": -item["quantity"]}}
+                )
         
         # Update customer last purchase
         if transaction.customer_id:
-            await db.customers.update_one(
-                {"_id": ObjectId(transaction.customer_id)},
-                {
-                    "$set": {"last_purchase": transaction.transaction_timestamp},
-                    "$inc": {"loyalty_points": int(transaction.total_amount)}
-                }
-            )
+            try:
+                # Try ObjectId first
+                await db.customers.update_one(
+                    {"_id": ObjectId(transaction.customer_id)},
+                    {
+                        "$set": {"last_purchase": transaction.transaction_timestamp},
+                        "$inc": {"loyalty_points": int(transaction.total_amount)}
+                    }
+                )
+            except:
+                # Try string id
+                await db.customers.update_one(
+                    {"id": transaction.customer_id},
+                    {
+                        "$set": {"last_purchase": transaction.transaction_timestamp},
+                        "$inc": {"loyalty_points": int(transaction.total_amount)}
+                    }
+                )
         
         # Store PoS transaction for reference
         pos_transaction_record = transaction.dict()
