@@ -24,7 +24,16 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    // Enhanced error handling for network issues
+    if (!error.response) {
+      // Network error (offline, server down, etc.)
+      console.error('Network Error: Unable to connect to server');
+      error.networkError = true;
+      error.message = 'Network Error: Unable to connect to server. Please check your connection.';
+    } else {
+      // Server responded with error status
+      console.error('API Error:', error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );
