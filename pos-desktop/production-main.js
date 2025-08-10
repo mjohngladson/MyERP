@@ -640,6 +640,19 @@ function showKeyboardShortcuts() {
     }
 }
 
+function showAboutDialog() {
+    // Show about dialog
+    if (mainWindow) {
+        dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'About GiLi PoS',
+            message: 'GiLi Point of Sale System',
+            detail: 'Version 1.0.0\nBuilt with Electron\n© 2024 GiLi Business Systems',
+            buttons: ['OK']
+        });
+    }
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
