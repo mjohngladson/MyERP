@@ -619,22 +619,6 @@ function showExportDialog() {
     }
 }
 
-function isFirstRun() {
-    // Check if this is the first time the app is run
-    try {
-        return !config.get('app.first_run_completed');
-    } catch {
-        return true;
-    }
-}
-
-function showFirstRunDialog() {
-    // Show first run setup dialog
-    if (mainWindow) {
-        mainWindow.webContents.send('show-first-run-dialog');
-    }
-}
-
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
