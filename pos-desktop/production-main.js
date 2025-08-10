@@ -626,6 +626,13 @@ function showHardwareTestDialog() {
     }
 }
 
+function showSystemInfoDialog() {
+    // Show system information dialog
+    if (mainWindow) {
+        mainWindow.webContents.send('menu-action', 'system-info');
+    }
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
