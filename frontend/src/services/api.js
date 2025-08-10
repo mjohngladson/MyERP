@@ -80,30 +80,44 @@ export const networkUtils = {
   }
 };
 
+// Enhanced API call wrapper with retry logic and better error handling
+const makeRequest = async (requestFn, retries = 1) => {
+  try {
+    return await requestFn();
+  } catch (error) {
+    if (retries > 0 && (error.code === 'ECONNABORTED' || !error.response)) {
+      // Retry once for timeout or network errors
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      return makeRequest(requestFn, retries - 1);
+    }
+    throw error;
+  }
+};
+
 // API functions
 export const api = {
   // Authentication
   auth: {
-    login: (credentials) => apiClient.post('/auth/login', credentials),
-    getCurrentUser: (userId = 'default_user') => apiClient.get(`/auth/me?user_id=${userId}`),
-    logout: () => apiClient.post('/auth/logout'),
+    login: (credentials) => makeRequest(() => apiClient.post('/auth/login', credentials)),
+    getCurrentUser: (userId = 'default_user') => makeRequest(() => apiClient.get(`/auth/me?user_id=${userId}`)),
+    logout: () => makeRequest(() => apiClient.post('/auth/logout')),
   },
 
   // Dashboard
   dashboard: {
-    getStats: () => apiClient.get('/dashboard/stats'),
-    getTransactions: (limit = 10) => apiClient.get(`/dashboard/transactions?limit=${limit}`),
+    getStats: () => makeRequest(() => apiClient.get('/dashboard/stats')),
+    getTransactions: (limit = 10) => makeRequest(() => apiClient.get(`/dashboard/transactions?limit=${limit}`)),
     getNotifications: (userId, limit = 10) => 
-      apiClient.get(`/dashboard/notifications?user_id=${userId}&limit=${limit}`),
-    getReports: () => apiClient.get('/dashboard/reports'),
+      makeRequest(() => apiClient.get(`/dashboard/notifications?user_id=${userId}&limit=${limit}`)),
+    getReports: () => makeRequest(() => apiClient.get('/dashboard/reports')),
   },
 
   // Sales
   sales: {
-    getOrders: (limit = 20) => apiClient.get(`/sales/orders?limit=${limit}`),
-    createOrder: (orderData) => apiClient.post('/sales/orders', orderData),
-    getCustomers: (limit = 50) => apiClient.get(`/sales/customers?limit=${limit}`),
-    createCustomer: (customerData) => apiClient.post('/sales/customers', customerData),
+    getOrders: (limit = 20) => makeRequest(() => apiClient.get(`/sales/orders?limit=${limit}`)),
+    createOrder: (orderData) => makeRequest(() => apiClient.post('/sales/orders', orderData)),
+    getCustomers: (limit = 50) => makeRequest(() => apiClient.get(`/sales/customers?limit=${limit}`)),
+    createCustomer: (customerData) => makeRequest(() => apiClient.post('/sales/customers', customerData)),
   },
 
   // Search
@@ -113,29 +127,29 @@ export const api = {
       if (category) {
         url += `&category=${category}`;
       }
-      return apiClient.get(url);
+      return makeRequest(() => apiClient.get(url));
     },
     suggestions: (query, limit = 8) => 
-      apiClient.get(`/search/suggestions?query=${encodeURIComponent(query)}&limit=${limit}`),
+      makeRequest(() => apiClient.get(`/search/suggestions?query=${encodeURIComponent(query)}&limit=${limit}`)),
   },
 
   // Reporting
   reports: {
-    salesOverview: (days = 30) => apiClient.get(`/reports/sales-overview?days=${days}`),
-    financialSummary: (days = 30) => apiClient.get(`/reports/financial-summary?days=${days}`),
-    customerAnalysis: (days = 30) => apiClient.get(`/reports/customer-analysis?days=${days}`),
-    inventoryReport: () => apiClient.get(`/reports/inventory-report`),
-    performanceMetrics: (days = 30) => apiClient.get(`/reports/performance-metrics?days=${days}`),
+    salesOverview: (days = 30) => makeRequest(() => apiClient.get(`/reports/sales-overview?days=${days}`)),
+    financialSummary: (days = 30) => makeRequest(() => apiClient.get(`/reports/financial-summary?days=${days}`)),
+    customerAnalysis: (days = 30) => makeRequest(() => apiClient.get(`/reports/customer-analysis?days=${days}`)),
+    inventoryReport: () => makeRequest(() => apiClient.get(`/reports/inventory-report`)),
+    performanceMetrics: (days = 30) => makeRequest(() => apiClient.get(`/reports/performance-metrics?days=${days}`)),
     export: (reportType, format = 'pdf', days = 30) => 
-      apiClient.post(`/reports/export/${reportType}?format=${format}&days=${days}`),
-    download: (exportId) => apiClient.get(`/reports/download/${exportId}`),
+      makeRequest(() => apiClient.post(`/reports/export/${reportType}?format=${format}&days=${days}`)),
+    download: (exportId) => makeRequest(() => apiClient.get(`/reports/download/${exportId}`)),
   },
 
   // Generic API call helper
-  get: (endpoint) => apiClient.get(endpoint),
-  post: (endpoint, data) => apiClient.post(endpoint, data),
-  put: (endpoint, data) => apiClient.put(endpoint, data),
-  delete: (endpoint) => apiClient.delete(endpoint),
+  get: (endpoint) => makeRequest(() => apiClient.get(endpoint)),
+  post: (endpoint, data) => makeRequest(() => apiClient.post(endpoint, data)),
+  put: (endpoint, data) => makeRequest(() => apiClient.put(endpoint, data)),
+  delete: (endpoint) => makeRequest(() => apiClient.delete(endpoint)),
 };
 
 export default api;
