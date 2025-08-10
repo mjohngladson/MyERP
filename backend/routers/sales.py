@@ -23,7 +23,9 @@ async def get_sales_orders(limit: int = 20):
                 del order["_id"]
             
             # Ensure required fields exist with defaults
-            order.setdefault("order_number", f"SO-{order.get('id', '').split('-')[0][:8]}")
+            if not order.get("order_number"):
+                order_id = order.get('id', str(uuid.uuid4())[:8])
+                order["order_number"] = f"SO-{order_id[:8]}"
             
             # Handle customer_id - ensure it's a valid string
             if not order.get("customer_id") or order.get("customer_id") is None:
