@@ -623,6 +623,14 @@ const AdvancedReporting = ({ onBack }) => {
               <option value="90d">Last 90 days</option>
               <option value="1y">Last year</option>
             </select>
+
+            {/* Network Status Indicator */}
+            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+              isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span>{isOnline ? 'Online' : 'Offline'}</span>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
