@@ -4,7 +4,7 @@ import {
   ChevronLeft, RefreshCw, Share2, Printer, Eye, Settings,
   Target, Users, DollarSign, Package, ArrowUp, ArrowDown
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, networkUtils } from '../services/api';
 
 const AdvancedReporting = ({ onBack }) => {
   const [selectedReport, setSelectedReport] = useState('sales_overview');
