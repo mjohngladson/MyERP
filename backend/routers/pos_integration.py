@@ -288,9 +288,16 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         customer_id = transaction.customer_id or "default_customer"
         
         if transaction.customer_id:
-            customer = await db.customers.find_one({"_id": ObjectId(transaction.customer_id)})
-            if customer:
-                customer_name = customer.get("name", "Unknown Customer")
+            try:
+                # Try to find customer by ObjectId first
+                customer = await db.customers.find_one({"_id": ObjectId(transaction.customer_id)})
+                if customer:
+                    customer_name = customer.get("name", "Unknown Customer")
+            except:
+                # If ObjectId conversion fails, try to find by id field (string)
+                customer = await db.customers.find_one({"id": transaction.customer_id})
+                if customer:
+                    customer_name = customer.get("name", "Unknown Customer")
         
         # Convert PoS items to SalesOrder items format
         sales_order_items = []
