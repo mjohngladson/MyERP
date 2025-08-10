@@ -62,7 +62,21 @@ async def init_sample_data():
     await users_collection.insert_one(user_data)
     
     # Create sample customers
+    default_customer_id = "default_customer"
     customers_data = [
+        {
+            "id": default_customer_id,
+            "name": "Walk-in Customer",
+            "email": "walkin@pos.local",
+            "phone": None,
+            "address": "Point of Sale",
+            "loyalty_points": 0,
+            "last_purchase": None,
+            "active": True,
+            "company_id": company_id,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        },
         {
             "id": str(uuid.uuid4()),
             "name": "ABC Corp",
