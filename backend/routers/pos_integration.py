@@ -305,7 +305,13 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         
         for item in transaction.items:
             # Get product info
-            product = await db.items.find_one({"_id": ObjectId(item["product_id"])})
+            product = None
+            try:
+                # Try ObjectId first
+                product = await db.items.find_one({"_id": ObjectId(item["product_id"])})
+            except:
+                # Try string id
+                product = await db.items.find_one({"id": item["product_id"]})
             
             # Map to SalesOrderItem format
             sales_order_item = {
