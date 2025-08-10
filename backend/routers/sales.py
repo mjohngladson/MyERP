@@ -7,6 +7,22 @@ from datetime import datetime
 
 router = APIRouter(prefix="/api/sales", tags=["sales"])
 
+@router.get("/orders/raw")
+async def get_raw_sales_orders(limit: int = 5):
+    """Get raw sales orders for debugging"""
+    try:
+        cursor = sales_orders_collection.find().sort("created_at", -1).limit(limit)
+        orders = await cursor.to_list(length=limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for order in orders:
+            if "_id" in order:
+                order["_id"] = str(order["_id"])
+        
+        return {"orders": orders}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching raw sales orders: {str(e)}")
+
 @router.get("/orders", response_model=List[SalesOrder])
 async def get_sales_orders(limit: int = 20):
     """Get sales orders"""
@@ -17,47 +33,52 @@ async def get_sales_orders(limit: int = 20):
         # Transform data to match SalesOrder model
         transformed_orders = []
         for order in orders:
-            # Convert MongoDB ObjectId to string
-            if "_id" in order:
-                order["id"] = str(order["_id"])
-                del order["_id"]
-            
-            # Ensure required fields exist with defaults
-            if not order.get("order_number"):
-                order_id = order.get('id', str(uuid.uuid4())[:8])
-                order["order_number"] = f"SO-{order_id[:8]}"
-            
-            # Handle customer_id - ensure it's a valid string
-            if not order.get("customer_id") or order.get("customer_id") is None:
-                order["customer_id"] = "default_customer"
-            else:
-                order["customer_id"] = str(order["customer_id"])
+            try:
+                # Convert MongoDB ObjectId to string
+                if "_id" in order:
+                    order["id"] = str(order["_id"])
+                    del order["_id"]
                 
-            order.setdefault("customer_name", "Unknown Customer")
-            order.setdefault("total_amount", 0.0)
-            order.setdefault("status", "draft")
-            order.setdefault("items", [])
-            order.setdefault("company_id", "default_company")
-            
-            # Ensure items have proper structure
-            fixed_items = []
-            for item in order.get("items", []):
-                fixed_item = {
-                    "item_id": item.get("item_id", item.get("product_id", "unknown")),
-                    "item_name": item.get("item_name", item.get("product_name", "Unknown Item")),
-                    "quantity": item.get("quantity", 0),
-                    "rate": item.get("rate", item.get("unit_price", 0.0)),
-                    "amount": item.get("amount", item.get("line_total", 0.0))
-                }
-                fixed_items.append(fixed_item)
-            
-            order["items"] = fixed_items
-            
-            # Handle status mapping
-            if order.get("status") == "completed":
-                order["status"] = "delivered"
-            
-            transformed_orders.append(SalesOrder(**order))
+                # Ensure required fields exist with defaults
+                if not order.get("order_number"):
+                    order_id = order.get('id', str(uuid.uuid4())[:8])
+                    order["order_number"] = f"SO-{order_id[:8]}"
+                
+                # Handle customer_id - ensure it's a valid string
+                if not order.get("customer_id") or order.get("customer_id") is None:
+                    order["customer_id"] = "default_customer"
+                else:
+                    order["customer_id"] = str(order["customer_id"])
+                    
+                order.setdefault("customer_name", "Unknown Customer")
+                order.setdefault("total_amount", 0.0)
+                order.setdefault("status", "draft")
+                order.setdefault("items", [])
+                order.setdefault("company_id", "default_company")
+                
+                # Ensure items have proper structure
+                fixed_items = []
+                for item in order.get("items", []):
+                    fixed_item = {
+                        "item_id": item.get("item_id", item.get("product_id", "unknown")),
+                        "item_name": item.get("item_name", item.get("product_name", "Unknown Item")),
+                        "quantity": item.get("quantity", 0),
+                        "rate": item.get("rate", item.get("unit_price", 0.0)),
+                        "amount": item.get("amount", item.get("line_total", 0.0))
+                    }
+                    fixed_items.append(fixed_item)
+                
+                order["items"] = fixed_items
+                
+                # Handle status mapping
+                if order.get("status") == "completed":
+                    order["status"] = "delivered"
+                
+                transformed_orders.append(SalesOrder(**order))
+            except Exception as item_error:
+                # Skip invalid orders and continue
+                print(f"Skipping invalid order: {item_error}")
+                continue
         
         return transformed_orders
     except Exception as e:
