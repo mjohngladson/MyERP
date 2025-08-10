@@ -24,7 +24,13 @@ async def get_sales_orders(limit: int = 20):
             
             # Ensure required fields exist with defaults
             order.setdefault("order_number", f"SO-{order.get('id', '').split('-')[0][:8]}")
-            order.setdefault("customer_id", "default_customer")
+            
+            # Handle customer_id - ensure it's a valid string
+            if not order.get("customer_id") or order.get("customer_id") is None:
+                order["customer_id"] = "default_customer"
+            else:
+                order["customer_id"] = str(order["customer_id"])
+                
             order.setdefault("customer_name", "Unknown Customer")
             order.setdefault("total_amount", 0.0)
             order.setdefault("status", "draft")
