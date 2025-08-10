@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
-const BACKEND_URL = process.env.BACKEND_URL || 'https://your-backend-name.railway.app';
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api-production-8536.up.railway.app';
 
 // Enable CORS
 app.use(cors());
