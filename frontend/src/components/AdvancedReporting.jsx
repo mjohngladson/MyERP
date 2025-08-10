@@ -70,6 +70,15 @@ const AdvancedReporting = ({ onBack }) => {
     setError(null);
     
     try {
+      // Check network connectivity first
+      const connectionStatus = await networkUtils.getConnectionStatus();
+      if (!connectionStatus.online) {
+        setError(connectionStatus.message);
+        setReportData({});
+        setLoading(false);
+        return;
+      }
+
       const days = getDaysFromRange(dateRange);
       let response;
       
@@ -97,7 +106,23 @@ const AdvancedReporting = ({ onBack }) => {
       setReportData(response.data || {});
     } catch (error) {
       console.error('Error loading report data:', error);
-      setError(`Failed to load ${selectedReport.replace('_', ' ')} report. Please try again.`);
+      
+      // Handle different types of errors
+      let errorMessage = `Failed to load ${selectedReport.replace('_', ' ')} report.`;
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (error.networkError || !error.response) {
+        errorMessage = 'Network Error: Unable to connect to server. Please check your connection.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error occurred. Please try again later.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Report endpoint not found. Please contact support.';
+      } else if (error.message?.includes('offline')) {
+        errorMessage = 'You are currently offline. Please check your internet connection.';
+      }
+      
+      setError(errorMessage);
       setReportData({});
     } finally {
       setLoading(false);
