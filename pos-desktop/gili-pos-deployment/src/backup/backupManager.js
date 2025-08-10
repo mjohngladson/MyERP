@@ -513,6 +513,34 @@ class BackupManager {
             encryption_enabled: this.config.get('backup.encrypt_backups')
         };
     }
+
+    async encryptBackup(backupPath) {
+        // Simple encryption implementation for backup files
+        try {
+            const crypto = require('crypto');
+            const fs = require('fs').promises;
+            const encryptionKey = this.config.get('backup.encryption_key') || 'default-backup-key-change-me';
+            
+            // For now, just mark the backup as "encrypted" with a simple method
+            const data = await fs.readFile(backupPath);
+            const cipher = crypto.createCipher('aes256', encryptionKey);
+            let encrypted = cipher.update(data, 'binary', 'hex');
+            encrypted += cipher.final('hex');
+            
+            // Write encrypted file with .enc extension
+            const encryptedPath = backupPath + '.enc';
+            await fs.writeFile(encryptedPath, encrypted);
+            
+            // Remove original unencrypted backup
+            await fs.unlink(backupPath);
+            
+            console.log('✅ Backup encrypted successfully');
+            return encryptedPath;
+        } catch (error) {
+            console.warn('⚠️ Backup encryption failed, keeping unencrypted:', error.message);
+            return backupPath;
+        }
+    }
 }
 
 module.exports = { BackupManager };
