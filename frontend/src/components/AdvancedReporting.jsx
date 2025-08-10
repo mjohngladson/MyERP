@@ -550,14 +550,36 @@ const AdvancedReporting = ({ onBack }) => {
       return (
         <div className="flex flex-col items-center justify-center h-64">
           <BarChart3 className="w-16 h-16 text-red-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Error Loading Report</h3>
-          <p className="text-red-600 text-center mb-4">{error}</p>
-          <button
-            onClick={loadReportData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Error Loading Statistics</h3>
+          <p className="text-red-600 text-center mb-4 max-w-md">{error}</p>
+          
+          {/* Additional help for network issues */}
+          {(error.includes('Network Error') || error.includes('offline') || !isOnline) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md">
+              <h4 className="text-sm font-medium text-yellow-800 mb-2">Troubleshooting Tips:</h4>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li>• Check your internet connection</li>
+                <li>• Verify the server is running</li>
+                <li>• Try refreshing the page</li>
+                <li>• Contact support if the issue persists</li>
+              </ul>
+            </div>
+          )}
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={loadReportData}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       );
     }
