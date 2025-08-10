@@ -611,6 +611,30 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled rejection:', reason);
 });
 
+// Helper functions
+function showExportDialog() {
+    // Show export dialog to the main window
+    if (mainWindow) {
+        mainWindow.webContents.send('menu-action', 'export-data');
+    }
+}
+
+function isFirstRun() {
+    // Check if this is the first time the app is run
+    try {
+        return !config.get('app.first_run_completed');
+    } catch {
+        return true;
+    }
+}
+
+function showFirstRunDialog() {
+    // Show first run setup dialog
+    if (mainWindow) {
+        mainWindow.webContents.send('show-first-run-dialog');
+    }
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
