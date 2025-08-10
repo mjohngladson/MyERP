@@ -12,6 +12,21 @@ const AdvancedReporting = ({ onBack }) => {
   const [reportData, setReportData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Listen for network status changes
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const reportTypes = [
     {
