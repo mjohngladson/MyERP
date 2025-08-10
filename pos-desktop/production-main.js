@@ -653,6 +653,12 @@ function showAboutDialog() {
     }
 }
 
+function cleanupTempFiles() {
+    // Clean up temporary files
+    console.log('🧹 Cleaning up temporary files...');
+    // Add cleanup logic here if needed
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
