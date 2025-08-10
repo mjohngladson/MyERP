@@ -1589,6 +1589,26 @@ class BackendTester:
             self.log_test("PoS Transaction Processing", False, f"Error: {str(e)}")
             return False
 
+    async def test_pos_sync_status_and_categories(self):
+        """Test PoS sync status and categories endpoints"""
+        try:
+            # Test sync status
+            sync_result = await self.test_pos_sync_status()
+            
+            # Test categories
+            categories_result = await self.test_pos_categories()
+            
+            if sync_result and categories_result:
+                self.log_test("PoS Sync Status & Categories", True, "Both sync status and categories endpoints working")
+                return True
+            else:
+                self.log_test("PoS Sync Status & Categories", False, f"Sync status: {sync_result}, Categories: {categories_result}")
+                return False
+                
+        except Exception as e:
+            self.log_test("PoS Sync Status & Categories", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting Backend API Tests for GiLi")
