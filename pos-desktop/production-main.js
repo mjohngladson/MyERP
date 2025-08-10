@@ -51,11 +51,22 @@ async function createWindow() {
 
     // Load the app
     const indexPath = path.join(__dirname, 'src/renderer/index.html');
-    await mainWindow.loadFile(indexPath);
+    
+    try {
+        await mainWindow.loadFile(indexPath);
+        console.log('✅ Renderer loaded successfully');
+    } catch (error) {
+        console.error('❌ Failed to load renderer:', error);
+        // Show error window
+        await dialog.showErrorBox('Loading Error', 
+            `Failed to load application UI: ${error.message}`);
+    }
 
     // Production window event handlers
     mainWindow.once('ready-to-show', () => {
+        console.log('✅ Window ready-to-show event fired');
         mainWindow.show();
+        mainWindow.focus();
         
         // Log application startup
         logger.info('Application window ready and shown');
@@ -70,6 +81,15 @@ async function createWindow() {
             mainWindow.webContents.openDevTools();
         }
     });
+
+    // Fallback: Show window after 3 seconds if ready-to-show doesn't fire
+    setTimeout(() => {
+        if (mainWindow && !mainWindow.isVisible()) {
+            console.log('⚠️ Window not shown yet, forcing show...');
+            mainWindow.show();
+            mainWindow.focus();
+        }
+    }, 3000);
 
     mainWindow.on('closed', () => {
         logger.info('Main window closed');
