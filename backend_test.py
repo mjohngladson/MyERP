@@ -981,6 +981,310 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_sales_orders_validation_fixes(self):
+        """Test sales orders endpoint with proper validation and field mapping"""
+        try:
+            # Test GET /api/sales/orders endpoint
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Check first order structure for validation fixes
+                            order = data[0]
+                            required_fields = ["id", "order_number", "customer_id", "customer_name", "total_amount", "status", "items"]
+                            
+                            if all(field in order for field in required_fields):
+                                # Verify status is valid (not 'completed')
+                                valid_statuses = ["draft", "submitted", "delivered", "cancelled"]
+                                if order["status"] in valid_statuses:
+                                    # Check items structure
+                                    if isinstance(order["items"], list):
+                                        items_valid = True
+                                        for item in order["items"]:
+                                            required_item_fields = ["item_id", "item_name", "rate", "amount"]
+                                            if not all(field in item for field in required_item_fields):
+                                                items_valid = False
+                                                break
+                                        
+                                        if items_valid:
+                                            self.log_test("Sales Orders Validation Fixes", True, f"Sales order validation working. Status: {order['status']}, Items: {len(order['items'])}", order)
+                                        else:
+                                            self.log_test("Sales Orders Validation Fixes", False, "Items missing required fields (item_id, item_name, rate, amount)", order)
+                                            return False
+                                    else:
+                                        self.log_test("Sales Orders Validation Fixes", False, "Items field is not a list", order)
+                                        return False
+                                else:
+                                    self.log_test("Sales Orders Validation Fixes", False, f"Invalid status '{order['status']}', should be one of: {valid_statuses}", order)
+                                    return False
+                            else:
+                                missing = [f for f in required_fields if f not in order]
+                                self.log_test("Sales Orders Validation Fixes", False, f"Missing required fields: {missing}", order)
+                                return False
+                        else:
+                            self.log_test("Sales Orders Validation Fixes", True, "Empty sales orders list (valid for testing)", data)
+                    else:
+                        self.log_test("Sales Orders Validation Fixes", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Sales Orders Validation Fixes", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Orders Validation Fixes", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_transaction_to_sales_order_conversion(self):
+        """Test PoS transaction processing and conversion to proper SalesOrder format"""
+        try:
+            # Create a realistic PoS transaction
+            pos_transaction = {
+                "pos_transaction_id": "POS-TXN-001",
+                "store_location": "Main Store",
+                "cashier_id": "CASHIER-001",
+                "customer_id": None,  # Walk-in customer
+                "items": [
+                    {
+                        "product_id": "66f8b123456789abcdef0001",  # Sample product ID
+                        "product_name": "Sample Product A",
+                        "quantity": 2,
+                        "unit_price": 25.00,
+                        "line_total": 50.00
+                    },
+                    {
+                        "product_id": "66f8b123456789abcdef0002",  # Sample product ID
+                        "product_name": "Sample Product B", 
+                        "quantity": 1,
+                        "unit_price": 15.00,
+                        "line_total": 15.00
+                    }
+                ],
+                "subtotal": 65.00,
+                "tax_amount": 5.85,
+                "discount_amount": 0.00,
+                "total_amount": 70.85,
+                "payment_method": "cash",
+                "payment_details": {"cash_received": 80.00, "change_given": 9.15},
+                "status": "completed",
+                "transaction_timestamp": "2024-01-15T14:30:00Z",
+                "pos_device_id": "POS-DEVICE-001",
+                "receipt_number": "RCP-001"
+            }
+            
+            # Test PoS transaction processing
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=pos_transaction) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "sales_order_id", "order_number", "transaction_processed", "inventory_updated"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["transaction_processed"]:
+                            self.log_test("PoS Transaction Processing", True, f"PoS transaction processed successfully. Order: {data['order_number']}", data)
+                            
+                            # Now verify the created sales order has proper format
+                            async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                                if orders_response.status == 200:
+                                    orders_data = await orders_response.json()
+                                    if isinstance(orders_data, list) and len(orders_data) > 0:
+                                        # Find the order we just created
+                                        created_order = None
+                                        for order in orders_data:
+                                            if order.get("order_number") == data["order_number"]:
+                                                created_order = order
+                                                break
+                                        
+                                        if created_order:
+                                            # Verify all validation issues are fixed
+                                            validation_checks = []
+                                            
+                                            # Check order_number exists
+                                            if created_order.get("order_number"):
+                                                validation_checks.append("✅ order_number field present")
+                                            else:
+                                                validation_checks.append("❌ order_number field missing")
+                                            
+                                            # Check customer_id is valid string
+                                            if isinstance(created_order.get("customer_id"), str) and created_order.get("customer_id"):
+                                                validation_checks.append("✅ customer_id is valid string")
+                                            else:
+                                                validation_checks.append("❌ customer_id should be valid string")
+                                            
+                                            # Check status is valid (not 'completed')
+                                            valid_statuses = ["draft", "submitted", "delivered", "cancelled"]
+                                            if created_order.get("status") in valid_statuses:
+                                                validation_checks.append(f"✅ status is valid: {created_order.get('status')}")
+                                            else:
+                                                validation_checks.append(f"❌ status should be one of {valid_statuses}, got: {created_order.get('status')}")
+                                            
+                                            # Check items have required fields
+                                            items = created_order.get("items", [])
+                                            items_valid = True
+                                            for item in items:
+                                                required_item_fields = ["item_id", "item_name", "rate", "amount"]
+                                                if not all(field in item for field in required_item_fields):
+                                                    items_valid = False
+                                                    break
+                                            
+                                            if items_valid and len(items) > 0:
+                                                validation_checks.append(f"✅ items have all required fields (item_id, item_name, rate, amount)")
+                                            else:
+                                                validation_checks.append("❌ items missing required fields")
+                                            
+                                            # Check if all validations passed
+                                            all_passed = all("✅" in check for check in validation_checks)
+                                            
+                                            if all_passed:
+                                                self.log_test("PoS to SalesOrder Conversion Validation", True, f"All Pydantic validation issues fixed: {'; '.join(validation_checks)}", created_order)
+                                            else:
+                                                self.log_test("PoS to SalesOrder Conversion Validation", False, f"Validation issues remain: {'; '.join(validation_checks)}", created_order)
+                                                return False
+                                        else:
+                                            self.log_test("PoS to SalesOrder Conversion Validation", False, f"Created order not found in sales orders list", {"expected_order_number": data["order_number"]})
+                                            return False
+                                    else:
+                                        self.log_test("PoS to SalesOrder Conversion Validation", False, "No sales orders found after PoS transaction", orders_data)
+                                        return False
+                                else:
+                                    self.log_test("PoS to SalesOrder Conversion Validation", False, f"Failed to fetch sales orders: HTTP {orders_response.status}")
+                                    return False
+                        else:
+                            self.log_test("PoS Transaction Processing", False, f"Transaction processing failed: {data}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("PoS Transaction Processing", False, f"Missing response fields: {missing}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("PoS Transaction Processing", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("PoS Transaction to SalesOrder Conversion", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_transaction_field_mapping(self):
+        """Test specific field mappings from PoS format to SalesOrder format"""
+        try:
+            # Test with customer ID provided
+            pos_transaction_with_customer = {
+                "pos_transaction_id": "POS-TXN-002",
+                "store_location": "Branch Store",
+                "cashier_id": "CASHIER-002",
+                "customer_id": "66f8b123456789abcdef0003",  # Existing customer
+                "items": [
+                    {
+                        "product_id": "66f8b123456789abcdef0001",
+                        "product_name": "Test Product",
+                        "quantity": 1,
+                        "unit_price": 100.00,
+                        "line_total": 100.00
+                    }
+                ],
+                "subtotal": 100.00,
+                "tax_amount": 9.00,
+                "discount_amount": 5.00,
+                "total_amount": 104.00,
+                "payment_method": "card",
+                "payment_details": {"card_type": "credit", "last_four": "1234"},
+                "status": "completed",
+                "transaction_timestamp": "2024-01-15T15:45:00Z",
+                "pos_device_id": "POS-DEVICE-002",
+                "receipt_number": "RCP-002"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=pos_transaction_with_customer) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        # Verify field mappings
+                        async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                            if orders_response.status == 200:
+                                orders_data = await orders_response.json()
+                                created_order = None
+                                for order in orders_data:
+                                    if order.get("order_number") == data["order_number"]:
+                                        created_order = order
+                                        break
+                                
+                                if created_order:
+                                    mapping_checks = []
+                                    
+                                    # Check PoS transaction ID mapping
+                                    if created_order.get("order_number", "").startswith("POS-"):
+                                        mapping_checks.append("✅ PoS transaction creates POS-prefixed order number")
+                                    else:
+                                        mapping_checks.append("❌ Order number should be POS-prefixed")
+                                    
+                                    # Check status mapping (completed -> delivered)
+                                    if created_order.get("status") == "delivered":
+                                        mapping_checks.append("✅ PoS 'completed' status mapped to 'delivered'")
+                                    else:
+                                        mapping_checks.append(f"❌ Status should be 'delivered' for completed PoS transactions, got: {created_order.get('status')}")
+                                    
+                                    # Check customer mapping
+                                    if created_order.get("customer_id") == pos_transaction_with_customer["customer_id"]:
+                                        mapping_checks.append("✅ Customer ID properly mapped")
+                                    else:
+                                        mapping_checks.append("❌ Customer ID not properly mapped")
+                                    
+                                    # Check total amount mapping
+                                    if abs(created_order.get("total_amount", 0) - pos_transaction_with_customer["total_amount"]) < 0.01:
+                                        mapping_checks.append("✅ Total amount properly mapped")
+                                    else:
+                                        mapping_checks.append("❌ Total amount not properly mapped")
+                                    
+                                    # Check items mapping
+                                    items = created_order.get("items", [])
+                                    if len(items) == len(pos_transaction_with_customer["items"]):
+                                        item_mapping_ok = True
+                                        for i, item in enumerate(items):
+                                            pos_item = pos_transaction_with_customer["items"][i]
+                                            if (item.get("item_id") != pos_item["product_id"] or
+                                                item.get("item_name") != pos_item["product_name"] or
+                                                abs(item.get("rate", 0) - pos_item["unit_price"]) > 0.01 or
+                                                abs(item.get("amount", 0) - pos_item["line_total"]) > 0.01):
+                                                item_mapping_ok = False
+                                                break
+                                        
+                                        if item_mapping_ok:
+                                            mapping_checks.append("✅ Items properly mapped (product_id->item_id, product_name->item_name, unit_price->rate, line_total->amount)")
+                                        else:
+                                            mapping_checks.append("❌ Items not properly mapped")
+                                    else:
+                                        mapping_checks.append("❌ Item count mismatch")
+                                    
+                                    all_mappings_ok = all("✅" in check for check in mapping_checks)
+                                    
+                                    if all_mappings_ok:
+                                        self.log_test("PoS Field Mapping", True, f"All field mappings working correctly: {'; '.join(mapping_checks)}", created_order)
+                                    else:
+                                        self.log_test("PoS Field Mapping", False, f"Field mapping issues: {'; '.join(mapping_checks)}", created_order)
+                                        return False
+                                else:
+                                    self.log_test("PoS Field Mapping", False, "Created order not found for field mapping verification")
+                                    return False
+                            else:
+                                self.log_test("PoS Field Mapping", False, f"Failed to fetch orders for mapping verification: HTTP {orders_response.status}")
+                                return False
+                    else:
+                        self.log_test("PoS Field Mapping", False, f"PoS transaction processing failed: {data}")
+                        return False
+                else:
+                    self.log_test("PoS Field Mapping", False, f"PoS transaction failed: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("PoS Field Mapping", False, f"Error: {str(e)}")
+            return False
+
     async def test_pos_health_check(self):
         """Test PoS health check endpoint"""
         try:
