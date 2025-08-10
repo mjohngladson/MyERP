@@ -279,59 +279,67 @@ async def receive_pos_transaction(transaction: PoSTransaction):
     try:
         db = get_database()
         
-        # Convert PoS transaction to Sales Order format
+        # Generate order number
+        order_count = await db.sales_orders.count_documents({})
+        order_number = f"POS-{datetime.now().strftime('%Y%m%d')}-{order_count + 1:04d}"
+        
+        # Get customer info if provided
+        customer_name = "Walk-in Customer"
+        customer_id = transaction.customer_id or "default_customer"
+        
+        if transaction.customer_id:
+            customer = await db.customers.find_one({"_id": ObjectId(transaction.customer_id)})
+            if customer:
+                customer_name = customer.get("name", "Unknown Customer")
+        
+        # Convert PoS items to SalesOrder items format
+        sales_order_items = []
+        total_quantity = 0
+        
+        for item in transaction.items:
+            # Get product info
+            product = await db.items.find_one({"_id": ObjectId(item["product_id"])})
+            
+            # Map to SalesOrderItem format
+            sales_order_item = {
+                "item_id": item["product_id"],
+                "item_name": item.get("product_name", product.get("name", "") if product else "Unknown Product"),
+                "quantity": item["quantity"],
+                "rate": item["unit_price"],
+                "amount": item["line_total"]
+            }
+            
+            sales_order_items.append(sales_order_item)
+            total_quantity += item["quantity"]
+        
+        # Create proper SalesOrder format
         sales_order = {
             "id": str(uuid.uuid4()),
-            "customer_id": transaction.customer_id,
-            "customer_name": "Walk-in Customer",  # Default
-            "order_date": transaction.transaction_timestamp,
-            "items": [],
-            "subtotal": transaction.subtotal,
-            "tax_amount": transaction.tax_amount,
-            "discount_amount": transaction.discount_amount,
+            "order_number": order_number,
+            "customer_id": customer_id,
+            "customer_name": customer_name,
             "total_amount": transaction.total_amount,
-            "status": "completed",
-            "payment_method": transaction.payment_method,
-            "payment_status": "paid",
+            "status": "delivered",  # PoS transactions are completed immediately
+            "order_date": transaction.transaction_timestamp,
+            "delivery_date": transaction.transaction_timestamp,  # Same as order date for PoS
+            "items": sales_order_items,
+            "company_id": "default_company",  # Default company for PoS transactions
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
-            # PoS-specific metadata
+            # Additional PoS metadata
             "pos_metadata": {
                 "pos_transaction_id": transaction.pos_transaction_id,
                 "cashier_id": transaction.cashier_id,
                 "store_location": transaction.store_location,
                 "pos_device_id": transaction.pos_device_id,
                 "receipt_number": transaction.receipt_number,
-                "payment_details": transaction.payment_details
+                "payment_method": transaction.payment_method,
+                "payment_details": transaction.payment_details,
+                "subtotal": transaction.subtotal,
+                "tax_amount": transaction.tax_amount,
+                "discount_amount": transaction.discount_amount
             }
         }
-        
-        # Get customer info if provided
-        if transaction.customer_id:
-            customer = await db.customers.find_one({"_id": ObjectId(transaction.customer_id)})
-            if customer:
-                sales_order["customer_name"] = customer.get("name", "Unknown Customer")
-        
-        # Convert items
-        total_quantity = 0
-        for item in transaction.items:
-            # Get product info
-            product = await db.items.find_one({"_id": ObjectId(item["product_id"])})
-            
-            order_item = {
-                "product_id": item["product_id"],
-                "product_name": item.get("product_name", product.get("name", "") if product else "Unknown Product"),
-                "sku": product.get("item_code", "") if product else "",
-                "quantity": item["quantity"],
-                "unit_price": item["unit_price"],
-                "discount_percent": item.get("discount_percent", 0),
-                "line_total": item["line_total"]
-            }
-            
-            sales_order["items"].append(order_item)
-            total_quantity += item["quantity"]
-        
-        sales_order["total_quantity"] = total_quantity
         
         # Insert sales order
         result = await db.sales_orders.insert_one(sales_order)
@@ -340,7 +348,7 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         for item in transaction.items:
             await db.items.update_one(
                 {"_id": ObjectId(item["product_id"])},
-                {"$inc": {"stock_quantity": -item["quantity"]}}
+                {"$inc": {"stock_qty": -item["quantity"]}}
             )
         
         # Update customer last purchase
@@ -363,6 +371,7 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         return {
             "success": True,
             "sales_order_id": str(result.inserted_id),
+            "order_number": order_number,
             "transaction_processed": True,
             "inventory_updated": True,
             "message": "Transaction successfully integrated into GiLi system"
