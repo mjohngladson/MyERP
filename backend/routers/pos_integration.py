@@ -656,6 +656,41 @@ async def get_pos_summary_report(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate PoS report: {str(e)}")
 
+@router.post("/device-register")
+async def register_pos_device(device_info: dict):
+    """Register a PoS device for tracking and management"""
+    
+    try:
+        db = get_database()
+        
+        device_registration = {
+            "device_id": device_info.get("device_id"),
+            "device_name": device_info.get("device_name", "Unknown Device"),
+            "device_type": device_info.get("device_type", "pos_terminal"),
+            "os_platform": device_info.get("os_platform", "unknown"),
+            "app_version": device_info.get("app_version", "1.0.0"),
+            "registered_at": datetime.now(),
+            "last_seen": datetime.now(),
+            "status": "active"
+        }
+        
+        # Update or insert device registration
+        await db.pos_devices.update_one(
+            {"device_id": device_info.get("device_id")},
+            {"$set": device_registration},
+            upsert=True
+        )
+        
+        return {
+            "success": True,
+            "device_id": device_info.get("device_id"),
+            "message": "Device registered successfully",
+            "registered_at": device_registration["registered_at"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Device registration failed: {str(e)}")
+
 # Export router
 def get_pos_router():
     return router
