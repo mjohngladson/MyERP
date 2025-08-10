@@ -37,8 +37,8 @@ async def init_sample_data():
     if await companies_collection.count_documents({}) > 0:
         return
     
-    # Create sample company
-    company_id = str(uuid.uuid4())
+    # Create sample company with default ID
+    company_id = "default_company"
     company_data = {
         "id": company_id,
         "name": "Sample Company Ltd",
