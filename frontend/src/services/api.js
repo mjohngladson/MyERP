@@ -51,6 +51,35 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Utility functions for network status
+export const networkUtils = {
+  isOnline: () => isOnline,
+  checkConnection: async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/`, { 
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+  getConnectionStatus: async () => {
+    if (!isOnline) {
+      return { online: false, message: 'You are offline. Please check your internet connection.' };
+    }
+    
+    const serverReachable = await networkUtils.checkConnection();
+    if (!serverReachable) {
+      return { online: false, message: 'Cannot connect to server. The server may be down or unreachable.' };
+    }
+    
+    return { online: true, message: 'Connected' };
+  }
+};
+
 // API functions
 export const api = {
   // Authentication
