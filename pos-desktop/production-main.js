@@ -659,6 +659,12 @@ function cleanupTempFiles() {
     // Add cleanup logic here if needed
 }
 
+function optimizeDatabase() {
+    // Optimize database
+    console.log('🔧 Optimizing database...');
+    // Add database optimization logic here if needed
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
