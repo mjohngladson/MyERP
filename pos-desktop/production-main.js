@@ -619,6 +619,13 @@ function showExportDialog() {
     }
 }
 
+function showHardwareTestDialog() {
+    // Show hardware test dialog
+    if (mainWindow) {
+        mainWindow.webContents.send('menu-action', 'hardware-test');
+    }
+}
+
 module.exports = {
     getMainWindow: () => mainWindow,
     isReady: () => isProductionReady,
