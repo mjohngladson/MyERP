@@ -1620,7 +1620,11 @@ class BackendTester:
             self.test_pos_full_sync,
             self.test_pos_sync_status,
             self.test_pos_categories,
-            self.test_pos_transaction_processing
+            self.test_pos_transaction_processing,
+            # Sales Order Validation Tests (NEW - for PoS integration fixes)
+            self.test_sales_orders_validation_fixes,
+            self.test_pos_transaction_to_sales_order_conversion,
+            self.test_pos_transaction_field_mapping
         ]
         
         passed = 0
