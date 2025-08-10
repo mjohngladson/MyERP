@@ -17,13 +17,20 @@ const apiClient = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
-// Request interceptor for auth
+// Request interceptor for auth and network checking
 apiClient.interceptors.request.use((config) => {
+  // Check if user is offline
+  if (!isOnline) {
+    throw new axios.Cancel('You are currently offline. Please check your internet connection.');
+  }
+  
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // Response interceptor for error handling
