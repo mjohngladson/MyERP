@@ -96,13 +96,6 @@ function setupIpcHandlers() {
     console.log('✅ IPC handlers registered');
 }
 
-// Minimal required modules
-const { initDatabase } = require('./src/database/sqlite');
-const { SyncManager } = require('./src/sync/syncManager');
-
-let mainWindow;
-let syncManager;
-
 async function createWindow() {
     console.log('🚀 Starting GiLi PoS...');
     
