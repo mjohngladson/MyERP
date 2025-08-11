@@ -138,6 +138,9 @@ async function createWindow() {
         console.warn('⚠️ Sync manager failed:', error.message);
     }
 
+    // Setup IPC handlers after sync manager is ready
+    setupIpcHandlers();
+
     // Load the app
     const indexPath = path.join(__dirname, 'src/renderer/index.html');
     console.log('📄 Loading UI from:', indexPath);
