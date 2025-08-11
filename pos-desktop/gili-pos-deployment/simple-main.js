@@ -2,6 +2,9 @@
 const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 
+// Load environment variables
+require('dotenv').config();
+
 // Minimal required modules
 const { initDatabase } = require('./src/database/sqlite');
 const { SyncManager } = require('./src/sync/syncManager');
