@@ -6,7 +6,7 @@ class SyncManager {
         this.isOnline = false;
         this.lastSyncTime = null;
         this.syncInProgress = false;
-        this.serverUrl = 'http://localhost:8001'; // Will be loaded from config
+        this.serverUrl = 'https://api-production-8536.up.railway.app'; // Railway backend URL
         this.syncInterval = 5 * 60 * 1000; // 5 minutes
         this.autoSyncTimer = null;
         this.deviceId = null;
