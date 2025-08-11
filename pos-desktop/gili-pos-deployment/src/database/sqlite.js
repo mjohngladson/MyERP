@@ -153,7 +153,7 @@ async function createTables() {
 
 async function insertDefaultSettings() {
   const defaultSettings = [
-    ['server_url', 'http://localhost:8001'],
+    ['server_url', 'https://api-production-8536.up.railway.app'],
     ['store_name', 'GiLi Store'],
     ['store_address', ''],
     ['receipt_footer', 'Thank you for your business!'],
