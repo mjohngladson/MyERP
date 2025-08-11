@@ -79,3 +79,4 @@ agenthub/agents/youtube/db
 # Mobile development
 android-sdk/ pos-desktop/node_modules/electron/dist/electron
 pos-desktop/node_modules/electron/dist/electron
+pos-desktop/gili-pos-deployment/node_modules/electron/dist/electron

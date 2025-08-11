@@ -5,6 +5,8 @@
   "main": "production-main.js",
   "scripts": {
     "start": "electron production-main.js --no-sandbox --disable-dev-shm-usage",
+    "simple": "electron simple-main.js --no-sandbox --disable-dev-shm-usage",
+    "debug": "electron debug-main.js",
     "dev": "electron main.js --dev --no-sandbox --disable-dev-shm-usage"
   },
   "keywords": [
