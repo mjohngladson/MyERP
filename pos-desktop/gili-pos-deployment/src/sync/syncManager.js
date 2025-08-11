@@ -4,7 +4,7 @@ const { getDatabase } = require('../database/sqlite');
 
 class SyncManager {
     constructor() {
-        this.serverUrl = process.env.GILI_SERVER_URL || 'http://localhost:8001';
+        this.serverUrl = process.env.GILI_SERVER_URL || 'https://api-production-8536.up.railway.app';
         this.deviceId = this.generateDeviceId();
         this.deviceName = require('os').hostname() || 'GiLi-PoS-Device';
         this.isOnline = false;
