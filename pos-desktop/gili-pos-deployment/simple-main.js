@@ -1,6 +1,100 @@
 // Simplified Production Main - Based on working debug version
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
+
+// Minimal required modules
+const { initDatabase } = require('./src/database/sqlite');
+const { SyncManager } = require('./src/sync/syncManager');
+
+let mainWindow;
+let syncManager;
+
+// IPC Handlers for renderer communication
+function setupIpcHandlers() {
+    // Get device ID
+    ipcMain.handle('pos:get-device-id', () => {
+        return syncManager ? syncManager.deviceId : 'local-device-' + Date.now();
+    });
+    
+    // Check connection status
+    ipcMain.handle('pos:check-connection', async () => {
+        if (!syncManager) {
+            return { online: false, message: 'Sync manager not initialized' };
+        }
+        
+        try {
+            await syncManager.checkConnection();
+            return { 
+                online: syncManager.isOnline, 
+                message: syncManager.isOnline ? 'Connected to GiLi backend' : 'Backend not reachable'
+            };
+        } catch (error) {
+            return { online: false, message: error.message };
+        }
+    });
+    
+    // Load products
+    ipcMain.handle('pos:load-products', async () => {
+        if (!syncManager) {
+            return { success: false, products: [], error: 'Sync manager not available' };
+        }
+        
+        try {
+            const products = await syncManager.getProducts();
+            return { success: true, products: products || [] };
+        } catch (error) {
+            console.error('Failed to load products:', error);
+            return { success: false, products: [], error: error.message };
+        }
+    });
+    
+    // Load customers
+    ipcMain.handle('pos:load-customers', async () => {
+        if (!syncManager) {
+            return { success: false, customers: [], error: 'Sync manager not available' };
+        }
+        
+        try {
+            const customers = await syncManager.getCustomers();
+            return { success: true, customers: customers || [] };
+        } catch (error) {
+            console.error('Failed to load customers:', error);
+            return { success: false, customers: [], error: error.message };
+        }
+    });
+    
+    // Process transaction
+    ipcMain.handle('pos:process-transaction', async (event, transactionData) => {
+        if (!syncManager) {
+            return { success: false, error: 'Sync manager not available' };
+        }
+        
+        try {
+            const result = await syncManager.processTransaction(transactionData);
+            return { success: true, result };
+        } catch (error) {
+            console.error('Failed to process transaction:', error);
+            return { success: false, error: error.message };
+        }
+    });
+    
+    // Sync data
+    ipcMain.handle('pos:sync-data', async () => {
+        if (!syncManager) {
+            return { success: false, error: 'Sync manager not available' };
+        }
+        
+        try {
+            await syncManager.syncData();
+            return { success: true, message: 'Data synced successfully' };
+        } catch (error) {
+            console.error('Failed to sync data:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    console.log('✅ IPC handlers registered');
+}
 
 // Minimal required modules
 const { initDatabase } = require('./src/database/sqlite');
