@@ -173,7 +173,7 @@ const EnvironmentOverrides = {
         app: { debug: true, crashReporting: false },
         database: { backup_enabled: false },
         logging: { level: 'debug', console_enabled: true },
-        network: { server_url: 'http://localhost:8001' },
+        network: { server_url: 'https://api-production-8536.up.railway.app' },
         support: { crash_reporting: false, usage_analytics: false }
     },
     
