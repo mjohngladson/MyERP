@@ -1,0 +1,35 @@
+{
+  "name": "gili-pos-safe",
+  "version": "1.0.0",
+  "description": "GiLi Point of Sale - Safe Build",
+  "main": "safe-main.js",
+  "scripts": {
+    "start": "electron safe-main.js",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "electron-store": "^8.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.gili.pos",
+    "productName": "GiLi PoS",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "dir"
+    },
+    "files": [
+      "safe-main.js",
+      "src/**/*",
+      ".env",
+      "package.json"
+    ]
+  }
+}
