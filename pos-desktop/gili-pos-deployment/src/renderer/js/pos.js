@@ -228,9 +228,15 @@ class PoSApp {
     
     async loadProducts() {
         try {
-            const products = await ipcRenderer.invoke('pos:get-products');
-            this.products.setProducts(products);
-            this.displayProducts(products);
+            const result = await ipcRenderer.invoke('pos:load-products');
+            if (result.success) {
+                this.products.setProducts(result.products);
+                this.displayProducts(result.products);
+                console.log(`✅ Loaded ${result.products.length} products`);
+            } else {
+                console.error('Failed to load products:', result.error);
+                this.showError('Failed to load products: ' + result.error);
+            }
         } catch (error) {
             console.error('Error loading products:', error);
             this.showError('Failed to load products');
