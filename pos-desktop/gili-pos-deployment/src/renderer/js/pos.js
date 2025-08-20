@@ -227,8 +227,11 @@ class PoSApp {
     }
     
     async loadProducts() {
+        console.log('🔄 Loading products...');
         try {
             const result = await ipcRenderer.invoke('pos:load-products');
+            console.log('📦 Products result:', result);
+            
             if (result.success) {
                 this.products.setProducts(result.products);
                 this.displayProducts(result.products);
@@ -240,6 +243,26 @@ class PoSApp {
         } catch (error) {
             console.error('Error loading products:', error);
             this.showError('Failed to load products');
+        }
+    }
+
+    async loadCustomers() {
+        console.log('👥 Loading customers...');
+        try {
+            const result = await ipcRenderer.invoke('pos:load-customers');
+            console.log('👥 Customers result:', result);
+            
+            if (result.success) {
+                // Store customers for checkout
+                this.customers = result.customers;
+                console.log(`✅ Loaded ${result.customers.length} customers`);
+            } else {
+                console.error('Failed to load customers:', result.error);
+                this.showError('Failed to load customers: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            this.showError('Failed to load customers');
         }
     }
     
