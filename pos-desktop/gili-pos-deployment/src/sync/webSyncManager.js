@@ -44,16 +44,23 @@ class SimpleStore {
 
 class WebSyncManager {
     constructor() {
+        console.log('🔧 WebSyncManager constructor starting...');
+        
         this.serverUrl = process.env.GILI_SERVER_URL || 'https://api-production-8536.up.railway.app';
         this.deviceName = require('os').hostname() || 'GiLi-PoS-Desktop';
         this.isOnline = false;
         
         // Initialize store FIRST before using it
+        console.log('🔧 Initializing simple storage...');
         this.store = new SimpleStore();
         console.log('✅ Simple storage initialized');
         
         // Now we can safely generate device ID (which uses this.store)
+        console.log('🔧 Generating device ID...');
         this.deviceId = this.generateDeviceId();
+        console.log('✅ Device ID generated:', this.deviceId);
+        
+        console.log('✅ WebSyncManager constructor completed');
     }
 
     generateDeviceId() {
