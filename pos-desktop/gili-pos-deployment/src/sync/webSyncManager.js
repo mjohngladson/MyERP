@@ -65,10 +65,13 @@ class WebSyncManager {
 
     async initialize() {
         console.log('🚀 Initializing Web Sync Manager...');
+        console.log('🔗 Server URL:', this.serverUrl);
+        console.log('🆔 Device ID:', this.deviceId);
+        
         try {
             await this.checkConnection();
             await this.registerDevice();
-            console.log('✅ Web Sync Manager initialized');
+            console.log('✅ Web Sync Manager initialized successfully');
         } catch (error) {
             console.warn('⚠️ Sync manager initialization failed:', error.message);
         }
