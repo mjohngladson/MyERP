@@ -795,6 +795,7 @@
             }
         }
 
+        // Cart functions
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             if (!product) return;
@@ -909,6 +910,8 @@
             
             if (confirm('Clear all items from cart?')) {
                 cart = [];
+                selectedCustomer = null;
+                selectWalkInCustomer();
                 updateCartDisplay();
                 showNotification('Cart cleared', 'info');
             }
@@ -941,15 +944,18 @@
             const tax = subtotal * 0.18;
             const total = subtotal + tax;
             
+            const receiptNumber = `RCP-${transactionId.toString().padStart(6, '0')}`;
+            
             // Create transaction data for API
             const transactionData = {
                 pos_transaction_id: `POS-${Date.now()}`,
                 cashier_id: 'cashier-001',
                 store_location: 'Main Store',
                 pos_device_id: 'pos-desktop-001',
-                receipt_number: `RCP-${transactionId.toString().padStart(6, '0')}`,
+                receipt_number: receiptNumber,
                 transaction_timestamp: new Date().toISOString(),
-                customer_id: null,
+                customer_id: selectedCustomer?.id || null,
+                customer_name: selectedCustomer?.name || 'Walk-in Customer',
                 items: cart.map(item => ({
                     product_id: item.id,
                     product_name: item.name,
@@ -987,16 +993,35 @@
                     
                     const result = await response.json();
                     console.log('✅ Transaction synced to API:', result);
-                    showNotification(`Payment of ₹${total.toFixed(2)} processed and synced`, 'success');
+                    showNotification(`Payment processed and synced to server`, 'success');
                 } else {
                     // Store for later sync when online
                     const pendingTransactions = JSON.parse(localStorage.getItem('pendingTransactions') || '[]');
                     pendingTransactions.push(transactionData);
                     localStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
                     
-                    showNotification(`Payment of ₹${total.toFixed(2)} processed (will sync when online)`, 'warning');
+                    showNotification(`Payment processed (will sync when online)`, 'warning');
                     console.log('📱 Transaction stored for later sync');
                 }
+                
+                // Store transaction locally for sales history
+                const localSales = JSON.parse(localStorage.getItem('localSales') || '[]');
+                localSales.unshift({
+                    ...transactionData,
+                    order_number: receiptNumber,
+                    order_date: transactionData.transaction_timestamp,
+                    status: 'delivered'
+                });
+                
+                // Keep only last 100 sales locally
+                if (localSales.length > 100) {
+                    localSales.splice(100);
+                }
+                localStorage.setItem('localSales', JSON.stringify(localSales));
+                
+                // Update sales history display
+                salesHistory = localSales;
+                displaySalesHistory(salesHistory);
                 
             } catch (error) {
                 console.error('❌ Failed to sync transaction:', error);
@@ -1006,11 +1031,16 @@
                 pendingTransactions.push(transactionData);
                 localStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
                 
-                showNotification(`Payment processed, sync failed (stored for retry)`, 'warning');
+                showNotification(`Payment processed, will retry sync later`, 'warning');
             }
+            
+            // Generate and show receipt
+            generateReceipt(transactionData);
             
             // Clear cart and close modal
             cart = [];
+            selectedCustomer = null;
+            selectWalkInCustomer();
             updateCartDisplay();
             closePaymentModal();
             
@@ -1026,6 +1056,8 @@
             
             if (confirm('Void this transaction?')) {
                 cart = [];
+                selectedCustomer = null;
+                selectWalkInCustomer();
                 updateCartDisplay();
                 showNotification('Transaction voided', 'warning');
             }
@@ -1035,6 +1067,104 @@
             document.getElementById('transaction-id').textContent = '#' + transactionId.toString().padStart(3, '0');
         }
 
+        // Receipt functions
+        function generateReceipt(transactionData) {
+            const receiptContent = document.getElementById('receipt-content');
+            const date = new Date(transactionData.transaction_timestamp);
+            
+            receiptContent.innerHTML = `
+                <div class="text-center mb-4">
+                    <h2 class="text-lg font-bold">GiLi Store</h2>
+                    <p class="text-sm">Main Store Location</p>
+                    <p class="text-sm">Phone: +91-1234567890</p>
+                    <hr class="my-2">
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span>Receipt:</span>
+                        <span>${transactionData.receipt_number}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span>Date:</span>
+                        <span>${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span>Customer:</span>
+                        <span>${transactionData.customer_name}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span>Cashier:</span>
+                        <span>${transactionData.cashier_id}</span>
+                    </div>
+                </div>
+                
+                <hr class="my-2">
+                
+                <div class="mb-4">
+                    <div class="text-sm font-bold mb-2">ITEMS:</div>
+                    ${transactionData.items.map(item => `
+                        <div class="flex justify-between text-sm mb-1">
+                            <div class="flex-1">
+                                <div>${item.product_name}</div>
+                                <div class="text-xs text-gray-600">${item.quantity} x ₹${item.unit_price.toFixed(2)}</div>
+                            </div>
+                            <div>₹${item.line_total.toFixed(2)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <hr class="my-2">
+                
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>₹${transactionData.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span>GST (18%):</span>
+                        <span>₹${transactionData.tax_amount.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between font-bold">
+                        <span>TOTAL:</span>
+                        <span>₹${transactionData.total_amount.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <hr class="my-2">
+                
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span>Payment Method:</span>
+                        <span class="uppercase">${transactionData.payment_method}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span>Amount Paid:</span>
+                        <span>₹${transactionData.total_amount.toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <hr class="my-2">
+                
+                <div class="text-center text-xs mt-4">
+                    <p>Thank you for shopping with us!</p>
+                    <p>Visit again!</p>
+                    <p class="mt-2">GST No: 12ABCDE1234F1Z5</p>
+                </div>
+            `;
+            
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function printReceipt() {
+            window.print();
+        }
+
+        // Search functions
         function searchProducts() {
             const searchTerm = document.getElementById('search-box').value.toLowerCase();
             const filtered = products.filter(product => 
@@ -1063,6 +1193,7 @@
             }
         }
 
+        // Sync functions
         async function syncData() {
             const btn = document.getElementById('sync-btn');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
@@ -1072,8 +1203,12 @@
                 await checkConnectionStatus();
                 
                 if (isOnline) {
-                    // Reload products from API
-                    await loadProductsFromAPI();
+                    // Reload data from API
+                    await Promise.all([
+                        loadProductsFromAPI(),
+                        loadCustomersFromAPI(),
+                        loadSalesData()
+                    ]);
                     
                     // Sync pending transactions
                     const pendingTransactions = JSON.parse(localStorage.getItem('pendingTransactions') || '[]');
@@ -1117,7 +1252,7 @@
                         }
                     }
                     
-                    showNotification('Data synced successfully', 'success');
+                    showNotification('All data synced successfully', 'success');
                 } else {
                     showNotification('Cannot sync - offline', 'error');
                 }
@@ -1180,6 +1315,18 @@
                         event.preventDefault();
                         syncData();
                         break;
+                    case '1':
+                        event.preventDefault();
+                        switchTab('products');
+                        break;
+                    case '2':
+                        event.preventDefault();
+                        switchTab('customers');
+                        break;
+                    case '3':
+                        event.preventDefault();
+                        switchTab('sales');
+                        break;
                 }
             }
         });
@@ -1195,7 +1342,7 @@
             }
         }, 300000); // 5 minutes
 
-        console.log('✅ GiLi PoS initialized with API integration');
+        console.log('✅ GiLi PoS initialized with full integration');
     </script>
 </body>
 </html>
