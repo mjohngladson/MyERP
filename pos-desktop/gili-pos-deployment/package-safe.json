@@ -2,7 +2,7 @@
   "name": "gili-pos-deployment-safe",
   "version": "1.0.0",
   "description": "GiLi Point of Sale Desktop Application - Safe Build",
-  "main": "simple-main.js",
+  "main": "safe-main.js",
   "scripts": {
     "start": "electron simple-main.js --no-sandbox --disable-dev-shm-usage",
     "build-safe": "electron-builder --config.nativeRebuilds=false",
