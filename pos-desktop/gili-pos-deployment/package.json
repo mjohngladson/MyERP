@@ -7,7 +7,11 @@
     "start": "electron production-main.js --no-sandbox --disable-dev-shm-usage",
     "simple": "electron simple-main.js --no-sandbox --disable-dev-shm-usage",
     "debug": "electron debug-main.js",
-    "dev": "electron main.js --dev --no-sandbox --disable-dev-shm-usage"
+    "dev": "electron main.js --dev --no-sandbox --disable-dev-shm-usage",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir"
   },
   "keywords": [
     "pos",
