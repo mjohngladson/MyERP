@@ -118,11 +118,18 @@ async function createWindow() {
 
     // Initialize sync manager (no database needed)
     try {
+        console.log('🔄 Creating sync manager...');
         syncManager = new SyncManager();
+        console.log('🔄 Initializing sync manager...');
         await syncManager.initialize();
         console.log('✅ Web sync manager initialized');
     } catch (error) {
-        console.warn('⚠️ Sync manager failed:', error.message);
+        console.error('❌ Sync manager failed:', error.message);
+        console.error('Stack trace:', error.stack);
+        
+        // Continue without sync manager for now
+        syncManager = null;
+        console.warn('⚠️ Continuing without sync manager - products will be unavailable');
     }
 
     // Setup IPC handlers after sync manager is ready
