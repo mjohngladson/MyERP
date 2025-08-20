@@ -1,17 +1,17 @@
 @echo off
 echo ===================================
-echo    GiLi PoS - STANDALONE VERSION
+echo    GiLi PoS - API INTEGRATED VERSION
 echo ===================================
 echo.
-echo Creating a FULLY WORKING PoS with all buttons functional
+echo Creating PoS with FULL API INTEGRATION and RUPEES currency
 echo.
 
 :: Create distribution folder
-set DIST_FOLDER=gili-pos-standalone
+set DIST_FOLDER=gili-pos-api-integrated
 if exist %DIST_FOLDER% rmdir /s /q %DIST_FOLDER%
 mkdir %DIST_FOLDER%
 
-echo Copying standalone files...
+echo Copying API-integrated files...
 copy standalone-main.js %DIST_FOLDER%\
 copy standalone-pos.html %DIST_FOLDER%\
 
@@ -19,7 +19,7 @@ copy standalone-pos.html %DIST_FOLDER%\
 echo Creating package.json...
 (
 echo {
-echo   "name": "gili-pos-standalone",
+echo   "name": "gili-pos-api-integrated",
 echo   "version": "1.0.0",
 echo   "main": "standalone-main.js",
 echo   "dependencies": {
@@ -36,15 +36,19 @@ echo Creating launcher...
 (
 echo @echo off
 echo echo ===================================
-echo echo    GiLi PoS - FULLY FUNCTIONAL
+echo echo    GiLi PoS - API INTEGRATED
 echo echo ===================================
 echo echo.
-echo echo Features:
-echo echo ✓ All buttons work
-echo echo ✓ Products load immediately  
-echo echo ✓ Cart functionality
-echo echo ✓ Checkout process
-echo echo ✓ Keyboard shortcuts
+echo echo API: https://api-production-8536.up.railway.app
+echo echo Currency: Indian Rupees ^(₹^)
+echo echo GST: 18%%
+echo echo.
+echo echo API INTEGRATION FEATURES:
+echo echo ✓ Loads products from Railway API
+echo echo ✓ Sends sales data to API
+echo echo ✓ Offline mode with local storage
+echo echo ✓ Auto-sync pending transactions
+echo echo ✓ Stock validation
 echo echo.
 echo echo Starting PoS...
 echo .\node_modules\.bin\electron.cmd standalone-main.js
@@ -55,22 +59,25 @@ cd ..
 
 echo.
 echo ===================================
-echo ✓ SUCCESS! FULLY FUNCTIONAL PoS!
+echo ✓ SUCCESS! API INTEGRATED PoS!
 echo ===================================
 echo.
 echo Application: %DIST_FOLDER%\
 echo.
-echo GUARANTEED WORKING FEATURES:
-echo ✓ 6 sample products load immediately
-echo ✓ Add to cart - WORKS
-echo ✓ Quantity +/- buttons - WORK  
-echo ✓ Remove items - WORKS
-echo ✓ Search products - WORKS
-echo ✓ Barcode scanning - WORKS
-echo ✓ Checkout process - WORKS
-echo ✓ Cash/Card payments - WORK
-echo ✓ Void transaction - WORKS
-echo ✓ Keyboard shortcuts - WORK
+echo API INTEGRATION FEATURES:
+echo ✓ Products sync from: https://api-production-8536.up.railway.app/api/pos/products
+echo ✓ Sales sync to: https://api-production-8536.up.railway.app/api/pos/transactions
+echo ✓ Currency: Indian Rupees ^(₹^)
+echo ✓ Tax: 18%% GST
+echo ✓ Offline fallback with mock products
+echo ✓ Pending transaction sync when online
+echo ✓ Stock quantity validation
+echo ✓ Auto-sync every 5 minutes
+echo.
+echo KEYBOARD SHORTCUTS:
+echo ✓ Ctrl+Enter: Checkout
+echo ✓ Ctrl+Delete: Void transaction
+echo ✓ Ctrl+S: Manual sync
 echo.
 echo TESTING NOW...
 start "" "%cd%\%DIST_FOLDER%\Start GiLi PoS.bat"
