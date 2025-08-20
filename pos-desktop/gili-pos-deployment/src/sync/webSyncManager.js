@@ -128,6 +128,34 @@ class WebSyncManager {
             // Return cached products
             const cachedProducts = this.store.get('products', []);
             console.log(`📱 Found ${cachedProducts.length} cached products`);
+            
+            // If no cached products, return mock data for testing
+            if (cachedProducts.length === 0) {
+                console.log('🧪 No cached products, returning mock data for testing');
+                const mockProducts = [
+                    {
+                        id: 'mock-1',
+                        name: 'Sample Product A',
+                        price: 10.99,
+                        stock_quantity: 50,
+                        category: 'Test',
+                        image_url: null
+                    },
+                    {
+                        id: 'mock-2', 
+                        name: 'Sample Product B',
+                        price: 25.50,
+                        stock_quantity: 25,
+                        category: 'Test',
+                        image_url: null
+                    }
+                ];
+                
+                // Store mock data
+                this.store.set('products', mockProducts);
+                return mockProducts;
+            }
+            
             return cachedProducts;
         }
     }
