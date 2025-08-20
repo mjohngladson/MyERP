@@ -1,6 +1,46 @@
 // Web Storage Sync Manager - No SQLite dependencies
 const axios = require('axios');
-const Store = require('electron-store');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+class SimpleStore {
+    constructor() {
+        // Create a simple file-based storage
+        this.dataDir = path.join(os.homedir(), 'gili-pos-data');
+        this.dataFile = path.join(this.dataDir, 'pos-data.json');
+        this.data = {};
+        
+        try {
+            // Create directory if it doesn't exist
+            if (!fs.existsSync(this.dataDir)) {
+                fs.mkdirSync(this.dataDir, { recursive: true });
+            }
+            
+            // Load existing data
+            if (fs.existsSync(this.dataFile)) {
+                const fileData = fs.readFileSync(this.dataFile, 'utf8');
+                this.data = JSON.parse(fileData);
+            }
+        } catch (error) {
+            console.warn('Failed to initialize simple store:', error.message);
+            this.data = {};
+        }
+    }
+    
+    get(key, defaultValue = null) {
+        return this.data[key] !== undefined ? this.data[key] : defaultValue;
+    }
+    
+    set(key, value) {
+        this.data[key] = value;
+        try {
+            fs.writeFileSync(this.dataFile, JSON.stringify(this.data, null, 2));
+        } catch (error) {
+            console.warn('Failed to save data:', error.message);
+        }
+    }
+}
 
 class WebSyncManager {
     constructor() {
@@ -8,7 +48,10 @@ class WebSyncManager {
         this.deviceId = this.generateDeviceId();
         this.deviceName = require('os').hostname() || 'GiLi-PoS-Desktop';
         this.isOnline = false;
-        this.store = new Store(); // Use electron-store for persistence
+        
+        // Use simple store instead of electron-store
+        this.store = new SimpleStore();
+        console.log('✅ Simple storage initialized');
     }
 
     generateDeviceId() {
