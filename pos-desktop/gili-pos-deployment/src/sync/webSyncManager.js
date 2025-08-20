@@ -6,25 +6,39 @@ const os = require('os');
 
 class SimpleStore {
     constructor() {
+        console.log('🔧 SimpleStore constructor starting...');
+        
         // Create a simple file-based storage
         this.dataDir = path.join(os.homedir(), 'gili-pos-data');
         this.dataFile = path.join(this.dataDir, 'pos-data.json');
         this.data = {};
         
+        console.log('📁 Data directory:', this.dataDir);
+        console.log('📄 Data file:', this.dataFile);
+        
         try {
             // Create directory if it doesn't exist
             if (!fs.existsSync(this.dataDir)) {
+                console.log('📁 Creating data directory...');
                 fs.mkdirSync(this.dataDir, { recursive: true });
+                console.log('✅ Data directory created');
             }
             
             // Load existing data
             if (fs.existsSync(this.dataFile)) {
+                console.log('📄 Loading existing data file...');
                 const fileData = fs.readFileSync(this.dataFile, 'utf8');
                 this.data = JSON.parse(fileData);
+                console.log('✅ Data loaded, keys:', Object.keys(this.data));
+            } else {
+                console.log('📄 No existing data file, starting fresh');
             }
+            
+            console.log('✅ SimpleStore initialized successfully');
         } catch (error) {
-            console.warn('Failed to initialize simple store:', error.message);
+            console.error('❌ Failed to initialize simple store:', error.message);
             this.data = {};
+            console.log('⚠️ Using in-memory storage only');
         }
     }
     
