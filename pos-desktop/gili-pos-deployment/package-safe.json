@@ -17,12 +17,12 @@
   "author": "GiLi Team",
   "license": "MIT",
   "dependencies": {
-    "electron": "^28.1.0",
     "axios": "^1.6.2",
     "electron-store": "^8.1.0",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
+    "electron": "^28.1.0",
     "electron-builder": "^24.9.1"
   },
   "build": {
@@ -34,7 +34,6 @@
     "files": [
       "**/*",
       "!**/node_modules/**",
-      "node_modules/electron/**",
       "node_modules/axios/**",
       "node_modules/electron-store/**",
       "node_modules/dotenv/**",
