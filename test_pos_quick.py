@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 
 async def test_pos_endpoints():
-    base_url = 'https://d6a78edf-c5b5-4dd2-91dc-add59f2c679f.preview.emergentagent.com'
+    base_url = 'https://smart-retail-5.preview.emergentagent.com'
     
     async with aiohttp.ClientSession() as session:
         print('🔍 Testing PoS Integration Endpoints')
