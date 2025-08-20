@@ -63,18 +63,26 @@ class WebSyncManager {
     }
 
     async getProducts() {
+        console.log('🛍️ WebSyncManager: Fetching products from server...');
         try {
             const response = await axios.get(`${this.serverUrl}/api/pos/products`, { timeout: 10000 });
+            console.log('📦 Server response for products:', response.status, response.data);
+            
             const products = response.data || [];
             
             // Store in local storage
             this.store.set('products', products);
+            console.log(`✅ Stored ${products.length} products locally`);
             
             return products;
         } catch (error) {
-            console.error('Failed to fetch products from server:', error.message);
+            console.error('❌ Failed to fetch products from server:', error.message);
+            console.log('📱 Trying cached products...');
+            
             // Return cached products
-            return this.store.get('products', []);
+            const cachedProducts = this.store.get('products', []);
+            console.log(`📱 Found ${cachedProducts.length} cached products`);
+            return cachedProducts;
         }
     }
 
