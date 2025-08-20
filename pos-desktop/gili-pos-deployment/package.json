@@ -35,5 +35,47 @@
   },
   "devDependencies": {
     "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.gili.pos",
+    "productName": "GiLi PoS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/**",
+      "node_modules/electron/**",
+      "node_modules/sqlite3/**",
+      "node_modules/axios/**",
+      "node_modules/electron-store/**",
+      "node_modules/dotenv/**",
+      "node_modules/express/**",
+      "node_modules/cors/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GiLi PoS"
+    },
+    "portable": {
+      "artifactName": "GiLi-PoS-Portable.exe"
+    }
   }
 }
