@@ -1,0 +1,59 @@
+{
+  "name": "gili-pos-deployment-safe",
+  "version": "1.0.0",
+  "description": "GiLi Point of Sale Desktop Application - Safe Build",
+  "main": "simple-main.js",
+  "scripts": {
+    "start": "electron simple-main.js --no-sandbox --disable-dev-shm-usage",
+    "build-safe": "electron-builder --config.nativeRebuilds=false",
+    "pack-safe": "electron-builder --dir --config.nativeRebuilds=false"
+  },
+  "keywords": [
+    "pos",
+    "point-of-sale",
+    "gili",
+    "electron"
+  ],
+  "author": "GiLi Team",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^28.1.0",
+    "axios": "^1.6.2",
+    "electron-store": "^8.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.gili.pos.safe",
+    "productName": "GiLi PoS Safe",
+    "directories": {
+      "output": "dist-safe"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/**",
+      "node_modules/electron/**",
+      "node_modules/axios/**",
+      "node_modules/electron-store/**",
+      "node_modules/dotenv/**",
+      "!node_modules/sqlite3/**",
+      "!node_modules/serialport/**",
+      "!node_modules/node-thermal-printer/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "portable": {
+      "artifactName": "GiLi-PoS-Safe-Portable.exe"
+    },
+    "nativeRebuilds": false
+  }
+}
