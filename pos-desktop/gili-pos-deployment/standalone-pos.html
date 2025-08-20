@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiLi Point of Sale</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .pos-grid { display: grid; grid-template-columns: 1fr 350px; height: 100vh; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .cart-item { border-bottom: 1px solid #e5e7eb; }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Main PoS Interface -->
+    <div class="pos-grid">
+        <!-- Left Panel - Products -->
+        <div class="bg-white flex flex-col">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-cash-register text-2xl"></i>
+                    <h1 class="text-xl font-bold">GiLi PoS</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="sync-status" class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-green-500" id="status-indicator"></div>
+                        <span class="text-sm" id="status-text">Online</span>
+                    </div>
+                    <button id="sync-btn" class="bg-blue-500 hover:bg-blue-700 px-3 py-1 rounded text-sm" onclick="syncData()">
+                        <i class="fas fa-sync"></i> Sync
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="p-4 border-b">
+                <div class="flex space-x-4">
+                    <input type="text" id="search-box" placeholder="Search products..." 
+                           class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           onkeyup="searchProducts()">
+                    <input type="text" id="barcode-input" placeholder="Scan barcode..." 
+                           class="w-32 px-3 py-2 border rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                           onkeyup="handleBarcode(event)">
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div id="products-grid" class="product-grid">
+                    <!-- Products will be loaded here -->
+                    <div class="text-center text-gray-500 col-span-full">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading products...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Cart -->
+        <div class="bg-gray-50 flex flex-col border-l">
+            <!-- Transaction Header -->
+            <div class="bg-gray-800 text-white p-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold">Transaction</h2>
+                    <span class="text-sm bg-gray-600 px-2 py-1 rounded" id="transaction-id">#001</span>
+                </div>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="flex-1 overflow-y-auto">
+                <div id="cart-container">
+                    <div id="cart-items" style="display: none;"></div>
+                    <div id="empty-cart" class="p-6 text-center text-gray-500">
+                        <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                        <p>Cart is empty</p>
+                        <p class="text-sm">Add products to start transaction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="p-4 border-t bg-white">
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Tax (8%):</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-lg border-t pt-2">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="p-4 space-y-2 bg-white border-t">
+                <button id="checkout-btn" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-semibold disabled:bg-gray-400" 
+                        disabled onclick="startCheckout()">
+                    Checkout
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="voidTransaction()" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded">
+                        Void
+                    </button>
+                    <button onclick="clearCart()" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg w-96">
+            <div class="bg-green-600 text-white p-4 rounded-t-lg">
+                <h3 class="text-lg font-semibold">Payment</h3>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="text-2xl font-bold text-center">Total: <span id="payment-total">$0.00</span></div>
+                </div>
+                
+                <div class="space-y-4">
+                    <button onclick="processPayment('cash')" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg">
+                        <i class="fas fa-money-bill-wave mr-2"></i> Cash Payment
+                    </button>
+                    <button onclick="processPayment('card')" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg">
+                        <i class="fas fa-credit-card mr-2"></i> Card Payment
+                    </button>
+                </div>
+                
+                <div class="flex space-x-3 mt-6">
+                    <button onclick="closePaymentModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let cart = [];
+        let products = [];
+        let transactionId = 1;
+        
+        // Initialize PoS
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 GiLi PoS Starting...');
+            loadMockProducts();
+            updateTransactionId();
+            updateCartDisplay();
+        });
+
+        // Load mock products for immediate functionality
+        function loadMockProducts() {
+            products = [
+                {
+                    id: 'prod-1',
+                    name: 'Coffee - Large',
+                    price: 4.50,
+                    stock_quantity: 100,
+                    category: 'Beverages',
+                    barcode: '12345678901'
+                },
+                {
+                    id: 'prod-2',
+                    name: 'Sandwich - Turkey',
+                    price: 8.99,
+                    stock_quantity: 50,
+                    category: 'Food',
+                    barcode: '12345678902'
+                },
+                {
+                    id: 'prod-3',
+                    name: 'Water Bottle',
+                    price: 1.99,
+                    stock_quantity: 200,
+                    category: 'Beverages',
+                    barcode: '12345678903'
+                },
+                {
+                    id: 'prod-4',
+                    name: 'Chips',
+                    price: 2.50,
+                    stock_quantity: 75,
+                    category: 'Snacks',
+                    barcode: '12345678904'
+                },
+                {
+                    id: 'prod-5',
+                    name: 'Energy Drink',
+                    price: 3.25,
+                    stock_quantity: 60,
+                    category: 'Beverages',
+                    barcode: '12345678905'
+                },
+                {
+                    id: 'prod-6',
+                    name: 'Salad Bowl',
+                    price: 12.99,
+                    stock_quantity: 30,
+                    category: 'Food',
+                    barcode: '12345678906'
+                }
+            ];
+            
+            displayProducts(products);
+            console.log('✅ Loaded ' + products.length + ' products');
+        }
+
+        function displayProducts(productsToShow) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = productsToShow.map(product => `
+                <div class="product-card bg-white border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+                     onclick="addToCart('${product.id}')">
+                    <div class="text-center mb-2">
+                        <i class="fas fa-box text-3xl text-blue-500"></i>
+                    </div>
+                    <div class="text-sm font-medium truncate text-center">${product.name}</div>
+                    <div class="text-lg font-bold text-blue-600 text-center">$${product.price.toFixed(2)}</div>
+                    <div class="text-xs text-gray-500 text-center">Stock: ${product.stock_quantity}</div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            // Check if product already in cart
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+                existingItem.total = existingItem.price * existingItem.quantity;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    total: product.price
+                });
+            }
+            
+            updateCartDisplay();
+            showNotification(`Added ${product.name} to cart`, 'success');
+        }
+
+        function updateCartDisplay() {
+            const cartContainer = document.getElementById('cart-items');
+            const emptyCart = document.getElementById('empty-cart');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            if (cart.length === 0) {
+                cartContainer.style.display = 'none';
+                emptyCart.style.display = 'block';
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('bg-gray-400');
+                checkoutBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            } else {
+                cartContainer.style.display = 'block';
+                emptyCart.style.display = 'none';
+                checkoutBtn.disabled = false;
+                checkoutBtn.classList.remove('bg-gray-400');
+                checkoutBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                cartContainer.innerHTML = cart.map(item => `
+                    <div class="cart-item p-4 flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="font-medium">${item.name}</div>
+                            <div class="text-sm text-gray-600">$${item.price.toFixed(2)} each</div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="updateQuantity('${item.id}', ${item.quantity - 1})" 
+                                    class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded flex items-center justify-center">
+                                <i class="fas fa-minus text-sm"></i>
+                            </button>
+                            <span class="w-8 text-center">${item.quantity}</span>
+                            <button onclick="updateQuantity('${item.id}', ${item.quantity + 1})" 
+                                    class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded flex items-center justify-center">
+                                <i class="fas fa-plus text-sm"></i>
+                            </button>
+                            <div class="w-20 text-right font-medium">$${item.total.toFixed(2)}</div>
+                            <button onclick="removeFromCart('${item.id}')" 
+                                    class="text-red-600 hover:text-red-800 ml-2">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            updateTotals();
+        }
+
+        function updateQuantity(itemId, newQuantity) {
+            if (newQuantity <= 0) {
+                removeFromCart(itemId);
+                return;
+            }
+            
+            const item = cart.find(item => item.id === itemId);
+            if (item) {
+                item.quantity = newQuantity;
+                item.total = item.price * newQuantity;
+                updateCartDisplay();
+            }
+        }
+
+        function removeFromCart(itemId) {
+            cart = cart.filter(item => item.id !== itemId);
+            updateCartDisplay();
+            showNotification('Item removed from cart', 'warning');
+        }
+
+        function clearCart() {
+            if (cart.length === 0) return;
+            
+            if (confirm('Clear all items from cart?')) {
+                cart = [];
+                updateCartDisplay();
+                showNotification('Cart cleared', 'info');
+            }
+        }
+
+        function updateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const tax = subtotal * 0.08; // 8% tax
+            const total = subtotal + tax;
+            
+            document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+            document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+            document.getElementById('total').textContent = '$' + total.toFixed(2);
+        }
+
+        function startCheckout() {
+            if (cart.length === 0) return;
+            
+            const total = cart.reduce((sum, item) => sum + item.total, 0) * 1.08; // Include tax
+            document.getElementById('payment-total').textContent = '$' + total.toFixed(2);
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+        }
+
+        function processPayment(method) {
+            const total = cart.reduce((sum, item) => sum + item.total, 0) * 1.08;
+            
+            // Process payment
+            showNotification(`Payment of $${total.toFixed(2)} processed via ${method}`, 'success');
+            
+            // Clear cart and close modal
+            cart = [];
+            updateCartDisplay();
+            closePaymentModal();
+            
+            // Update transaction ID
+            transactionId++;
+            updateTransactionId();
+            
+            console.log(`✅ Transaction completed: ${method} payment of $${total.toFixed(2)}`);
+        }
+
+        function voidTransaction() {
+            if (cart.length === 0) return;
+            
+            if (confirm('Void this transaction?')) {
+                cart = [];
+                updateCartDisplay();
+                showNotification('Transaction voided', 'warning');
+            }
+        }
+
+        function updateTransactionId() {
+            document.getElementById('transaction-id').textContent = '#' + transactionId.toString().padStart(3, '0');
+        }
+
+        function searchProducts() {
+            const searchTerm = document.getElementById('search-box').value.toLowerCase();
+            const filtered = products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.category.toLowerCase().includes(searchTerm)
+            );
+            displayProducts(filtered);
+        }
+
+        function handleBarcode(event) {
+            if (event.key === 'Enter') {
+                const barcode = event.target.value;
+                const product = products.find(p => p.barcode === barcode);
+                
+                if (product) {
+                    addToCart(product.id);
+                    event.target.value = '';
+                    showNotification(`Scanned: ${product.name}`, 'success');
+                } else {
+                    showNotification('Product not found', 'error');
+                }
+            }
+        }
+
+        function syncData() {
+            const btn = document.getElementById('sync-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+            
+            // Simulate sync
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-sync"></i> Sync';
+                showNotification('Data synced successfully', 'success');
+            }, 2000);
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white slide-in`;
+            
+            switch (type) {
+                case 'success':
+                    notification.classList.add('bg-green-500');
+                    break;
+                case 'error':
+                    notification.classList.add('bg-red-500');
+                    break;
+                case 'warning':
+                    notification.classList.add('bg-yellow-500');
+                    break;
+                default:
+                    notification.classList.add('bg-blue-500');
+            }
+            
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${type === 'success' ? 'fa-check' : type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey) {
+                switch(event.key) {
+                    case 'Enter':
+                        event.preventDefault();
+                        if (!document.getElementById('checkout-btn').disabled) {
+                            startCheckout();
+                        }
+                        break;
+                    case 'Delete':
+                        event.preventDefault();
+                        voidTransaction();
+                        break;
+                }
+            }
+        });
+
+        console.log('✅ GiLi PoS initialized successfully');
+    </script>
+</body>
+</html>
