@@ -1025,9 +1025,11 @@
                 }
                 localStorage.setItem('localSales', JSON.stringify(localSales));
                 
-                // Update sales history display
-                salesHistory = localSales;
-                displaySalesHistory(salesHistory);
+                // Update sales history display immediately with backend data
+                await loadSalesData();
+                
+                // Clear the locally stored pending transactions for these successfully synced ones
+                localStorage.setItem('localSales', JSON.stringify(salesHistory));
                 
             } catch (error) {
                 console.error('❌ Failed to sync transaction:', error);
