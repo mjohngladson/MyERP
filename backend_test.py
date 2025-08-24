@@ -1969,6 +1969,181 @@ class BackendTester:
             self.log_test("PoS Sync Status & Categories", False, f"Error: {str(e)}")
             return False
 
+    async def test_pos_data_mismatch_investigation(self):
+        """Test specific data mismatch issue reported by user - PoS vs Main UI amounts"""
+        try:
+            print("\n🔍 INVESTIGATING PoS DATA MISMATCH ISSUE")
+            print("=" * 60)
+            
+            # Step 1: Fetch raw sales orders data to see actual stored amounts
+            print("📊 Step 1: Fetching raw sales orders data...")
+            async with self.session.get(f"{self.base_url}/api/sales/orders/raw") as response:
+                if response.status == 200:
+                    raw_data = await response.json()
+                    print(f"✅ Raw data retrieved: {len(raw_data)} orders")
+                    
+                    # Look for the specific transaction IDs mentioned by user
+                    target_transactions = ["POS-20250824-0006", "POS-20250824-0005"]
+                    found_transactions = {}
+                    
+                    for order in raw_data:
+                        order_number = order.get("order_number", "")
+                        if any(target in order_number for target in target_transactions):
+                            found_transactions[order_number] = {
+                                "total_amount": order.get("total_amount"),
+                                "subtotal": order.get("subtotal"),
+                                "tax_amount": order.get("tax_amount"),
+                                "discount_amount": order.get("discount_amount"),
+                                "items": order.get("items", []),
+                                "raw_data": order
+                            }
+                            print(f"🎯 Found {order_number}: ₹{order.get('total_amount')}")
+                    
+                    if found_transactions:
+                        self.log_test("PoS Data Mismatch - Raw Data Check", True, 
+                                    f"Found {len(found_transactions)} target transactions in raw data", 
+                                    found_transactions)
+                    else:
+                        self.log_test("PoS Data Mismatch - Raw Data Check", False, 
+                                    f"Target transactions {target_transactions} not found in raw data")
+                        return False
+                else:
+                    self.log_test("PoS Data Mismatch - Raw Data Check", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 2: Fetch formatted sales orders data to compare
+            print("\n📋 Step 2: Fetching formatted sales orders data...")
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    formatted_data = await response.json()
+                    print(f"✅ Formatted data retrieved: {len(formatted_data)} orders")
+                    
+                    formatted_transactions = {}
+                    for order in formatted_data:
+                        order_number = order.get("order_number", "")
+                        if any(target in order_number for target in target_transactions):
+                            formatted_transactions[order_number] = {
+                                "total_amount": order.get("total_amount"),
+                                "status": order.get("status"),
+                                "customer_name": order.get("customer_name"),
+                                "items": order.get("items", []),
+                                "formatted_data": order
+                            }
+                            print(f"🎯 Found {order_number}: ₹{order.get('total_amount')}")
+                    
+                    # Compare raw vs formatted data
+                    comparison_results = {}
+                    for order_number in found_transactions.keys():
+                        if order_number in formatted_transactions:
+                            raw_amount = found_transactions[order_number]["total_amount"]
+                            formatted_amount = formatted_transactions[order_number]["total_amount"]
+                            
+                            comparison_results[order_number] = {
+                                "raw_amount": raw_amount,
+                                "formatted_amount": formatted_amount,
+                                "amounts_match": abs(raw_amount - formatted_amount) < 0.01,
+                                "difference": abs(raw_amount - formatted_amount)
+                            }
+                            
+                            print(f"💰 {order_number}: Raw=₹{raw_amount}, Formatted=₹{formatted_amount}, Match={comparison_results[order_number]['amounts_match']}")
+                    
+                    self.log_test("PoS Data Mismatch - Raw vs Formatted Comparison", True, 
+                                f"Compared {len(comparison_results)} transactions", 
+                                comparison_results)
+                else:
+                    self.log_test("PoS Data Mismatch - Formatted Data Check", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 3: Test with sample transaction that should result in ₹236.00 total
+            print("\n🧪 Step 3: Testing with sample transaction (₹236.00 expected)...")
+            sample_transaction = {
+                "pos_transaction_id": "POS-TEST-AMOUNT-001", 
+                "cashier_id": "cashier-001",
+                "store_location": "Main Store",
+                "pos_device_id": "pos-desktop-001",
+                "receipt_number": "RCP-TEST-001",
+                "transaction_timestamp": "2025-01-21T10:00:00Z",
+                "customer_id": None,
+                "customer_name": "Walk-in Customer",
+                "items": [
+                    {
+                        "product_id": "product-1",
+                        "product_name": "Test Product",
+                        "quantity": 2,
+                        "unit_price": 100.00,
+                        "discount_percent": 0,
+                        "line_total": 200.00
+                    }
+                ],
+                "subtotal": 200.00,
+                "tax_amount": 36.00,
+                "discount_amount": 0,
+                "total_amount": 236.00,
+                "payment_method": "cash",
+                "payment_details": {
+                    "method": "cash", 
+                    "processed_at": "2025-01-21T10:00:00Z"
+                }
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", 
+                                       json=sample_transaction) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    print(f"✅ Sample transaction processed successfully")
+                    
+                    # Now check if it appears correctly in sales orders
+                    await asyncio.sleep(1)  # Give it a moment to process
+                    
+                    async with self.session.get(f"{self.base_url}/api/sales/orders") as check_response:
+                        if check_response.status == 200:
+                            orders = await check_response.json()
+                            test_order = None
+                            for order in orders:
+                                if "POS-TEST-AMOUNT-001" in order.get("order_number", ""):
+                                    test_order = order
+                                    break
+                            
+                            if test_order:
+                                stored_amount = test_order.get("total_amount")
+                                expected_amount = 236.00
+                                amounts_match = abs(stored_amount - expected_amount) < 0.01
+                                
+                                print(f"💰 Test transaction: Expected=₹{expected_amount}, Stored=₹{stored_amount}, Match={amounts_match}")
+                                
+                                self.log_test("PoS Data Mismatch - Sample Transaction Test", amounts_match, 
+                                            f"Sample transaction amount verification: expected ₹{expected_amount}, got ₹{stored_amount}", 
+                                            {
+                                                "expected": expected_amount,
+                                                "stored": stored_amount,
+                                                "difference": abs(stored_amount - expected_amount),
+                                                "test_order": test_order
+                                            })
+                            else:
+                                self.log_test("PoS Data Mismatch - Sample Transaction Test", False, 
+                                            "Test transaction not found in sales orders after processing")
+                                return False
+                        else:
+                            self.log_test("PoS Data Mismatch - Sample Transaction Verification", False, 
+                                        f"Failed to retrieve orders for verification: HTTP {check_response.status}")
+                            return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("PoS Data Mismatch - Sample Transaction Processing", False, 
+                                f"Failed to process sample transaction: HTTP {response.status}, {error_text}")
+                    return False
+            
+            print("\n📊 INVESTIGATION SUMMARY:")
+            print("=" * 60)
+            print("✅ Investigation completed successfully")
+            print("📋 Check test results for detailed findings")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("PoS Data Mismatch Investigation", False, f"Error during investigation: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting Backend API Tests for GiLi")
@@ -2009,7 +2184,9 @@ class BackendTester:
             # Sales Order Validation Tests (NEW - for PoS integration fixes)
             self.test_sales_orders_validation_fixes,
             self.test_pos_transaction_to_sales_order_conversion,
-            self.test_pos_transaction_field_mapping
+            self.test_pos_transaction_field_mapping,
+            # PoS Data Mismatch Investigation (CRITICAL USER ISSUE)
+            self.test_pos_data_mismatch_investigation,
         ]
         
         passed = 0
