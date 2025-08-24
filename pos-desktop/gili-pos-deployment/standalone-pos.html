@@ -462,6 +462,7 @@
                     return;
                 }
 
+                // Always try to load from backend first when online
                 const response = await fetch(`${API_BASE}/sales/orders?limit=50`);
                 
                 if (!response.ok) {
@@ -471,12 +472,17 @@
                 const data = await response.json();
                 salesHistory = data || [];
                 
-                console.log(`✅ Loaded ${salesHistory.length} sales records`);
+                console.log(`✅ Loaded ${salesHistory.length} sales records from backend`);
                 displaySalesHistory(salesHistory);
                 
+                // Update local storage with backend data to keep them in sync
+                if (salesHistory.length > 0) {
+                    localStorage.setItem('localSales', JSON.stringify(salesHistory));
+                }
+                
             } catch (error) {
-                console.error('❌ Failed to load sales data:', error);
-                showNotification('Failed to load sales data', 'warning');
+                console.error('❌ Failed to load sales data from backend:', error);
+                showNotification('Failed to load sales data from server, using local cache', 'warning');
                 
                 // Load from local storage as fallback
                 const localSales = JSON.parse(localStorage.getItem('localSales') || '[]');
