@@ -1037,6 +1037,366 @@ class BackendTester:
             self.log_test("Sales Orders Validation Fixes", False, f"Error: {str(e)}")
             return False
 
+    async def test_pos_transaction_processing_api(self):
+        """Test PoS transaction processing API with sample data from user request"""
+        try:
+            # Use the exact sample PoS transaction data provided by the user
+            pos_transaction = {
+                "pos_transaction_id": "POS-1234567890",
+                "cashier_id": "cashier-001",
+                "store_location": "Main Store",
+                "pos_device_id": "pos-desktop-001",
+                "receipt_number": "RCP-000001",
+                "transaction_timestamp": "2025-01-21T10:00:00Z",
+                "customer_id": None,
+                "customer_name": "Walk-in Customer",
+                "items": [
+                    {
+                        "product_id": "product-1",
+                        "product_name": "Test Product",
+                        "quantity": 2,
+                        "unit_price": 50.00,
+                        "discount_percent": 0,
+                        "line_total": 100.00
+                    }
+                ],
+                "subtotal": 100.00,
+                "tax_amount": 18.00,
+                "discount_amount": 0,
+                "total_amount": 118.00,
+                "payment_method": "cash",
+                "payment_details": {
+                    "method": "cash",
+                    "processed_at": "2025-01-21T10:00:00Z"
+                }
+            }
+            
+            # Test POST /api/pos/transactions
+            async with self.session.post(
+                f"{self.base_url}/api/pos/transactions",
+                json=pos_transaction,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "sales_order_id", "order_number", "transaction_processed", "inventory_updated"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["transaction_processed"]:
+                            self.log_test("PoS Transaction Processing API", True, f"PoS transaction processed successfully. Order: {data['order_number']}, Sales Order ID: {data['sales_order_id']}", data)
+                            return data["sales_order_id"]  # Return for further testing
+                        else:
+                            self.log_test("PoS Transaction Processing API", False, f"Transaction processing failed: {data}", data)
+                            return None
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("PoS Transaction Processing API", False, f"Missing response fields: {missing}", data)
+                        return None
+                else:
+                    error_text = await response.text()
+                    self.log_test("PoS Transaction Processing API", False, f"HTTP {response.status}: {error_text}")
+                    return None
+                    
+        except Exception as e:
+            self.log_test("PoS Transaction Processing API", False, f"Error: {str(e)}")
+            return None
+
+    async def test_sales_orders_after_pos_transaction(self):
+        """Test if PoS transactions appear in sales orders API"""
+        try:
+            # First process a PoS transaction
+            sales_order_id = await self.test_pos_transaction_processing_api()
+            
+            if not sales_order_id:
+                self.log_test("Sales Orders After PoS Transaction", False, "Could not process PoS transaction first")
+                return False
+            
+            # Now check if it appears in sales orders
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        # Look for our PoS transaction in sales orders
+                        pos_order_found = False
+                        for order in data:
+                            if order.get("id") == sales_order_id or "POS-" in order.get("order_number", ""):
+                                pos_order_found = True
+                                # Verify the order has proper structure
+                                required_fields = ["id", "order_number", "customer_name", "total_amount", "status", "items"]
+                                if all(field in order for field in required_fields):
+                                    if order["status"] == "delivered" and order["total_amount"] == 118.00:
+                                        self.log_test("Sales Orders After PoS Transaction", True, f"PoS transaction found in sales orders. Order: {order['order_number']}, Amount: {order['total_amount']}", order)
+                                        return True
+                                    else:
+                                        self.log_test("Sales Orders After PoS Transaction", False, f"PoS order found but incorrect data. Status: {order['status']}, Amount: {order['total_amount']}", order)
+                                        return False
+                                else:
+                                    missing = [f for f in required_fields if f not in order]
+                                    self.log_test("Sales Orders After PoS Transaction", False, f"PoS order found but missing fields: {missing}", order)
+                                    return False
+                        
+                        if not pos_order_found:
+                            self.log_test("Sales Orders After PoS Transaction", False, f"PoS transaction not found in sales orders. Expected ID: {sales_order_id}", {"orders_count": len(data)})
+                            return False
+                    else:
+                        self.log_test("Sales Orders After PoS Transaction", False, "Sales orders response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Sales Orders After PoS Transaction", False, f"HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Sales Orders After PoS Transaction", False, f"Error: {str(e)}")
+            return False
+
+    async def test_customer_loyalty_updates_after_pos(self):
+        """Test if customer loyalty points are updated after PoS transactions"""
+        try:
+            # First, create a customer for testing
+            test_customer = {
+                "name": "Test Customer for PoS",
+                "email": "testcustomer@example.com",
+                "phone": "+1234567890",
+                "address": "123 Test Street",
+                "loyalty_points": 0
+            }
+            
+            # Create customer first
+            async with self.session.post(
+                f"{self.base_url}/api/sales/customers",
+                json=test_customer,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    customer_data = await response.json()
+                    customer_id = customer_data.get("id")
+                    
+                    if not customer_id:
+                        self.log_test("Customer Loyalty Updates After PoS", False, "Could not create test customer")
+                        return False
+                else:
+                    self.log_test("Customer Loyalty Updates After PoS", False, f"Failed to create customer: HTTP {response.status}")
+                    return False
+            
+            # Now create a PoS transaction with this customer
+            pos_transaction_with_customer = {
+                "pos_transaction_id": "POS-LOYALTY-TEST-001",
+                "cashier_id": "cashier-001",
+                "store_location": "Main Store",
+                "pos_device_id": "pos-desktop-001",
+                "receipt_number": "RCP-LOYALTY-001",
+                "transaction_timestamp": "2025-01-21T11:00:00Z",
+                "customer_id": customer_id,
+                "customer_name": "Test Customer for PoS",
+                "items": [
+                    {
+                        "product_id": "product-1",
+                        "product_name": "Loyalty Test Product",
+                        "quantity": 1,
+                        "unit_price": 100.00,
+                        "discount_percent": 0,
+                        "line_total": 100.00
+                    }
+                ],
+                "subtotal": 100.00,
+                "tax_amount": 20.00,
+                "discount_amount": 0,
+                "total_amount": 120.00,
+                "payment_method": "card",
+                "payment_details": {
+                    "method": "card",
+                    "processed_at": "2025-01-21T11:00:00Z"
+                }
+            }
+            
+            # Process the PoS transaction
+            async with self.session.post(
+                f"{self.base_url}/api/pos/transactions",
+                json=pos_transaction_with_customer,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    transaction_result = await response.json()
+                    if transaction_result.get("success"):
+                        # Now check if customer loyalty points were updated
+                        async with self.session.get(f"{self.base_url}/api/sales/customers") as customers_response:
+                            if customers_response.status == 200:
+                                customers = await customers_response.json()
+                                updated_customer = None
+                                for customer in customers:
+                                    if customer.get("id") == customer_id:
+                                        updated_customer = customer
+                                        break
+                                
+                                if updated_customer:
+                                    expected_points = 120  # Should equal total_amount
+                                    actual_points = updated_customer.get("loyalty_points", 0)
+                                    if actual_points >= expected_points:
+                                        self.log_test("Customer Loyalty Updates After PoS", True, f"Customer loyalty points updated correctly. Points: {actual_points}", updated_customer)
+                                        return True
+                                    else:
+                                        self.log_test("Customer Loyalty Updates After PoS", False, f"Loyalty points not updated correctly. Expected: {expected_points}, Got: {actual_points}", updated_customer)
+                                        return False
+                                else:
+                                    self.log_test("Customer Loyalty Updates After PoS", False, f"Customer not found after transaction. ID: {customer_id}")
+                                    return False
+                            else:
+                                self.log_test("Customer Loyalty Updates After PoS", False, f"Failed to fetch customers: HTTP {customers_response.status}")
+                                return False
+                    else:
+                        self.log_test("Customer Loyalty Updates After PoS", False, f"PoS transaction failed: {transaction_result}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Customer Loyalty Updates After PoS", False, f"PoS transaction failed: HTTP {response.status}: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Customer Loyalty Updates After PoS", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_data_flow_verification(self):
+        """Test complete data flow from PoS transaction to sales order storage"""
+        try:
+            # Test the complete flow with a comprehensive transaction
+            comprehensive_pos_transaction = {
+                "pos_transaction_id": "POS-DATAFLOW-TEST-001",
+                "cashier_id": "cashier-dataflow",
+                "store_location": "Test Store",
+                "pos_device_id": "pos-test-device",
+                "receipt_number": "RCP-DATAFLOW-001",
+                "transaction_timestamp": "2025-01-21T12:00:00Z",
+                "customer_id": None,  # Walk-in customer
+                "customer_name": "Data Flow Test Customer",
+                "items": [
+                    {
+                        "product_id": "dataflow-product-1",
+                        "product_name": "Data Flow Test Product 1",
+                        "quantity": 3,
+                        "unit_price": 33.33,
+                        "discount_percent": 0,
+                        "line_total": 99.99
+                    },
+                    {
+                        "product_id": "dataflow-product-2", 
+                        "product_name": "Data Flow Test Product 2",
+                        "quantity": 1,
+                        "unit_price": 50.00,
+                        "discount_percent": 10,
+                        "line_total": 45.00
+                    }
+                ],
+                "subtotal": 144.99,
+                "tax_amount": 26.10,
+                "discount_amount": 5.00,
+                "total_amount": 166.09,
+                "payment_method": "card",
+                "payment_details": {
+                    "method": "card",
+                    "card_type": "visa",
+                    "last_four": "1234",
+                    "processed_at": "2025-01-21T12:00:00Z"
+                }
+            }
+            
+            # Step 1: Process PoS transaction
+            async with self.session.post(
+                f"{self.base_url}/api/pos/transactions",
+                json=comprehensive_pos_transaction,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    transaction_result = await response.json()
+                    if not transaction_result.get("success"):
+                        self.log_test("PoS Data Flow Verification", False, f"Transaction processing failed: {transaction_result}")
+                        return False
+                    
+                    sales_order_id = transaction_result.get("sales_order_id")
+                    order_number = transaction_result.get("order_number")
+                    
+                    # Step 2: Verify sales order was created correctly
+                    async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                        if orders_response.status == 200:
+                            orders = await orders_response.json()
+                            matching_order = None
+                            
+                            for order in orders:
+                                if order.get("id") == sales_order_id or order.get("order_number") == order_number:
+                                    matching_order = order
+                                    break
+                            
+                            if matching_order:
+                                # Verify order data integrity
+                                verification_checks = []
+                                
+                                # Check total amount
+                                if abs(matching_order.get("total_amount", 0) - 166.09) < 0.01:
+                                    verification_checks.append("✅ Total amount correct")
+                                else:
+                                    verification_checks.append(f"❌ Total amount incorrect: expected 166.09, got {matching_order.get('total_amount')}")
+                                
+                                # Check status
+                                if matching_order.get("status") == "delivered":
+                                    verification_checks.append("✅ Status correct (delivered)")
+                                else:
+                                    verification_checks.append(f"❌ Status incorrect: expected 'delivered', got '{matching_order.get('status')}'")
+                                
+                                # Check items count
+                                items = matching_order.get("items", [])
+                                if len(items) == 2:
+                                    verification_checks.append("✅ Items count correct")
+                                    
+                                    # Check individual items
+                                    for i, item in enumerate(items):
+                                        expected_item = comprehensive_pos_transaction["items"][i]
+                                        if (item.get("item_name") == expected_item["product_name"] and
+                                            item.get("quantity") == expected_item["quantity"] and
+                                            abs(item.get("rate", 0) - expected_item["unit_price"]) < 0.01):
+                                            verification_checks.append(f"✅ Item {i+1} data correct")
+                                        else:
+                                            verification_checks.append(f"❌ Item {i+1} data incorrect")
+                                else:
+                                    verification_checks.append(f"❌ Items count incorrect: expected 2, got {len(items)}")
+                                
+                                # Check customer name
+                                if matching_order.get("customer_name") == "Data Flow Test Customer":
+                                    verification_checks.append("✅ Customer name correct")
+                                else:
+                                    verification_checks.append(f"❌ Customer name incorrect: expected 'Data Flow Test Customer', got '{matching_order.get('customer_name')}'")
+                                
+                                # Determine overall success
+                                failed_checks = [check for check in verification_checks if check.startswith("❌")]
+                                
+                                if not failed_checks:
+                                    self.log_test("PoS Data Flow Verification", True, f"Complete data flow verified successfully. All checks passed: {verification_checks}", {
+                                        "order_number": order_number,
+                                        "sales_order_id": sales_order_id,
+                                        "verification_checks": verification_checks
+                                    })
+                                    return True
+                                else:
+                                    self.log_test("PoS Data Flow Verification", False, f"Data flow verification failed. Failed checks: {failed_checks}", {
+                                        "order_number": order_number,
+                                        "sales_order_id": sales_order_id,
+                                        "all_checks": verification_checks,
+                                        "matching_order": matching_order
+                                    })
+                                    return False
+                            else:
+                                self.log_test("PoS Data Flow Verification", False, f"Sales order not found after PoS transaction. Expected ID: {sales_order_id}, Order Number: {order_number}")
+                                return False
+                        else:
+                            self.log_test("PoS Data Flow Verification", False, f"Failed to fetch sales orders: HTTP {orders_response.status}")
+                            return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("PoS Data Flow Verification", False, f"PoS transaction failed: HTTP {response.status}: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("PoS Data Flow Verification", False, f"Error: {str(e)}")
+            return False
+
     async def test_pos_transaction_to_sales_order_conversion(self):
         """Test PoS transaction processing and conversion to proper SalesOrder format"""
         try:
