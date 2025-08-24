@@ -1979,7 +1979,8 @@ class BackendTester:
             print("📊 Step 1: Fetching raw sales orders data...")
             async with self.session.get(f"{self.base_url}/api/sales/orders/raw") as response:
                 if response.status == 200:
-                    raw_data = await response.json()
+                    raw_response = await response.json()
+                    raw_data = raw_response.get("orders", []) if isinstance(raw_response, dict) else raw_response
                     print(f"✅ Raw data retrieved: {len(raw_data)} orders")
                     
                     # Look for the specific transaction IDs mentioned by user
@@ -1989,15 +1990,18 @@ class BackendTester:
                     for order in raw_data:
                         order_number = order.get("order_number", "")
                         if any(target in order_number for target in target_transactions):
+                            pos_metadata = order.get("pos_metadata", {})
                             found_transactions[order_number] = {
                                 "total_amount": order.get("total_amount"),
-                                "subtotal": order.get("subtotal"),
-                                "tax_amount": order.get("tax_amount"),
-                                "discount_amount": order.get("discount_amount"),
+                                "subtotal": pos_metadata.get("subtotal"),
+                                "tax_amount": pos_metadata.get("tax_amount"),
+                                "discount_amount": pos_metadata.get("discount_amount"),
                                 "items": order.get("items", []),
+                                "pos_metadata": pos_metadata,
                                 "raw_data": order
                             }
-                            print(f"🎯 Found {order_number}: ₹{order.get('total_amount')}")
+                            print(f"🎯 Found {order_number}: ₹{order.get('total_amount')} (stored)")
+                            print(f"   PoS metadata - Subtotal: ₹{pos_metadata.get('subtotal')}, Tax: ₹{pos_metadata.get('tax_amount')}, Discount: ₹{pos_metadata.get('discount_amount')}")
                     
                     if found_transactions:
                         self.log_test("PoS Data Mismatch - Raw Data Check", True, 
