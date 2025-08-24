@@ -1254,6 +1254,8 @@
                         
                         if (synced > 0) {
                             showNotification(`Synced ${synced} pending transactions`, 'success');
+                            // Refresh sales data to show updated amounts from backend
+                            await loadSalesData();
                         }
                         if (remaining.length > 0) {
                             showNotification(`${remaining.length} transactions still pending`, 'warning');
