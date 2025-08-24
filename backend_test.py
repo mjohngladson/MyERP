@@ -1993,7 +1993,12 @@ class BackendTester:
             self.test_export_functionality,
             self.test_reporting_error_handling,
             self.test_error_handling,
-            # PoS Integration Tests
+            # PoS Integration Tests - USER REQUESTED
+            self.test_pos_transaction_processing_api,
+            self.test_sales_orders_after_pos_transaction,
+            self.test_customer_loyalty_updates_after_pos,
+            self.test_pos_data_flow_verification,
+            # Additional PoS Tests
             self.test_pos_health_check,
             self.test_pos_products_sync,
             self.test_pos_customers_sync,
