@@ -228,9 +228,9 @@ backend:
 frontend:
   - task: "PoS Desktop - Data Sync to UI/API"
     implemented: true
-    working: true
+    working: false
     file: "pos-desktop/gili-pos-deployment/standalone-pos.html"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -240,6 +240,9 @@ frontend:
         - working: true
           agent: "main" 
           comment: "✅ ISSUE RESOLVED: PoS sync is actually working correctly! Investigation revealed: (1) Backend API working - PoS transactions processed and stored as sales orders (2) Frontend displaying correctly - Sales Orders list shows 6 PoS transactions (POS-20250824-0001 to POS-20250824-0006) with amounts ₹118, ₹166.09, etc., all marked as 'Delivered' (3) Dashboard stats showing ₹687 sales orders total (4) All PoS transactions visible in Sales → Sales Order section. The sync IS working - user may need to check Sales Orders section specifically."
+        - working: false
+          agent: "main"
+          comment: "🚨 CONFIRMED BUG: User provided screenshots showing data mismatch between PoS and main UI. PoS shows #POS-20250824-0006: ₹236.00 and #POS-20250824-0005: ₹118.00, but main UI shows POS-20250824-0006: ₹104 and POS-20250824-0005: ₹70.85. Backend testing revealed the backend data is actually ₹104 and ₹70.85 (matching UI), suggesting PoS is displaying cached localStorage data instead of actual synced amounts. Issue: PoS showing local transaction amounts before sync processing, not the final processed amounts from backend."
 
   - task: "PoS Desktop - Sync Manager Backend Integration"
     implemented: true
