@@ -1037,6 +1037,198 @@ class BackendTester:
             self.log_test("Sales Orders Validation Fixes", False, f"Error: {str(e)}")
             return False
 
+    async def test_pos_tax_calculation_investigation(self):
+        """URGENT: Investigate critical tax calculation error in PoS system"""
+        try:
+            print("\n🚨 CRITICAL TAX CALCULATION INVESTIGATION STARTED")
+            
+            # Test Case 1: Product A (₹100) - Expected ₹118 (100 + 18% tax)
+            test_transaction_1 = {
+                "pos_transaction_id": "TEST-TAX-001",
+                "cashier_id": "test-cashier",
+                "store_location": "Test Store",
+                "pos_device_id": "test-device",
+                "receipt_number": "TEST-001",
+                "transaction_timestamp": "2025-01-21T10:00:00Z",
+                "customer_id": None,
+                "customer_name": "Walk-in Customer",
+                "items": [
+                    {
+                        "product_id": "test-product-a",
+                        "product_name": "Product A",
+                        "quantity": 1,
+                        "unit_price": 100.00,
+                        "line_total": 100.00
+                    }
+                ],
+                "subtotal": 100.00,
+                "tax_amount": 18.00,  # 18% tax
+                "discount_amount": 0.00,
+                "total_amount": 118.00,  # Expected: 100 + 18 = 118
+                "payment_method": "cash",
+                "payment_details": {},
+                "status": "completed"
+            }
+            
+            # Submit test transaction 1
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction_1) as response:
+                if response.status == 200:
+                    result_1 = await response.json()
+                    self.log_test("Tax Calculation Test 1 - Submission", True, f"Transaction submitted successfully: {result_1.get('order_number')}", result_1)
+                    
+                    # Now check what was actually stored
+                    async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                        if orders_response.status == 200:
+                            orders = await orders_response.json()
+                            # Find our test transaction
+                            test_order = None
+                            for order in orders:
+                                if order.get("order_number") == result_1.get("order_number"):
+                                    test_order = order
+                                    break
+                            
+                            if test_order:
+                                stored_amount = test_order.get("total_amount")
+                                expected_amount = 118.00
+                                
+                                if abs(stored_amount - expected_amount) < 0.01:
+                                    self.log_test("Tax Calculation Test 1 - Verification", True, f"✅ CORRECT: Stored amount {stored_amount} matches expected {expected_amount}", test_order)
+                                else:
+                                    self.log_test("Tax Calculation Test 1 - Verification", False, f"❌ TAX ERROR: Expected ₹{expected_amount}, but stored ₹{stored_amount}", test_order)
+                            else:
+                                self.log_test("Tax Calculation Test 1 - Verification", False, "Could not find test transaction in stored orders")
+                        else:
+                            self.log_test("Tax Calculation Test 1 - Verification", False, f"Failed to retrieve orders: HTTP {orders_response.status}")
+                else:
+                    self.log_test("Tax Calculation Test 1 - Submission", False, f"Failed to submit transaction: HTTP {response.status}")
+                    return False
+            
+            # Test Case 2: Product B (₹200) - Expected ₹236 (200 + 18% tax)
+            test_transaction_2 = {
+                "pos_transaction_id": "TEST-TAX-002",
+                "cashier_id": "test-cashier",
+                "store_location": "Test Store",
+                "pos_device_id": "test-device",
+                "receipt_number": "TEST-002",
+                "transaction_timestamp": "2025-01-21T10:05:00Z",
+                "customer_id": None,
+                "customer_name": "Walk-in Customer",
+                "items": [
+                    {
+                        "product_id": "test-product-b",
+                        "product_name": "Product B",
+                        "quantity": 1,
+                        "unit_price": 200.00,
+                        "line_total": 200.00
+                    }
+                ],
+                "subtotal": 200.00,
+                "tax_amount": 36.00,  # 18% tax
+                "discount_amount": 0.00,
+                "total_amount": 236.00,  # Expected: 200 + 36 = 236
+                "payment_method": "cash",
+                "payment_details": {},
+                "status": "completed"
+            }
+            
+            # Submit test transaction 2
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction_2) as response:
+                if response.status == 200:
+                    result_2 = await response.json()
+                    self.log_test("Tax Calculation Test 2 - Submission", True, f"Transaction submitted successfully: {result_2.get('order_number')}", result_2)
+                    
+                    # Check what was actually stored
+                    async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                        if orders_response.status == 200:
+                            orders = await orders_response.json()
+                            # Find our test transaction
+                            test_order = None
+                            for order in orders:
+                                if order.get("order_number") == result_2.get("order_number"):
+                                    test_order = order
+                                    break
+                            
+                            if test_order:
+                                stored_amount = test_order.get("total_amount")
+                                expected_amount = 236.00
+                                
+                                if abs(stored_amount - expected_amount) < 0.01:
+                                    self.log_test("Tax Calculation Test 2 - Verification", True, f"✅ CORRECT: Stored amount {stored_amount} matches expected {expected_amount}", test_order)
+                                else:
+                                    self.log_test("Tax Calculation Test 2 - Verification", False, f"❌ TAX ERROR: Expected ₹{expected_amount}, but stored ₹{stored_amount}", test_order)
+                            else:
+                                self.log_test("Tax Calculation Test 2 - Verification", False, "Could not find test transaction in stored orders")
+                        else:
+                            self.log_test("Tax Calculation Test 2 - Verification", False, f"Failed to retrieve orders: HTTP {orders_response.status}")
+                else:
+                    self.log_test("Tax Calculation Test 2 - Submission", False, f"Failed to submit transaction: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Tax Calculation Investigation", False, f"Error: {str(e)}")
+            return False
+
+    async def test_existing_problematic_transactions(self):
+        """Check existing problematic transactions mentioned in user report"""
+        try:
+            print("\n🔍 CHECKING EXISTING PROBLEMATIC TRANSACTIONS")
+            
+            # Get all sales orders to find the problematic ones
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    orders = await response.json()
+                    
+                    # Look for POS-20250824-0006 and POS-20250824-0005
+                    problematic_orders = {}
+                    for order in orders:
+                        order_number = order.get("order_number", "")
+                        if "POS-20250824-0006" in order_number or "POS-20250824-0005" in order_number:
+                            problematic_orders[order_number] = order
+                    
+                    if problematic_orders:
+                        for order_number, order in problematic_orders.items():
+                            stored_amount = order.get("total_amount")
+                            
+                            # Check if this matches the user's reported wrong amounts
+                            if "0006" in order_number:
+                                # User reported: PoS shows ₹236.00, UI shows ₹104
+                                if abs(stored_amount - 104.0) < 0.01:
+                                    self.log_test("Existing Transaction Analysis - 0006", True, f"Found POS-20250824-0006 with stored amount ₹{stored_amount} (matches user report of ₹104 in UI)", order)
+                                else:
+                                    self.log_test("Existing Transaction Analysis - 0006", False, f"POS-20250824-0006 amount ₹{stored_amount} does not match user report", order)
+                            
+                            elif "0005" in order_number:
+                                # User reported: PoS shows ₹118.00, UI shows ₹70.85
+                                if abs(stored_amount - 70.85) < 0.01:
+                                    self.log_test("Existing Transaction Analysis - 0005", True, f"Found POS-20250824-0005 with stored amount ₹{stored_amount} (matches user report of ₹70.85 in UI)", order)
+                                else:
+                                    self.log_test("Existing Transaction Analysis - 0005", False, f"POS-20250824-0005 amount ₹{stored_amount} does not match user report", order)
+                            
+                            # Check if there's pos_metadata to understand the calculation
+                            if "pos_metadata" in order:
+                                metadata = order["pos_metadata"]
+                                subtotal = metadata.get("subtotal", 0)
+                                tax_amount = metadata.get("tax_amount", 0)
+                                discount_amount = metadata.get("discount_amount", 0)
+                                calculated_total = subtotal + tax_amount - discount_amount
+                                
+                                self.log_test(f"Transaction Calculation Analysis - {order_number}", True, 
+                                    f"Subtotal: ₹{subtotal}, Tax: ₹{tax_amount}, Discount: ₹{discount_amount}, Calculated: ₹{calculated_total}, Stored: ₹{stored_amount}", 
+                                    metadata)
+                    else:
+                        self.log_test("Existing Transaction Analysis", True, "No problematic transactions found with those specific order numbers", {"total_orders": len(orders)})
+                else:
+                    self.log_test("Existing Transaction Analysis", False, f"Failed to retrieve orders: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Existing Transaction Analysis", False, f"Error: {str(e)}")
+            return False
+
     async def test_pos_transaction_processing_api(self):
         """Test PoS transaction processing API with sample data from user request"""
         try:
