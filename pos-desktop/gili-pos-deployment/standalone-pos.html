@@ -1282,6 +1282,69 @@
                         }
                     }
                     
+                    // Sync pending customers
+                    const pendingCustomers = JSON.parse(localStorage.getItem('pendingCustomers') || '[]');
+                    if (pendingCustomers.length > 0) {
+                        console.log(`👥 Syncing ${pendingCustomers.length} pending customers...`);
+                        
+                        let customersSynced = 0;
+                        const remainingCustomers = [];
+                        
+                        for (const customer of pendingCustomers) {
+                            try {
+                                const customerData = {
+                                    name: customer.name,
+                                    phone: customer.phone,
+                                    email: customer.email,
+                                    address: customer.address
+                                };
+                                
+                                const response = await fetch(`${API_BASE}/pos/customers`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(customerData)
+                                });
+                                
+                                if (response.ok) {
+                                    const result = await response.json();
+                                    if (result.success) {
+                                        customersSynced++;
+                                        console.log('✅ Synced customer:', customer.name);
+                                        
+                                        // Update local customer with server ID
+                                        const localCustomerIndex = customers.findIndex(c => c.id === customer.id);
+                                        if (localCustomerIndex >= 0) {
+                                            customers[localCustomerIndex] = result.customer;
+                                        }
+                                    } else {
+                                        remainingCustomers.push(customer);
+                                    }
+                                } else {
+                                    remainingCustomers.push(customer);
+                                    console.warn('⚠️ Failed to sync customer:', customer.name);
+                                }
+                            } catch (error) {
+                                remainingCustomers.push(customer);
+                                console.error('❌ Error syncing customer:', error);
+                            }
+                        }
+                        
+                        // Update pending customers
+                        localStorage.setItem('pendingCustomers', JSON.stringify(remainingCustomers));
+                        
+                        if (customersSynced > 0) {
+                            showNotification(`Synced ${customersSynced} pending customers`, 'success');
+                            displayCustomers(customers);
+                            // Refresh customers from backend to ensure consistency
+                            await loadCustomersFromAPI();
+                        }
+                        if (remainingCustomers.length > 0) {
+                            showNotification(`${remainingCustomers.length} customers still pending`, 'warning');
+                        }
+                    }
+                    
                     showNotification('All data synced successfully', 'success');
                 } else {
                     showNotification('Cannot sync - offline', 'error');
