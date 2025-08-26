@@ -2647,6 +2647,13 @@ class BackendTester:
         print(f"📍 Testing URL: {self.base_url}")
         print("=" * 60)
         
+        # URGENT: Tax calculation investigation tests first
+        urgent_tests = [
+            self.test_pos_tax_calculation_investigation,
+            self.test_existing_problematic_transactions,
+        ]
+        
+        # Core API tests
         tests = [
             self.test_health_check,
             self.test_dashboard_stats,
@@ -2692,6 +2699,23 @@ class BackendTester:
             self.test_pos_customer_search_functionality,
             self.test_pos_integration_regression,
         ]
+        
+        # Run urgent tests first
+        print("\n🚨 RUNNING URGENT TAX CALCULATION INVESTIGATION")
+        print("=" * 60)
+        urgent_passed = 0
+        urgent_total = len(urgent_tests)
+        
+        for test in urgent_tests:
+            try:
+                result = await test()
+                if result:
+                    urgent_passed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+        
+        print(f"\n🚨 URGENT TESTS SUMMARY: {urgent_passed}/{urgent_total} passed")
+        print("=" * 60)
         
         passed = 0
         total = len(tests)
