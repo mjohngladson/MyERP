@@ -247,12 +247,15 @@ async def get_pos_customers(
     search: Optional[str] = None,
     limit: int = 100
 ):
-    """Get customers for PoS lookup"""
+    """Get customers for PoS lookup - from main customers collection"""
     
     try:
         db = get_database()
         
-        query = {}
+        # Sync customers from main system first
+        await sync_customers_to_pos(db)
+        
+        query = {"active": True}  # Only get active customers
         if search:
             query["$or"] = [
                 {"name": {"$regex": search, "$options": "i"}},
@@ -261,11 +264,22 @@ async def get_pos_customers(
             ]
         
         customers = []
-        customers_cursor = db.pos_customers.find(query).limit(limit)
+        # Get from main customers collection, not pos_customers
+        customers_cursor = db.customers.find(query).limit(limit)
         
         async for customer in customers_cursor:
-            customer["_id"] = str(customer.get("_id", ""))
-            customers.append(customer)
+            # Convert to PoS format
+            pos_customer = {
+                "id": str(customer["_id"]) if "_id" in customer else customer.get("id"),
+                "name": customer.get("name", ""),
+                "email": customer.get("email", ""),
+                "phone": customer.get("phone", ""),
+                "address": customer.get("address", ""),
+                "loyalty_points": customer.get("loyalty_points", 0),
+                "last_purchase": customer.get("last_purchase"),
+                "active": customer.get("active", True)
+            }
+            customers.append(pos_customer)
         
         return customers
         
