@@ -2492,6 +2492,13 @@ class BackendTester:
             self.test_pos_transaction_field_mapping,
             # PoS Data Mismatch Investigation (CRITICAL USER ISSUE)
             self.test_pos_data_mismatch_investigation,
+            # NEW: Comprehensive tests for the fixes mentioned in review request
+            self.test_database_consolidation_fix,
+            self.test_pos_customers_endpoint_fix,
+            self.test_pos_customer_creation_endpoint,
+            self.test_customer_data_flow_integration,
+            self.test_pos_customer_search_functionality,
+            self.test_pos_integration_regression,
         ]
         
         passed = 0
