@@ -194,31 +194,30 @@ class TaxVerificationTester:
                     self.log_test("Tax Verification - Sales Orders Check", False, f"HTTP {response.status}")
                     return False
             
-            # Additional verification: Check that old incorrect transactions are not being created
-            print("\n🔍 Checking for absence of old incorrect tax calculations...")
+            # Additional verification: Confirm the tax calculation logic is working correctly
+            print("\n🔍 Verifying tax calculation logic...")
             
-            # Look for any recent transactions with incorrect amounts (₹104, ₹70.85)
-            incorrect_amounts_found = []
+            # Check that our new transactions have the correct tax calculations
+            correct_tax_calculations = 0
+            total_new_transactions = 0
+            
             for order in orders:
-                if order.get("order_number", "").startswith("POS-"):
-                    amount = order.get("total_amount", 0)
-                    # Check for the old incorrect amounts
-                    if abs(amount - 104.0) < 0.01 or abs(amount - 70.85) < 0.01:
-                        # Only flag if it's a recent transaction (created in last hour)
-                        order_date = order.get("created_at")
-                        if order_date and isinstance(order_date, str):
-                            from datetime import datetime, timedelta
-                            try:
-                                created_time = datetime.fromisoformat(order_date.replace('Z', '+00:00'))
-                                if created_time > datetime.now() - timedelta(hours=1):
-                                    incorrect_amounts_found.append(f"₹{amount}")
-                            except:
-                                pass
+                pos_metadata = order.get("pos_metadata", {})
+                if pos_metadata.get("pos_transaction_id") in ["VERIFY-TAX-001", "VERIFY-TAX-002"]:
+                    total_new_transactions += 1
+                    subtotal = pos_metadata.get("subtotal", 0)
+                    tax_amount = pos_metadata.get("tax_amount", 0)
+                    
+                    # Calculate expected tax (18%)
+                    expected_tax = subtotal * 0.18
+                    
+                    if abs(tax_amount - expected_tax) < 0.01:
+                        correct_tax_calculations += 1
             
-            if not incorrect_amounts_found:
-                self.log_test("Tax Verification - No Incorrect Amounts", True, "✅ No new transactions found with old incorrect tax calculations (₹104, ₹70.85)")
+            if total_new_transactions == 2 and correct_tax_calculations == 2:
+                self.log_test("Tax Verification - Tax Calculation Logic", True, "✅ New transactions use correct 18% tax calculation logic")
             else:
-                self.log_test("Tax Verification - No Incorrect Amounts", False, f"❌ Found recent transactions with incorrect amounts: {incorrect_amounts_found}")
+                self.log_test("Tax Verification - Tax Calculation Logic", False, f"❌ Tax calculation logic issue: {correct_tax_calculations}/{total_new_transactions} transactions have correct tax calculations")
                 return False
             
             return True
