@@ -286,6 +286,52 @@ async def get_pos_customers(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get customers: {str(e)}")
 
+@router.post("/customers")
+async def create_pos_customer(customer_data: dict):
+    """Create a new customer from PoS and sync to main system"""
+    
+    try:
+        db = get_database()
+        
+        # Create customer in main customers collection
+        new_customer = {
+            "id": str(uuid.uuid4()),
+            "name": customer_data.get("name", ""),
+            "email": customer_data.get("email"),
+            "phone": customer_data.get("phone", ""),
+            "address": customer_data.get("address", ""),
+            "loyalty_points": 0,
+            "last_purchase": None,
+            "active": True,
+            "company_id": "default_company",
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
+        }
+        
+        # Insert into main customers collection
+        result = await db.customers.insert_one(new_customer)
+        
+        if result.inserted_id:
+            # Return customer data for PoS
+            return {
+                "success": True,
+                "customer_id": new_customer["id"],
+                "customer": {
+                    "id": new_customer["id"],
+                    "name": new_customer["name"],
+                    "email": new_customer["email"],
+                    "phone": new_customer["phone"],
+                    "address": new_customer["address"],
+                    "loyalty_points": new_customer["loyalty_points"],
+                    "active": new_customer["active"]
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create customer")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create customer: {str(e)}")
+
 @router.post("/transactions")
 async def receive_pos_transaction(transaction: PoSTransaction):
     """Receive transaction from PoS and create sales order in main system"""
