@@ -967,8 +967,10 @@
 
         async function processPayment(method) {
             const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-            const tax = subtotal * 0.18;
+            const tax = subtotal * 0.18;  // 18% GST - VERIFIED CORRECT
             const total = subtotal + tax;
+            
+            console.log(`💰 Payment Processing: Subtotal=₹${subtotal}, Tax=₹${tax} (18%), Total=₹${total}`);
             
             const receiptNumber = `RCP-${transactionId.toString().padStart(6, '0')}`;
             
@@ -991,15 +993,24 @@
                     line_total: item.total
                 })),
                 subtotal: subtotal,
-                tax_amount: tax,
-                discount_amount: 0,
-                total_amount: total,
+                tax_amount: tax,  // 18% tax amount
+                discount_amount: 0,  // No discount
+                total_amount: total,  // subtotal + tax
                 payment_method: method,
                 payment_details: {
                     method: method,
                     processed_at: new Date().toISOString()
                 }
             };
+            
+            // Log transaction data for debugging
+            console.log('📊 Transaction Data:', {
+                subtotal: transactionData.subtotal,
+                tax_amount: transactionData.tax_amount,
+                discount_amount: transactionData.discount_amount,
+                total_amount: transactionData.total_amount,
+                calculation: `${subtotal} + ${tax} - 0 = ${total}`
+            });
             
             try {
                 // Send transaction to API if online
