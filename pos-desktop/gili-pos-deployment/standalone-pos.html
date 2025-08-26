@@ -755,18 +755,15 @@
             }
             
             const newCustomer = {
-                id: `cust-${Date.now()}`,
                 name: name,
                 phone: phone,
                 email: email || null,
-                address: address || null,
-                loyalty_points: 0,
-                active: true,
-                created_at: new Date().toISOString()
+                address: address || null
             };
             
             try {
                 if (isOnline) {
+                    console.log('👤 Creating customer via API...');
                     const response = await fetch(`${API_BASE}/pos/customers`, {
                         method: 'POST',
                         headers: {
@@ -776,28 +773,51 @@
                     });
                     
                     if (!response.ok) {
-                        throw new Error('Failed to add customer to API');
+                        throw new Error(`HTTP ${response.status}: Failed to create customer`);
                     }
                     
                     const result = await response.json();
-                    newCustomer.id = result.id || newCustomer.id;
-                    
-                    showNotification('Customer added successfully and synced', 'success');
+                    if (result.success && result.customer) {
+                        // Add to local customers list
+                        customers.push(result.customer);
+                        displayCustomers(customers);
+                        
+                        showNotification('Customer created and synced successfully', 'success');
+                        console.log('✅ Customer created successfully:', result.customer.name);
+                        
+                        // Refresh customers list from server to ensure sync
+                        await loadCustomersFromAPI();
+                    } else {
+                        throw new Error('Customer creation failed');
+                    }
                 } else {
+                    // Store locally when offline
+                    const localCustomer = {
+                        id: `local-${Date.now()}`,
+                        ...newCustomer,
+                        loyalty_points: 0,
+                        active: true,
+                        created_at: new Date().toISOString(),
+                        needs_sync: true
+                    };
+                    
+                    customers.push(localCustomer);
+                    displayCustomers(customers);
+                    
+                    // Store for later sync
+                    const pendingCustomers = JSON.parse(localStorage.getItem('pendingCustomers') || '[]');
+                    pendingCustomers.push(localCustomer);
+                    localStorage.setItem('pendingCustomers', JSON.stringify(pendingCustomers));
+                    
                     showNotification('Customer added locally (will sync when online)', 'warning');
+                    console.log('📱 Customer stored for later sync');
                 }
                 
-                customers.push(newCustomer);
-                displayCustomers(customers);
                 closeAddCustomerModal();
                 
             } catch (error) {
-                console.error('Failed to add customer:', error);
-                // Add locally anyway
-                customers.push(newCustomer);
-                displayCustomers(customers);
-                closeAddCustomerModal();
-                showNotification('Customer added locally', 'warning');
+                console.error('❌ Failed to create customer:', error);
+                showNotification(`Failed to create customer: ${error.message}`, 'error');
             }
         }
 
