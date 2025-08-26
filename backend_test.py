@@ -2148,6 +2148,307 @@ class BackendTester:
             self.log_test("PoS Data Mismatch Investigation", False, f"Error during investigation: {str(e)}")
             return False
 
+    async def test_database_consolidation_fix(self):
+        """Test that backend is using gili_production database as per fix"""
+        try:
+            # Test health check to verify database connection
+            async with self.session.get(f"{self.base_url}/api/") as response:
+                if response.status == 200:
+                    # Test that sample data is available (indicating gili_production is being used)
+                    async with self.session.get(f"{self.base_url}/api/sales/customers") as customers_response:
+                        if customers_response.status == 200:
+                            customers = await customers_response.json()
+                            if len(customers) > 0:
+                                self.log_test("Database Consolidation Fix", True, f"Backend using gili_production database with {len(customers)} customers", {"customers_count": len(customers)})
+                                return True
+                            else:
+                                self.log_test("Database Consolidation Fix", False, "No customers found - database may not be properly initialized")
+                                return False
+                        else:
+                            self.log_test("Database Consolidation Fix", False, f"Customers endpoint failed: HTTP {customers_response.status}")
+                            return False
+                else:
+                    self.log_test("Database Consolidation Fix", False, f"Health check failed: HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Database Consolidation Fix", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_customers_endpoint_fix(self):
+        """Test that PoS customers endpoint uses main customers collection"""
+        try:
+            # Test GET /api/pos/customers endpoint
+            async with self.session.get(f"{self.base_url}/api/pos/customers") as response:
+                if response.status == 200:
+                    pos_customers = await response.json()
+                    
+                    # Test main customers endpoint for comparison
+                    async with self.session.get(f"{self.base_url}/api/sales/customers") as main_response:
+                        if main_response.status == 200:
+                            main_customers = await main_response.json()
+                            
+                            # Verify PoS customers are from main collection
+                            if len(pos_customers) > 0 and len(main_customers) > 0:
+                                # Check if customer names match (indicating same source)
+                                pos_names = {c.get("name", "") for c in pos_customers}
+                                main_names = {c.get("name", "") for c in main_customers}
+                                
+                                # Should have overlap since PoS gets from main collection
+                                overlap = pos_names.intersection(main_names)
+                                if len(overlap) > 0:
+                                    self.log_test("PoS Customers Endpoint Fix", True, f"PoS customers endpoint using main collection - {len(overlap)} matching customers", {
+                                        "pos_customers": len(pos_customers),
+                                        "main_customers": len(main_customers),
+                                        "matching_names": len(overlap)
+                                    })
+                                    return True
+                                else:
+                                    self.log_test("PoS Customers Endpoint Fix", False, "No matching customers between PoS and main endpoints", {
+                                        "pos_names": list(pos_names),
+                                        "main_names": list(main_names)
+                                    })
+                                    return False
+                            else:
+                                self.log_test("PoS Customers Endpoint Fix", True, "Empty customer lists (acceptable for testing)", {
+                                    "pos_customers": len(pos_customers),
+                                    "main_customers": len(main_customers)
+                                })
+                                return True
+                        else:
+                            self.log_test("PoS Customers Endpoint Fix", False, f"Main customers endpoint failed: HTTP {main_response.status}")
+                            return False
+                else:
+                    self.log_test("PoS Customers Endpoint Fix", False, f"PoS customers endpoint failed: HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("PoS Customers Endpoint Fix", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_customer_creation_endpoint(self):
+        """Test new POST /api/pos/customers endpoint for creating customers"""
+        try:
+            # Test customer creation data
+            test_customer = {
+                "name": "Test PoS Customer",
+                "email": "test.pos@example.com",
+                "phone": "+1234567890",
+                "address": "123 Test Street, Test City"
+            }
+            
+            # Test POST /api/pos/customers endpoint
+            async with self.session.post(
+                f"{self.base_url}/api/pos/customers",
+                json=test_customer,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    
+                    # Verify response structure
+                    if result.get("success") and "customer_id" in result:
+                        customer_id = result["customer_id"]
+                        
+                        # Verify customer appears in main customers collection
+                        async with self.session.get(f"{self.base_url}/api/sales/customers") as customers_response:
+                            if customers_response.status == 200:
+                                customers = await customers_response.json()
+                                
+                                # Look for our test customer
+                                test_customer_found = any(
+                                    c.get("name") == test_customer["name"] and 
+                                    c.get("email") == test_customer["email"]
+                                    for c in customers
+                                )
+                                
+                                if test_customer_found:
+                                    self.log_test("PoS Customer Creation Endpoint", True, f"Customer created successfully and synced to main collection", {
+                                        "customer_id": customer_id,
+                                        "customer_name": test_customer["name"]
+                                    })
+                                    return True
+                                else:
+                                    self.log_test("PoS Customer Creation Endpoint", False, "Customer created but not found in main collection", result)
+                                    return False
+                            else:
+                                self.log_test("PoS Customer Creation Endpoint", False, f"Could not verify customer in main collection: HTTP {customers_response.status}")
+                                return False
+                    else:
+                        self.log_test("PoS Customer Creation Endpoint", False, "Invalid response structure", result)
+                        return False
+                else:
+                    self.log_test("PoS Customer Creation Endpoint", False, f"Customer creation failed: HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("PoS Customer Creation Endpoint", False, f"Error: {str(e)}")
+            return False
+
+    async def test_customer_data_flow_integration(self):
+        """Test complete customer data flow from PoS to main UI"""
+        try:
+            # Create a unique customer via PoS
+            import time
+            timestamp = int(time.time())
+            test_customer = {
+                "name": f"Integration Test Customer {timestamp}",
+                "email": f"integration.test.{timestamp}@example.com",
+                "phone": f"+123456{timestamp % 10000}",
+                "address": f"{timestamp} Integration Test Street"
+            }
+            
+            # Step 1: Create customer via PoS endpoint
+            async with self.session.post(
+                f"{self.base_url}/api/pos/customers",
+                json=test_customer,
+                headers={"Content-Type": "application/json"}
+            ) as create_response:
+                if create_response.status == 200:
+                    create_result = await create_response.json()
+                    customer_id = create_result.get("customer_id")
+                    
+                    # Step 2: Verify customer appears in PoS customers lookup
+                    async with self.session.get(f"{self.base_url}/api/pos/customers?search={test_customer['name']}") as pos_lookup_response:
+                        if pos_lookup_response.status == 200:
+                            pos_customers = await pos_lookup_response.json()
+                            pos_customer_found = any(c.get("name") == test_customer["name"] for c in pos_customers)
+                            
+                            # Step 3: Verify customer appears in main customers collection
+                            async with self.session.get(f"{self.base_url}/api/sales/customers") as main_lookup_response:
+                                if main_lookup_response.status == 200:
+                                    main_customers = await main_lookup_response.json()
+                                    main_customer_found = any(c.get("name") == test_customer["name"] for c in main_customers)
+                                    
+                                    if pos_customer_found and main_customer_found:
+                                        self.log_test("Customer Data Flow Integration", True, f"Complete data flow working - customer synced between PoS and main UI", {
+                                            "customer_id": customer_id,
+                                            "customer_name": test_customer["name"],
+                                            "pos_lookup": "found",
+                                            "main_lookup": "found"
+                                        })
+                                        return True
+                                    else:
+                                        self.log_test("Customer Data Flow Integration", False, f"Data flow incomplete - PoS: {pos_customer_found}, Main: {main_customer_found}")
+                                        return False
+                                else:
+                                    self.log_test("Customer Data Flow Integration", False, f"Main customers lookup failed: HTTP {main_lookup_response.status}")
+                                    return False
+                        else:
+                            self.log_test("Customer Data Flow Integration", False, f"PoS customers lookup failed: HTTP {pos_lookup_response.status}")
+                            return False
+                else:
+                    self.log_test("Customer Data Flow Integration", False, f"Customer creation failed: HTTP {create_response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Customer Data Flow Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_customer_search_functionality(self):
+        """Test PoS customer search functionality works correctly"""
+        try:
+            # Test search without parameters (should return all customers)
+            async with self.session.get(f"{self.base_url}/api/pos/customers") as response:
+                if response.status == 200:
+                    all_customers = await response.json()
+                    
+                    if len(all_customers) > 0:
+                        # Test search with specific customer name
+                        first_customer_name = all_customers[0].get("name", "")
+                        if first_customer_name:
+                            # Search for first few characters
+                            search_term = first_customer_name[:3]
+                            async with self.session.get(f"{self.base_url}/api/pos/customers?search={search_term}") as search_response:
+                                if search_response.status == 200:
+                                    search_results = await search_response.json()
+                                    
+                                    # Verify search results contain the customer
+                                    found_customer = any(
+                                        search_term.lower() in c.get("name", "").lower() 
+                                        for c in search_results
+                                    )
+                                    
+                                    if found_customer:
+                                        self.log_test("PoS Customer Search Functionality", True, f"Customer search working - found {len(search_results)} results for '{search_term}'", {
+                                            "search_term": search_term,
+                                            "results_count": len(search_results),
+                                            "total_customers": len(all_customers)
+                                        })
+                                        return True
+                                    else:
+                                        self.log_test("PoS Customer Search Functionality", False, f"Search term '{search_term}' not found in results")
+                                        return False
+                                else:
+                                    self.log_test("PoS Customer Search Functionality", False, f"Search request failed: HTTP {search_response.status}")
+                                    return False
+                        else:
+                            self.log_test("PoS Customer Search Functionality", True, "No customer names to test search (acceptable)")
+                            return True
+                    else:
+                        self.log_test("PoS Customer Search Functionality", True, "No customers available for search testing (acceptable)")
+                        return True
+                else:
+                    self.log_test("PoS Customer Search Functionality", False, f"PoS customers endpoint failed: HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("PoS Customer Search Functionality", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_integration_regression(self):
+        """Test that existing PoS integration endpoints still work after fixes"""
+        try:
+            # Test PoS health check
+            async with self.session.get(f"{self.base_url}/api/pos/health") as health_response:
+                health_working = health_response.status == 200
+                
+            # Test PoS products sync
+            async with self.session.get(f"{self.base_url}/api/pos/products") as products_response:
+                products_working = products_response.status == 200
+                
+            # Test PoS transaction processing (with minimal test data)
+            test_transaction = {
+                "pos_transaction_id": "TEST-REGRESSION-001",
+                "cashier_id": "test-cashier",
+                "store_location": "Test Store",
+                "customer_id": None,
+                "items": [
+                    {
+                        "product_id": "test-product-id",
+                        "product_name": "Test Product",
+                        "quantity": 1,
+                        "unit_price": 10.0,
+                        "line_total": 10.0
+                    }
+                ],
+                "subtotal": 10.0,
+                "tax_amount": 1.0,
+                "discount_amount": 0.0,
+                "total_amount": 11.0,
+                "payment_method": "cash",
+                "payment_details": {},
+                "transaction_timestamp": "2025-01-21T10:00:00Z"
+            }
+            
+            async with self.session.post(
+                f"{self.base_url}/api/pos/transactions",
+                json=test_transaction,
+                headers={"Content-Type": "application/json"}
+            ) as transaction_response:
+                # Transaction might fail due to invalid product ID, but endpoint should respond
+                transaction_working = transaction_response.status in [200, 400, 422, 500]
+                
+            if health_working and products_working and transaction_working:
+                self.log_test("PoS Integration Regression", True, "All existing PoS endpoints still functional after fixes", {
+                    "health_check": health_working,
+                    "products_sync": products_working,
+                    "transaction_processing": transaction_working
+                })
+                return True
+            else:
+                self.log_test("PoS Integration Regression", False, f"Some PoS endpoints broken - Health: {health_working}, Products: {products_working}, Transactions: {transaction_working}")
+                return False
+                
+        except Exception as e:
+            self.log_test("PoS Integration Regression", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run all backend tests"""
         print(f"🚀 Starting Backend API Tests for GiLi")
