@@ -132,10 +132,11 @@ class TaxVerificationTester:
             # Wait a moment for transactions to be processed
             await asyncio.sleep(2)
             
-            # Verify transactions appear in sales orders with correct amounts
-            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+            # Verify transactions appear in sales orders with correct amounts using raw endpoint
+            async with self.session.get(f"{self.base_url}/api/sales/orders/raw?limit=10") as response:
                 if response.status == 200:
-                    orders = await response.json()
+                    data = await response.json()
+                    orders = data.get("orders", [])
                     
                     # Find our test transactions
                     verify_tax_001_found = False
@@ -147,7 +148,14 @@ class TaxVerificationTester:
                         if pos_metadata.get("pos_transaction_id") == "VERIFY-TAX-001":
                             if abs(order.get("total_amount", 0) - 118.0) < 0.01:
                                 verify_tax_001_found = True
-                                self.log_test("Tax Verification - Product A Amount Check", True, f"✅ Product A shows correct amount: ₹{order['total_amount']} (Expected: ₹118)", order)
+                                # Verify tax calculation details
+                                tax_amount = pos_metadata.get("tax_amount", 0)
+                                subtotal = pos_metadata.get("subtotal", 0)
+                                if abs(tax_amount - 18.0) < 0.01 and abs(subtotal - 100.0) < 0.01:
+                                    self.log_test("Tax Verification - Product A Amount Check", True, f"✅ Product A shows correct amount: ₹{order['total_amount']} (Subtotal: ₹{subtotal}, Tax: ₹{tax_amount}, Expected: ₹118)", order)
+                                else:
+                                    self.log_test("Tax Verification - Product A Amount Check", False, f"❌ Product A tax calculation incorrect: Subtotal: ₹{subtotal}, Tax: ₹{tax_amount}", order)
+                                    return False
                             else:
                                 self.log_test("Tax Verification - Product A Amount Check", False, f"❌ Product A shows incorrect amount: ₹{order['total_amount']} (Expected: ₹118)", order)
                                 return False
@@ -155,7 +163,14 @@ class TaxVerificationTester:
                         elif pos_metadata.get("pos_transaction_id") == "VERIFY-TAX-002":
                             if abs(order.get("total_amount", 0) - 236.0) < 0.01:
                                 verify_tax_002_found = True
-                                self.log_test("Tax Verification - Product B Amount Check", True, f"✅ Product B shows correct amount: ₹{order['total_amount']} (Expected: ₹236)", order)
+                                # Verify tax calculation details
+                                tax_amount = pos_metadata.get("tax_amount", 0)
+                                subtotal = pos_metadata.get("subtotal", 0)
+                                if abs(tax_amount - 36.0) < 0.01 and abs(subtotal - 200.0) < 0.01:
+                                    self.log_test("Tax Verification - Product B Amount Check", True, f"✅ Product B shows correct amount: ₹{order['total_amount']} (Subtotal: ₹{subtotal}, Tax: ₹{tax_amount}, Expected: ₹236)", order)
+                                else:
+                                    self.log_test("Tax Verification - Product B Amount Check", False, f"❌ Product B tax calculation incorrect: Subtotal: ₹{subtotal}, Tax: ₹{tax_amount}", order)
+                                    return False
                             else:
                                 self.log_test("Tax Verification - Product B Amount Check", False, f"❌ Product B shows incorrect amount: ₹{order['total_amount']} (Expected: ₹236)", order)
                                 return False
