@@ -44,9 +44,10 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
     }
   };
 
-  const filteredModules = mockModules.filter(module => 
-    module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    module.items.some(item => item.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredModules = (mockModules || []).filter(module => 
+    module && module.name && module.items &&
+    (module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    module.items.some(item => item && item.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   return (
