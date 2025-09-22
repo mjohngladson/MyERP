@@ -226,6 +226,8 @@ const MainApp = () => {
   };
 
   const renderActiveComponent = () => {
+    console.log('🎯 Rendering view:', { activeView, activeModule });
+    
     switch (activeView) {
       case 'dashboard':
         return <Dashboard onViewAllTransactions={handleViewAllTransactions} onAdvancedReporting={handleAdvancedReporting} />;
@@ -238,6 +240,7 @@ const MainApp = () => {
       
       // Sales Module
       case 'sales-orders':
+        console.log('✅ Rendering SalesOrdersList component');
         return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
       case 'quotations':
         return <QuotationsList onBack={() => setActiveView('dashboard')} />;
