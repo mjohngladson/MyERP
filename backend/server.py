@@ -39,6 +39,65 @@ class StatusCheckCreate(BaseModel):
     client_name: str
 
 # Add your routes to the router instead of directly to app
+@api_router.post("/create-demo-users")
+async def create_demo_users():
+    """Create demo users directly"""
+    try:
+        import uuid
+        from datetime import datetime
+        from database import users_collection
+        
+        # Check if users already exist
+        existing_admin = await users_collection.find_one({"email": "admin@gili.com"})
+        if existing_admin:
+            return {"message": "Demo users already exist"}
+        
+        # Create demo users
+        demo_users = [
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Admin User",
+                "email": "admin@gili.com", 
+                "password": "admin123",
+                "role": "System Manager",
+                "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+                "company_id": "default_company",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "John Doe",
+                "email": "john.doe@company.com",
+                "password": "admin123", 
+                "role": "Sales Manager",
+                "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+                "company_id": "default_company",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Jane Smith",
+                "email": "jane.smith@company.com",
+                "password": "admin123",
+                "role": "Purchase Manager", 
+                "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+                "company_id": "default_company",
+                "created_at": datetime.utcnow()
+            }
+        ]
+        
+        # Insert users
+        result = await users_collection.insert_many(demo_users)
+        return {
+            "message": f"Created {len(result.inserted_ids)} demo users",
+            "users": ["admin@gili.com", "john.doe@company.com", "jane.smith@company.com"],
+            "password": "admin123"
+        }
+        
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Error creating demo users: {str(e)}")
+
 @api_router.get("/init-demo-data")
 async def init_demo_data_endpoint():
     """Force initialize demo data"""
