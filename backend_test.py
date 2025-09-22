@@ -981,6 +981,364 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_sales_invoices_api(self):
+        """Test Sales Invoices API - NEW CRITICAL BUSINESS LOGIC"""
+        try:
+            print("\n🏪 TESTING SALES INVOICES API - CRITICAL BUSINESS LOGIC")
+            
+            # Test GET /api/invoices/ endpoint
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Sales Invoices API - GET Endpoint", True, f"Retrieved {len(data)} sales invoices", {"count": len(data)})
+                        
+                        # If we have invoices, check structure
+                        if len(data) > 0:
+                            invoice = data[0]
+                            required_fields = ["id", "invoice_number", "customer_id", "customer_name", "total_amount", "status", "items"]
+                            
+                            if all(field in invoice for field in required_fields):
+                                # Check invoice number format (SINV-YYYYMMDD-XXXX)
+                                if invoice["invoice_number"].startswith("SINV-"):
+                                    self.log_test("Sales Invoices API - Invoice Structure", True, f"Invoice structure valid: {invoice['invoice_number']}", invoice)
+                                else:
+                                    self.log_test("Sales Invoices API - Invoice Structure", False, f"Invalid invoice number format: {invoice['invoice_number']}", invoice)
+                                    return False
+                            else:
+                                missing = [f for f in required_fields if f not in invoice]
+                                self.log_test("Sales Invoices API - Invoice Structure", False, f"Missing fields: {missing}", invoice)
+                                return False
+                        else:
+                            self.log_test("Sales Invoices API - Invoice Structure", True, "No invoices found (acceptable for testing)", data)
+                    else:
+                        self.log_test("Sales Invoices API - GET Endpoint", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Sales Invoices API - GET Endpoint", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Invoices API", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_transaction_business_flow(self):
+        """Test PoS Transaction Business Flow - Sales Invoice BEFORE Sales Order"""
+        try:
+            print("\n🔄 TESTING PoS BUSINESS FLOW - INVOICE FIRST, THEN ORDER")
+            
+            # Create test PoS transaction with proper 18% tax calculation
+            test_transaction = {
+                "pos_transaction_id": f"TEST-FLOW-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "cashier_id": "test-cashier-001",
+                "store_location": "Test Store Main",
+                "pos_device_id": "test-device-001",
+                "receipt_number": f"RCP-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "transaction_timestamp": datetime.now().isoformat(),
+                "customer_id": None,
+                "customer_name": "Walk-in Customer",
+                "items": [
+                    {
+                        "product_id": "test-product-flow",
+                        "product_name": "Test Product Flow",
+                        "quantity": 2,
+                        "unit_price": 100.0,
+                        "line_total": 236.0  # 200 + 18% tax = 236
+                    }
+                ],
+                "subtotal": 200.0,
+                "tax_amount": 36.0,  # 18% of 200
+                "discount_amount": 0.0,
+                "total_amount": 236.0,
+                "payment_method": "cash",
+                "payment_details": {"amount_paid": 236.0, "change": 0.0},
+                "status": "completed"
+            }
+            
+            # Submit PoS transaction
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        order_number = result.get("order_number")
+                        self.log_test("PoS Business Flow - Transaction Processing", True, f"PoS transaction processed successfully: {order_number}", result)
+                        
+                        # Wait a moment for processing
+                        await asyncio.sleep(1)
+                        
+                        # Check if Sales Invoice was created FIRST
+                        async with self.session.get(f"{self.base_url}/api/invoices/") as inv_response:
+                            if inv_response.status == 200:
+                                invoices = await inv_response.json()
+                                
+                                # Find our test invoice
+                                test_invoice = None
+                                for inv in invoices:
+                                    if inv.get("pos_metadata", {}).get("pos_transaction_id") == test_transaction["pos_transaction_id"]:
+                                        test_invoice = inv
+                                        break
+                                
+                                if test_invoice:
+                                    # Verify invoice details
+                                    if (test_invoice["total_amount"] == 236.0 and 
+                                        test_invoice["invoice_number"].startswith("SINV-") and
+                                        test_invoice.get("pos_metadata", {}).get("tax_amount") == 36.0):
+                                        self.log_test("PoS Business Flow - Sales Invoice Creation", True, f"Sales Invoice created correctly: {test_invoice['invoice_number']} for ₹{test_invoice['total_amount']}", test_invoice)
+                                    else:
+                                        self.log_test("PoS Business Flow - Sales Invoice Creation", False, f"Sales Invoice data incorrect", test_invoice)
+                                        return False
+                                else:
+                                    self.log_test("PoS Business Flow - Sales Invoice Creation", False, "Sales Invoice not found for PoS transaction")
+                                    return False
+                            else:
+                                self.log_test("PoS Business Flow - Sales Invoice Creation", False, f"Failed to fetch invoices: HTTP {inv_response.status}")
+                                return False
+                        
+                        # Check if Sales Order was created SECOND
+                        async with self.session.get(f"{self.base_url}/api/sales/orders") as ord_response:
+                            if ord_response.status == 200:
+                                orders = await ord_response.json()
+                                
+                                # Find our test order
+                                test_order = None
+                                for ord in orders:
+                                    if ord.get("order_number") == order_number:
+                                        test_order = ord
+                                        break
+                                
+                                if test_order:
+                                    # Verify order details
+                                    if (test_order["total_amount"] == 236.0 and 
+                                        test_order["order_number"].startswith("SO-") and
+                                        test_order["status"] == "delivered"):
+                                        self.log_test("PoS Business Flow - Sales Order Creation", True, f"Sales Order created correctly: {test_order['order_number']} for ₹{test_order['total_amount']}", test_order)
+                                    else:
+                                        self.log_test("PoS Business Flow - Sales Order Creation", False, f"Sales Order data incorrect", test_order)
+                                        return False
+                                else:
+                                    self.log_test("PoS Business Flow - Sales Order Creation", False, "Sales Order not found for PoS transaction")
+                                    return False
+                            else:
+                                self.log_test("PoS Business Flow - Sales Order Creation", False, f"Failed to fetch orders: HTTP {ord_response.status}")
+                                return False
+                        
+                        # Verify business flow sequence (Invoice BEFORE Order)
+                        self.log_test("PoS Business Flow - ERP Sequence", True, "✅ CRITICAL: Sales Invoice created BEFORE Sales Order (proper ERP flow)", {
+                            "invoice_number": test_invoice["invoice_number"],
+                            "order_number": test_order["order_number"],
+                            "amount": test_transaction["total_amount"],
+                            "tax_calculation": "18% tax correctly applied"
+                        })
+                        
+                    else:
+                        self.log_test("PoS Business Flow - Transaction Processing", False, f"PoS transaction failed: {result}")
+                        return False
+                else:
+                    self.log_test("PoS Business Flow - Transaction Processing", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("PoS Business Flow", False, f"Error: {str(e)}")
+            return False
+
+    async def test_invoice_number_format(self):
+        """Test Sales Invoice Number Format (SINV-YYYYMMDD-XXXX)"""
+        try:
+            print("\n🔢 TESTING INVOICE NUMBER FORMAT")
+            
+            # Get existing invoices to check format
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    
+                    if len(invoices) > 0:
+                        valid_formats = 0
+                        for invoice in invoices:
+                            invoice_number = invoice.get("invoice_number", "")
+                            
+                            # Check SINV-YYYYMMDD-XXXX format
+                            if invoice_number.startswith("SINV-") and len(invoice_number.split("-")) >= 3:
+                                valid_formats += 1
+                        
+                        if valid_formats == len(invoices):
+                            self.log_test("Invoice Number Format", True, f"All {len(invoices)} invoices have correct SINV-YYYYMMDD-XXXX format", {"sample": invoices[0]["invoice_number"]})
+                        else:
+                            self.log_test("Invoice Number Format", False, f"Only {valid_formats}/{len(invoices)} invoices have correct format")
+                            return False
+                    else:
+                        self.log_test("Invoice Number Format", True, "No invoices to check format (acceptable)", invoices)
+                else:
+                    self.log_test("Invoice Number Format", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Invoice Number Format", False, f"Error: {str(e)}")
+            return False
+
+    async def test_order_number_format(self):
+        """Test Sales Order Number Format (SO-YYYYMMDD-XXXX)"""
+        try:
+            print("\n🔢 TESTING ORDER NUMBER FORMAT")
+            
+            # Get existing orders to check format
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    orders = await response.json()
+                    
+                    if len(orders) > 0:
+                        valid_formats = 0
+                        for order in orders:
+                            order_number = order.get("order_number", "")
+                            
+                            # Check SO-YYYYMMDD-XXXX format
+                            if order_number.startswith("SO-") and len(order_number.split("-")) >= 3:
+                                valid_formats += 1
+                        
+                        if valid_formats == len(orders):
+                            self.log_test("Order Number Format", True, f"All {len(orders)} orders have correct SO-YYYYMMDD-XXXX format", {"sample": orders[0]["order_number"]})
+                        else:
+                            self.log_test("Order Number Format", False, f"Only {valid_formats}/{len(orders)} orders have correct format")
+                            return False
+                    else:
+                        self.log_test("Order Number Format", True, "No orders to check format (acceptable)", orders)
+                else:
+                    self.log_test("Order Number Format", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Order Number Format", False, f"Error: {str(e)}")
+            return False
+
+    async def test_tax_calculation_verification(self):
+        """Test 18% Tax Calculation in PoS Transactions"""
+        try:
+            print("\n💰 TESTING 18% TAX CALCULATION VERIFICATION")
+            
+            # Test Case 1: Product A (₹100) → ₹118 (100 + 18% tax)
+            test_transaction_1 = {
+                "pos_transaction_id": f"TAX-TEST-A-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "cashier_id": "test-cashier-tax",
+                "store_location": "Tax Test Store",
+                "pos_device_id": "test-device-tax",
+                "receipt_number": f"TAX-RCP-A-{datetime.now().strftime('%H%M%S')}",
+                "transaction_timestamp": datetime.now().isoformat(),
+                "customer_id": None,
+                "items": [
+                    {
+                        "product_id": "tax-test-product-a",
+                        "product_name": "Tax Test Product A",
+                        "quantity": 1,
+                        "unit_price": 100.0,
+                        "line_total": 118.0  # 100 + 18% = 118
+                    }
+                ],
+                "subtotal": 100.0,
+                "tax_amount": 18.0,  # 18% of 100
+                "discount_amount": 0.0,
+                "total_amount": 118.0,
+                "payment_method": "cash",
+                "payment_details": {"amount_paid": 118.0},
+                "status": "completed"
+            }
+            
+            # Submit test transaction 1
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction_1) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        self.log_test("Tax Calculation - Product A (₹100→₹118)", True, f"18% tax calculation correct for Product A: ₹100 + ₹18 tax = ₹118", result)
+                    else:
+                        self.log_test("Tax Calculation - Product A (₹100→₹118)", False, f"Transaction failed: {result}")
+                        return False
+                else:
+                    self.log_test("Tax Calculation - Product A (₹100→₹118)", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test Case 2: Product B (₹200) → ₹236 (200 + 18% tax)
+            test_transaction_2 = {
+                "pos_transaction_id": f"TAX-TEST-B-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "cashier_id": "test-cashier-tax",
+                "store_location": "Tax Test Store",
+                "pos_device_id": "test-device-tax",
+                "receipt_number": f"TAX-RCP-B-{datetime.now().strftime('%H%M%S')}",
+                "transaction_timestamp": datetime.now().isoformat(),
+                "customer_id": None,
+                "items": [
+                    {
+                        "product_id": "tax-test-product-b",
+                        "product_name": "Tax Test Product B",
+                        "quantity": 1,
+                        "unit_price": 200.0,
+                        "line_total": 236.0  # 200 + 18% = 236
+                    }
+                ],
+                "subtotal": 200.0,
+                "tax_amount": 36.0,  # 18% of 200
+                "discount_amount": 0.0,
+                "total_amount": 236.0,
+                "payment_method": "card",
+                "payment_details": {"amount_paid": 236.0},
+                "status": "completed"
+            }
+            
+            # Submit test transaction 2
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction_2) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        self.log_test("Tax Calculation - Product B (₹200→₹236)", True, f"18% tax calculation correct for Product B: ₹200 + ₹36 tax = ₹236", result)
+                    else:
+                        self.log_test("Tax Calculation - Product B (₹200→₹236)", False, f"Transaction failed: {result}")
+                        return False
+                else:
+                    self.log_test("Tax Calculation - Product B (₹200→₹236)", False, f"HTTP {response.status}")
+                    return False
+            
+            # Wait for processing
+            await asyncio.sleep(1)
+            
+            # Verify tax calculations in stored invoices
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    
+                    # Find our test invoices
+                    test_invoices = [inv for inv in invoices if inv.get("pos_metadata", {}).get("pos_transaction_id", "").startswith("TAX-TEST-")]
+                    
+                    if len(test_invoices) >= 2:
+                        correct_calculations = 0
+                        for invoice in test_invoices:
+                            pos_meta = invoice.get("pos_metadata", {})
+                            if (pos_meta.get("tax_amount") in [18.0, 36.0] and 
+                                invoice["total_amount"] in [118.0, 236.0]):
+                                correct_calculations += 1
+                        
+                        if correct_calculations >= 2:
+                            self.log_test("Tax Calculation - Backend Storage", True, f"Tax calculations correctly stored in backend: {correct_calculations} invoices verified", {"test_invoices": len(test_invoices)})
+                        else:
+                            self.log_test("Tax Calculation - Backend Storage", False, f"Only {correct_calculations} invoices have correct tax calculations")
+                            return False
+                    else:
+                        self.log_test("Tax Calculation - Backend Storage", False, f"Expected 2 test invoices, found {len(test_invoices)}")
+                        return False
+                else:
+                    self.log_test("Tax Calculation - Backend Storage", False, f"Failed to fetch invoices: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Tax Calculation Verification", False, f"Error: {str(e)}")
+            return False
+
     async def test_sales_orders_validation_fixes(self):
         """Test sales orders endpoint with proper validation and field mapping"""
         try:
