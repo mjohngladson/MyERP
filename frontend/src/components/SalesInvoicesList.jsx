@@ -107,7 +107,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
     }
 
     try {
-      const response = await fetch(`${api.getBaseUrl()}/invoices/${invoiceId}`, {
+      const response = await fetch(`${api.getBaseUrl()}/api/invoices/${invoiceId}`, {
         method: 'DELETE'
       });
 
