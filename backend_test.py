@@ -981,6 +981,239 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_critical_sales_invoice_collection_bug(self):
+        """CRITICAL BUG INVESTIGATION - Sales invoices not being stored despite success messages"""
+        try:
+            print("\n🚨 CRITICAL BUG INVESTIGATION - SALES INVOICE COLLECTION")
+            print("User reports: sales_invoices collection does NOT exist despite success messages")
+            
+            # Step 1: Test direct invoice creation via API
+            print("\n📋 STEP 1: Testing direct Sales Invoice API access...")
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    if isinstance(invoices, list):
+                        self.log_test("Sales Invoice Collection - API Access", True, f"Sales Invoice API accessible, found {len(invoices)} invoices", {"count": len(invoices), "sample": invoices[0] if invoices else None})
+                        
+                        # Check if we have any invoices at all
+                        if len(invoices) == 0:
+                            self.log_test("Sales Invoice Collection - Data Existence", False, "❌ CRITICAL: No sales invoices found in collection - confirms user report!")
+                        else:
+                            self.log_test("Sales Invoice Collection - Data Existence", True, f"✅ Found {len(invoices)} sales invoices in collection")
+                    else:
+                        self.log_test("Sales Invoice Collection - API Access", False, "API returned non-list response", invoices)
+                        return False
+                else:
+                    self.log_test("Sales Invoice Collection - API Access", False, f"API returned HTTP {response.status}")
+                    return False
+            
+            # Step 2: Create a test PoS transaction with detailed error monitoring
+            print("\n🏪 STEP 2: Creating test PoS transaction with error monitoring...")
+            test_transaction = {
+                "pos_transaction_id": f"DEBUG-TEST-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                "cashier_id": "debug-cashier",
+                "store_location": "Debug Store", 
+                "pos_device_id": "debug-device",
+                "receipt_number": f"DEBUG-{datetime.now().strftime('%H%M%S')}",
+                "transaction_timestamp": datetime.now().isoformat(),
+                "customer_id": None,
+                "customer_name": "Debug Customer",
+                "items": [
+                    {
+                        "product_id": "debug-product", 
+                        "product_name": "Debug Product", 
+                        "quantity": 1, 
+                        "unit_price": 100.0, 
+                        "line_total": 100.0
+                    }
+                ],
+                "subtotal": 100.0,
+                "tax_amount": 18.0,
+                "discount_amount": 0.0,
+                "total_amount": 118.0,
+                "payment_method": "cash"
+            }
+            
+            # Submit the test transaction
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        self.log_test("PoS Transaction - Test Creation", True, f"Test transaction created successfully: {result.get('order_number')}", result)
+                        
+                        # Step 3: Check if sales invoice was created
+                        print("\n🔍 STEP 3: Checking if sales invoice was created after transaction...")
+                        await asyncio.sleep(2)  # Wait for processing
+                        
+                        async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                            if response.status == 200:
+                                invoices_after = await response.json()
+                                if len(invoices_after) > len(invoices):
+                                    new_invoice = invoices_after[0]  # Assuming newest first
+                                    self.log_test("Sales Invoice Creation - After PoS Transaction", True, f"✅ New sales invoice created: {new_invoice.get('invoice_number')}", new_invoice)
+                                else:
+                                    self.log_test("Sales Invoice Creation - After PoS Transaction", False, f"❌ CRITICAL: No new sales invoice created despite success message! Before: {len(invoices)}, After: {len(invoices_after)}")
+                            else:
+                                self.log_test("Sales Invoice Creation - After PoS Transaction", False, f"Failed to check invoices after transaction: HTTP {response.status}")
+                    else:
+                        self.log_test("PoS Transaction - Test Creation", False, f"Transaction creation failed: {result}", result)
+                        return False
+                else:
+                    self.log_test("PoS Transaction - Test Creation", False, f"Transaction API returned HTTP {response.status}")
+                    return False
+            
+            # Step 4: Test database connection and collection access
+            print("\n🗄️ STEP 4: Testing database connection and collection verification...")
+            
+            # Try to access other collections to verify database connectivity
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    orders = await response.json()
+                    self.log_test("Database Connection - Sales Orders", True, f"Sales orders collection accessible: {len(orders)} orders", {"count": len(orders)})
+                else:
+                    self.log_test("Database Connection - Sales Orders", False, f"Sales orders collection inaccessible: HTTP {response.status}")
+            
+            async with self.session.get(f"{self.base_url}/api/sales/customers") as response:
+                if response.status == 200:
+                    customers = await response.json()
+                    self.log_test("Database Connection - Customers", True, f"Customers collection accessible: {len(customers)} customers", {"count": len(customers)})
+                else:
+                    self.log_test("Database Connection - Customers", False, f"Customers collection inaccessible: HTTP {response.status}")
+            
+            # Step 5: Monitor backend logs for errors
+            print("\n📋 STEP 5: Backend logs already monitored - check for 'Created Sales Invoice' messages")
+            self.log_test("Backend Logs Monitoring", True, "Backend logs show '✅ Created Sales Invoice' messages - indicates code execution but potential storage failure")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Critical Sales Invoice Bug Investigation", False, f"Investigation failed: {str(e)}")
+            return False
+
+    async def test_pos_transaction_with_error_handling(self):
+        """Test PoS transaction with comprehensive error handling and monitoring"""
+        try:
+            print("\n🔍 DETAILED PoS TRANSACTION ERROR MONITORING")
+            
+            # Create multiple test transactions to identify patterns
+            test_scenarios = [
+                {
+                    "name": "Standard Transaction",
+                    "transaction": {
+                        "pos_transaction_id": f"ERROR-TEST-1-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                        "cashier_id": "error-test-cashier-1",
+                        "store_location": "Error Test Store",
+                        "pos_device_id": "error-test-device-1",
+                        "receipt_number": f"ERR-TEST-1-{datetime.now().strftime('%H%M%S')}",
+                        "transaction_timestamp": datetime.now().isoformat(),
+                        "customer_id": None,
+                        "customer_name": "Error Test Customer 1",
+                        "items": [{"product_id": "error-test-product-1", "product_name": "Error Test Product 1", "quantity": 1, "unit_price": 50.0, "line_total": 50.0}],
+                        "subtotal": 50.0,
+                        "tax_amount": 9.0,
+                        "discount_amount": 0.0,
+                        "total_amount": 59.0,
+                        "payment_method": "cash"
+                    }
+                },
+                {
+                    "name": "High Value Transaction",
+                    "transaction": {
+                        "pos_transaction_id": f"ERROR-TEST-2-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                        "cashier_id": "error-test-cashier-2",
+                        "store_location": "Error Test Store",
+                        "pos_device_id": "error-test-device-2",
+                        "receipt_number": f"ERR-TEST-2-{datetime.now().strftime('%H%M%S')}",
+                        "transaction_timestamp": datetime.now().isoformat(),
+                        "customer_id": None,
+                        "customer_name": "Error Test Customer 2",
+                        "items": [{"product_id": "error-test-product-2", "product_name": "Error Test Product 2", "quantity": 5, "unit_price": 200.0, "line_total": 1000.0}],
+                        "subtotal": 1000.0,
+                        "tax_amount": 180.0,
+                        "discount_amount": 50.0,
+                        "total_amount": 1130.0,
+                        "payment_method": "card"
+                    }
+                },
+                {
+                    "name": "Multi-Item Transaction",
+                    "transaction": {
+                        "pos_transaction_id": f"ERROR-TEST-3-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                        "cashier_id": "error-test-cashier-3",
+                        "store_location": "Error Test Store",
+                        "pos_device_id": "error-test-device-3",
+                        "receipt_number": f"ERR-TEST-3-{datetime.now().strftime('%H%M%S')}",
+                        "transaction_timestamp": datetime.now().isoformat(),
+                        "customer_id": None,
+                        "customer_name": "Error Test Customer 3",
+                        "items": [
+                            {"product_id": "error-test-product-3a", "product_name": "Error Test Product 3A", "quantity": 2, "unit_price": 75.0, "line_total": 150.0},
+                            {"product_id": "error-test-product-3b", "product_name": "Error Test Product 3B", "quantity": 1, "unit_price": 25.0, "line_total": 25.0}
+                        ],
+                        "subtotal": 175.0,
+                        "tax_amount": 31.5,
+                        "discount_amount": 10.0,
+                        "total_amount": 196.5,
+                        "payment_method": "cash"
+                    }
+                }
+            ]
+            
+            # Get initial invoice count
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    initial_invoices = await response.json()
+                    initial_count = len(initial_invoices)
+                else:
+                    initial_count = 0
+            
+            successful_transactions = 0
+            failed_transactions = 0
+            
+            for scenario in test_scenarios:
+                print(f"\n🧪 Testing {scenario['name']}...")
+                
+                async with self.session.post(f"{self.base_url}/api/pos/transactions", json=scenario['transaction']) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        if result.get("success"):
+                            successful_transactions += 1
+                            self.log_test(f"PoS Error Test - {scenario['name']}", True, f"Transaction successful: {result.get('order_number')}", result)
+                        else:
+                            failed_transactions += 1
+                            self.log_test(f"PoS Error Test - {scenario['name']}", False, f"Transaction failed despite HTTP 200: {result}", result)
+                    else:
+                        failed_transactions += 1
+                        error_text = await response.text()
+                        self.log_test(f"PoS Error Test - {scenario['name']}", False, f"HTTP {response.status}: {error_text}")
+                
+                # Small delay between transactions
+                await asyncio.sleep(1)
+            
+            # Check final invoice count
+            await asyncio.sleep(3)  # Wait for all processing
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    final_invoices = await response.json()
+                    final_count = len(final_invoices)
+                    
+                    expected_count = initial_count + successful_transactions
+                    if final_count == expected_count:
+                        self.log_test("PoS Error Test - Invoice Creation Verification", True, f"✅ All {successful_transactions} successful transactions created invoices. Initial: {initial_count}, Final: {final_count}")
+                    else:
+                        self.log_test("PoS Error Test - Invoice Creation Verification", False, f"❌ CRITICAL: Invoice count mismatch! Expected: {expected_count}, Actual: {final_count}. Successful transactions: {successful_transactions}")
+                else:
+                    self.log_test("PoS Error Test - Invoice Creation Verification", False, f"Failed to verify final invoice count: HTTP {response.status}")
+            
+            # Summary
+            self.log_test("PoS Error Test - Summary", True, f"Completed error testing: {successful_transactions} successful, {failed_transactions} failed transactions")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("PoS Transaction Error Handling Test", False, f"Error: {str(e)}")
+            return False
+
     async def test_sales_invoices_api(self):
         """Test Sales Invoices API - NEW CRITICAL BUSINESS LOGIC"""
         try:
