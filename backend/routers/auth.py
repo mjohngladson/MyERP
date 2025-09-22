@@ -50,72 +50,53 @@ async def setup_demo():
 
 @router.post("/login")
 async def login(user_login: UserLogin):
-    """User login (simplified for demo)"""
+    """User login with automatic demo user creation"""
     try:
         # Find user by email
         user = await users_collection.find_one({"email": user_login.email})
         
-        # If user doesn't exist and it's a demo user, create it
-        if not user and user_login.email in ["admin@gili.com", "john.doe@company.com", "jane.smith@company.com"]:
-            print(f"📝 Creating demo user: {user_login.email}")
+        # If it's a demo email and user doesn't exist, create it immediately
+        if not user and user_login.email == "admin@gili.com" and user_login.password == "admin123":
             import uuid
             from datetime import datetime
             
-            # Demo user data mapping
-            demo_users_map = {
-                "admin@gili.com": {
-                    "name": "Admin User",
-                    "role": "System Manager",
-                    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-                },
-                "john.doe@company.com": {
-                    "name": "John Doe",
-                    "role": "Sales Manager", 
-                    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-                },
-                "jane.smith@company.com": {
-                    "name": "Jane Smith",
-                    "role": "Purchase Manager",
-                    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
-                }
-            }
-            
-            user_info = demo_users_map[user_login.email]
-            new_user = {
+            demo_user = {
+                "_id": str(uuid.uuid4()),
                 "id": str(uuid.uuid4()),
-                "name": user_info["name"],
-                "email": user_login.email,
-                "password": user_login.password,  # Store the password they used
-                "role": user_info["role"],
-                "avatar": user_info["avatar"],
+                "name": "Admin User", 
+                "email": "admin@gili.com",
+                "password": "admin123",
+                "role": "System Manager",
+                "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
                 "company_id": "default_company",
                 "created_at": datetime.utcnow()
             }
             
-            # Insert the new user
-            await users_collection.insert_one(new_user)
-            user = new_user
-            print(f"✅ Demo user created: {user_login.email}")
+            await users_collection.insert_one(demo_user)
+            user = demo_user
+            print(f"✅ Created demo user on-demand: {user_login.email}")
         
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Check password (simplified for demo - in production use hashed passwords)
+        # Check password
         if user.get("password") != user_login.password:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Return user data (in real app, return JWT token)
-        # Remove password from response
-        user_data = {k: v for k, v in user.items() if k != "password"}
+        # Remove password and _id from response
+        user_data = {k: v for k, v in user.items() if k not in ["password", "_id"]}
         
         return {
-            "user": User(**user_data),
+            "success": True,
+            "user": user_data,
             "token": "demo_token_" + user["id"],
             "message": "Login successful"
         }
+        
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Login error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
 
 @router.get("/me", response_model=User)
