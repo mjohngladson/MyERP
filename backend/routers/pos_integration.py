@@ -405,9 +405,13 @@ async def receive_pos_transaction(transaction: PoSTransaction):
                 print(f"✅ Created Sales Invoice: {invoice_number} for ₹{transaction.total_amount}")
             else:
                 print(f"❌ Failed to insert Sales Invoice: {invoice_number}")
+                print(f"❌ Sales Invoice data: {sales_invoice}")
                 raise Exception("Sales Invoice insertion returned no ID")
         except Exception as e:
             print(f"❌ Error inserting Sales Invoice: {str(e)}")
+            print(f"❌ Sales Invoice data that failed: {sales_invoice}")
+            print(f"❌ Database collection: sales_invoices")
+            print(f"❌ Exception type: {type(e).__name__}")
             # Continue with sales order creation even if invoice fails
             # In production, this should be handled differently
         
