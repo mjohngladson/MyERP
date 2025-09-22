@@ -106,14 +106,30 @@ export const AuthProvider = ({ children }) => {
       
       // Store auth data from Railway backend response
       const { user, token } = data;
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user_data', JSON.stringify(user));
       
-      setUser(user);
+      // Ensure user object has all required fields with defaults
+      const validatedUser = {
+        id: user.id || '1',
+        name: user.name || 'Unknown User',
+        email: user.email || credentials.email,
+        role: user.role || 'User',
+        avatar: user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        department: 'Administration',
+        phone: '+91 9876543210',
+        address: '123 Business Street, Mumbai, Maharashtra',
+        joining_date: '2023-01-15',
+        company_id: user.company_id || 'default_company',
+        created_at: user.created_at || new Date().toISOString()
+      };
+      
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user_data', JSON.stringify(validatedUser));
+      
+      setUser(validatedUser);
       setIsAuthenticated(true);
       
       console.log('✅ Login successful with Railway backend');
-      return { success: true, user: user };
+      return { success: true, user: validatedUser };
       
     } catch (error) {
       console.error('❌ Login error:', error);
