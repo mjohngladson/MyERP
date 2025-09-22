@@ -68,7 +68,11 @@ app.include_router(get_pos_router())
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=[
+        "*",  # Allow all origins for development
+        "https://ui-production-ccf6.up.railway.app",  # Railway frontend
+        "https://smart-retail-5.preview.emergentagent.com",  # Development frontend
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
