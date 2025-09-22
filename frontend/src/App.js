@@ -247,14 +247,44 @@ const MainApp = () => {
       case 'sales-orders':
         console.log('✅ Rendering SalesOrdersList component');
         return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
+      case 'sales-invoices':
+        return <SalesInvoicesList 
+          onBack={() => setActiveView('dashboard')} 
+          onCreateInvoice={() => setActiveView('sales-invoice-form')}
+          onEditInvoice={(invoice) => {
+            setSelectedItem(invoice);
+            setActiveView('sales-invoice-edit');
+          }}
+          onViewInvoice={(invoice) => {
+            setSelectedItem(invoice);
+            setActiveView('sales-invoice-view');
+          }}
+        />;
+      case 'sales-invoice-form':
+        return <SalesInvoiceForm onBack={() => setActiveView('sales-invoices')} onSave={() => setActiveView('sales-invoices')} />;
+      case 'sales-invoice-edit':
+        return <SalesInvoiceForm 
+          invoiceId={selectedItem?.id} 
+          onBack={() => setActiveView('sales-invoices')} 
+          onSave={() => setActiveView('sales-invoices')} 
+        />;
       case 'quotations':
         return <QuotationsList onBack={() => setActiveView('dashboard')} />;
       case 'customers':
-        return <CustomersList onBack={() => setActiveView('dashboard')} />;
+        return <CustomersList 
+          onBack={() => setActiveView('dashboard')} 
+          onCreateCustomer={() => setActiveView('customer-form')}
+          onEditCustomer={(customer) => {
+            setSelectedItem(customer);
+            setActiveView('customer-edit');
+          }}
+          onViewCustomer={(customer) => {
+            setSelectedItem(customer);
+            setActiveView('customer-view');
+          }}
+        />;
       case 'items':
         return <ItemsList onBack={() => setActiveView('dashboard')} />;
-      case 'sales-invoices':
-        return <SalesInvoicesList onBack={() => setActiveView('dashboard')} />;
       
       // Buying Module
       case 'purchase-orders':
