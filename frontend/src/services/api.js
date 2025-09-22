@@ -1,39 +1,10 @@
 import axios from 'axios';
 
-// Get backend URL with proper fallbacks for Railway environment  
-const getBackendUrl = () => {
-  try {
-    if (import.meta && import.meta.env && import.meta.env.REACT_APP_BACKEND_URL) {
-      return import.meta.env.REACT_APP_BACKEND_URL;
-    }
-  } catch (e) {
-    // import.meta might not be available
-  }
-  
-  try {
-    if (process && process.env && process.env.REACT_APP_BACKEND_URL) {
-      return process.env.REACT_APP_BACKEND_URL;
-    }
-  } catch (e) {
-    // process might not be available
-  }
-  
-  try {
-    if (window && window.env && window.env.REACT_APP_BACKEND_URL) {
-      return window.env.REACT_APP_BACKEND_URL;
-    }
-  } catch (e) {
-    // window.env might not be available
-  }
-  
-  // Railway production fallback
-  return 'https://myerp-production.up.railway.app';
-};
-
-const BACKEND_URL = getBackendUrl();
+// Railway production - hardcoded backend URL for immediate fix
+const BACKEND_URL = 'https://myerp-production.up.railway.app';
 const API_BASE = `${BACKEND_URL}/api`;
 
-console.log('🔧 API Service - Using backend URL:', BACKEND_URL);
+console.log('🔧 API Service - Using hardcoded Railway backend URL:', BACKEND_URL);
 
 // Network status detection
 let isOnline = navigator.onLine;
