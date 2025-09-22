@@ -36,7 +36,14 @@ async def init_sample_data():
     
     # Check if sample data already exists
     if await companies_collection.count_documents({}) > 0:
+        print("📊 Sample data already exists, skipping initialization")
         return
+    
+    await force_init_sample_data()
+
+async def force_init_sample_data():
+    """Force initialize sample data (even if already exists)"""
+    print("🚀 Initializing sample data...")
     
     # Create sample company with default ID
     company_id = "default_company"
