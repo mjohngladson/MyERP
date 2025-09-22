@@ -99,6 +99,9 @@ const makeRequest = async (requestFn, retries = 1) => {
 
 // API functions
 export const api = {
+  // Base configuration
+  getBaseUrl: () => BACKEND_URL,
+  
   // Authentication
   auth: {
     login: (credentials) => makeRequest(() => apiClient.post('/auth/login', credentials)),
