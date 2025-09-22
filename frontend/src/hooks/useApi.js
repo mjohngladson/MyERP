@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-export const useApi = (apiCall, dependencies = []) => {
-  const [data, setData] = useState(null);
+export const useApi = (apiCall, dependencies = [], initialData = null) => {
+  const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
