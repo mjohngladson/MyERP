@@ -55,7 +55,7 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
 
   const loadCustomers = async () => {
     try {
-      const response = await fetch(`${api.getBaseUrl()}/customers/`);
+      const response = await fetch(`${api.getBaseUrl()}/api/sales/customers`);
       const data = await response.json();
       setCustomers(data || []);
     } catch (error) {
