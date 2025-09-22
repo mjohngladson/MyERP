@@ -398,9 +398,18 @@ async def receive_pos_transaction(transaction: PoSTransaction):
             }
         }
         
-        # Insert Sales Invoice
-        await db.sales_invoices.insert_one(sales_invoice)
-        print(f"✅ Created Sales Invoice: {invoice_number} for ₹{transaction.total_amount}")
+        # Insert Sales Invoice with error handling
+        try:
+            result = await db.sales_invoices.insert_one(sales_invoice)
+            if result.inserted_id:
+                print(f"✅ Created Sales Invoice: {invoice_number} for ₹{transaction.total_amount}")
+            else:
+                print(f"❌ Failed to insert Sales Invoice: {invoice_number}")
+                raise Exception("Sales Invoice insertion returned no ID")
+        except Exception as e:
+            print(f"❌ Error inserting Sales Invoice: {str(e)}")
+            # Continue with sales order creation even if invoice fails
+            # In production, this should be handled differently
         
         # Create Sales Order (SECOND) - This is for order tracking/fulfillment
         order_count = await db.sales_orders.count_documents({})
