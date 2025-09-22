@@ -339,9 +339,56 @@ async def receive_pos_transaction(transaction: PoSTransaction):
     try:
         db = get_database()
         
-        # Generate order number
+        # Create Sales Invoice (FIRST) - This is the actual bill to customer
+        invoice_count = await db.sales_invoices.count_documents({})
+        invoice_number = f"SINV-{datetime.now().strftime('%Y%m%d')}-{invoice_count + 1:04d}"
+        
+        sales_invoice = {
+            "id": str(uuid.uuid4()),
+            "invoice_number": invoice_number,
+            "customer_id": customer_id or "default_customer",
+            "customer_name": transaction.customer_name,
+            "total_amount": transaction.total_amount,
+            "status": "submitted",  # Invoices are typically submitted when created
+            "invoice_date": datetime.now(),
+            "due_date": None,
+            "items": [
+                {
+                    "item_id": item.product_id,
+                    "item_name": item.product_name, 
+                    "quantity": item.quantity,
+                    "rate": item.unit_price,
+                    "amount": item.line_total
+                }
+                for item in transaction.items
+            ],
+            "company_id": company_id,
+            "subtotal": transaction.subtotal,
+            "tax_amount": transaction.tax_amount,
+            "discount_amount": transaction.discount_amount,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+            "pos_metadata": {
+                "pos_transaction_id": transaction.pos_transaction_id,
+                "receipt_number": transaction.receipt_number,
+                "pos_device_id": transaction.pos_device_id,
+                "store_location": transaction.store_location,
+                "cashier_id": transaction.cashier_id,
+                "payment_method": transaction.payment_method,
+                "payment_details": transaction.payment_details,
+                "original_subtotal": transaction.subtotal,
+                "tax_amount": transaction.tax_amount,
+                "discount_amount": transaction.discount_amount
+            }
+        }
+        
+        # Insert Sales Invoice
+        await db.sales_invoices.insert_one(sales_invoice)
+        print(f"✅ Created Sales Invoice: {invoice_number} for ₹{transaction.total_amount}")
+        
+        # Create Sales Order (SECOND) - This is for order tracking/fulfillment
         order_count = await db.sales_orders.count_documents({})
-        order_number = f"POS-{datetime.now().strftime('%Y%m%d')}-{order_count + 1:04d}"
+        order_number = f"SO-{datetime.now().strftime('%Y%m%d')}-{order_count + 1:04d}"
         
         # Get customer info if provided
         customer_name = "Walk-in Customer"
