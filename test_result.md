@@ -107,15 +107,18 @@ user_problem_statement: "Complete the integration of the GiLi Point of Sale (PoS
 frontend:
   - task: "Sales Invoices List - Fix UI to render API response"
     implemented: true
-    working: "NA"
+    working: false
     file: "frontend/src/components/SalesInvoicesList.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "main"
           comment: "Initial invoices list failed due to wrong base URL usage and response handling. Updated fetch URLs to include /api prefix, normalized useApi to accept both axios and fetch results, and stabilized list rendering with robust parsing for array or wrapped responses. Also fixed currency to INR with 2 decimals and hooked stats endpoint."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE FOUND: Sales Invoices List partially working but stats API failing. SUCCESSFUL: (1) ✅ Login with demo credentials works perfectly (2) ✅ Navigation to Sales → Sales Invoice works correctly (3) ✅ Invoice list renders with 1 invoice (SINV-20250922-0001) (4) ✅ INR currency formatting correct with 2 decimals (₹236.00, Tax: ₹36.00) (5) ✅ All 4 stats cards present (Total Invoices, Total Revenue, Pending, Paid) (6) ✅ Search functionality works (7) ✅ Refresh button works (8) ✅ New Invoice navigation works (form and back) (9) ✅ Screenshots captured. CRITICAL FAILURES: (1) ❌ Stats API endpoint /api/invoices/stats/overview returns HTTP 404 errors causing stats cards to show ₹0.00 instead of actual revenue data (2) ❌ Delete confirmation dialog not working properly. Frontend calling Railway backend but stats endpoint missing."
 
 metadata:
   created_by: "main_agent"
