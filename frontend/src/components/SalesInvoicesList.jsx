@@ -28,8 +28,8 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [showStats, setShowStats] = useState(true);
   
   // Fetch sales invoices with pagination and filters
-  const { data: invoices, loading, error, refetch } = useApi(() => 
-    fetch(`${api.getBaseUrl()}/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${searchTerm}`)
+  const { data: invoicesData, loading, error, refetch } = useApi(() => 
+    fetch(`${api.getBaseUrl()}/api/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${encodeURIComponent(searchTerm)}`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
