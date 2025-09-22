@@ -9,15 +9,22 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 async def login(user_login: UserLogin):
     """User login (simplified for demo)"""
     try:
-        # In a real application, you would verify password hash
+        # Find user by email
         user = await users_collection.find_one({"email": user_login.email})
         
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
+        # Check password (simplified for demo - in production use hashed passwords)
+        if user.get("password") != user_login.password:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
         # Return user data (in real app, return JWT token)
+        # Remove password from response
+        user_data = {k: v for k, v in user.items() if k != "password"}
+        
         return {
-            "user": User(**user),
+            "user": User(**user_data),
             "token": "demo_token_" + user["id"],
             "message": "Login successful"
         }
