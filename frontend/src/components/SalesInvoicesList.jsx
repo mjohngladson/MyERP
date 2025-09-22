@@ -57,7 +57,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       })
   );
 
-  const invoices = Array.isArray(invoicesData) ? invoicesData : [];
+  const invoices = Array.isArray(invoicesData) ? invoicesData : (invoicesData?.items || invoicesData?.data || []);
   const totalCount = invoices.length > 0 ? invoices[0]._meta?.total_count || 0 : 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
