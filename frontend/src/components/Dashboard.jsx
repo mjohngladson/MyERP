@@ -314,13 +314,13 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           <div className="divide-y divide-gray-100">
             {notificationsLoading ? (
               <div className="p-4 text-center text-gray-500">Loading notifications...</div>
-            ) : notifications && notifications.length > 0 ? (
+            ) : notifications && Array.isArray(notifications) && notifications.length > 0 ? (
               notifications.map((notification) => (
-                <div key={notification.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div key={notification.id || Math.random()} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start space-x-3">
                     {getNotificationIcon(notification.type)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{notification.title}</p>
+                      <p className="text-sm font-medium text-gray-800">{notification.title || 'No title'}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {formatTimeAgo(notification.created_at)}
                       </p>
