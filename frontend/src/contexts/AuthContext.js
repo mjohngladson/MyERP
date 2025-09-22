@@ -85,8 +85,27 @@ export const AuthProvider = ({ children }) => {
       
       console.log('🔐 Attempting login with Railway backend...');
       
+      // Get backend URL with proper fallbacks for Railway environment
+      const getBackendUrl = () => {
+        // Try different environment variable access methods
+        if (typeof import !== 'undefined' && import.meta && import.meta.env) {
+          return import.meta.env.REACT_APP_BACKEND_URL;
+        }
+        if (typeof process !== 'undefined' && process.env) {
+          return process.env.REACT_APP_BACKEND_URL;
+        }
+        if (typeof window !== 'undefined' && window.env) {
+          return window.env.REACT_APP_BACKEND_URL;
+        }
+        // Railway production fallback
+        return 'https://myerp-production.up.railway.app';
+      };
+      
+      const backendUrl = getBackendUrl();
+      console.log('🌐 Using backend URL:', backendUrl);
+      
       // Make actual API call to Railway backend
-      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
