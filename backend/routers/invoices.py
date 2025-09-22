@@ -349,10 +349,18 @@ async def get_invoice_stats():
         total_tax = total_result[0]["total_tax"] if total_result else 0
         
         # Recent invoices
-        recent_invoices = await sales_invoices_collection.find(
+        recent_invoices_cursor = sales_invoices_collection.find(
             {},
             {"invoice_number": 1, "customer_name": 1, "total_amount": 1, "status": 1, "created_at": 1}
-        ).sort("created_at", -1).limit(5).to_list(5)
+        ).sort("created_at", -1).limit(5)
+        
+        recent_invoices = []
+        async for invoice in recent_invoices_cursor:
+            # Convert ObjectId to string
+            if "_id" in invoice:
+                invoice["id"] = str(invoice["_id"])
+                del invoice["_id"]
+            recent_invoices.append(invoice)
         
         return {
             "total_invoices": total_invoices,
