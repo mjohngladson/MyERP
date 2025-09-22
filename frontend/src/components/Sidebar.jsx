@@ -152,13 +152,13 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                       ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                     `}>
                       <div className="ml-6 mt-1 space-y-1">
-                        {module.items.map((item, index) => (
+                        {(module.items || []).map((item, index) => (
                           <button
                             key={index}
                             onClick={() => handleSubItemClick(module.id, item)}
                             className="w-full text-left p-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
                           >
-                            {item}
+                            {item || 'Unnamed Item'}
                           </button>
                         ))}
                       </div>
