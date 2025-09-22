@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 
 # Import routers
-from routers import dashboard, auth, sales, search, reporting
+from routers import dashboard, auth, sales, search, reporting, invoices
 from routers.pos_integration import get_pos_router
 from database import init_sample_data
 
