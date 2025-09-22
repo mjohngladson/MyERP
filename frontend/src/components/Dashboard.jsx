@@ -28,10 +28,10 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
     useApi(() => api.dashboard.getStats());
   
   const { data: transactions, loading: transactionsLoading, refetch: refetchTransactions } = 
-    useApi(() => api.dashboard.getTransactions(4));
+    useApi(() => api.dashboard.getTransactions(4), [], []);
   
   const { data: notifications, loading: notificationsLoading } = 
-    useApi(() => currentUser ? api.dashboard.getNotifications(currentUser.id, 4) : Promise.resolve({ data: [] }), [currentUser]);
+    useApi(() => currentUser ? api.dashboard.getNotifications(currentUser.id, 4) : Promise.resolve({ data: [] }), [currentUser], []);
   
   const { data: reports, loading: reportsLoading } = 
     useApi(() => api.dashboard.getReports());
