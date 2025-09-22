@@ -5,6 +5,49 @@ from typing import Optional
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
+@router.post("/setup-demo")
+async def setup_demo():
+    """Setup demo environment with users"""
+    try:
+        import uuid
+        from datetime import datetime
+        
+        # Create demo users directly
+        demo_users = [
+            {
+                "_id": str(uuid.uuid4()),
+                "id": str(uuid.uuid4()),
+                "name": "Admin User",
+                "email": "admin@gili.com",
+                "password": "admin123",
+                "role": "System Manager",
+                "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+                "company_id": "default_company",
+                "created_at": datetime.utcnow()
+            }
+        ]
+        
+        # Clear existing users with same email and recreate
+        await users_collection.delete_many({"email": "admin@gili.com"})
+        result = await users_collection.insert_many(demo_users)
+        
+        return {
+            "success": True,
+            "message": "Demo setup completed",
+            "users_created": len(result.inserted_ids),
+            "demo_login": {
+                "email": "admin@gili.com", 
+                "password": "admin123"
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Demo setup failed"
+        }
+
 @router.post("/login")
 async def login(user_login: UserLogin):
     """User login (simplified for demo)"""
