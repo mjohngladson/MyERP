@@ -95,7 +95,8 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Make actual API call to Railway backend
-      const response = await fetch(`${backendUrl}/api/auth/login`, {
+      const apiUrl = backendUrl ? `${backendUrl}/api/auth/login` : '/api/auth/login';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
