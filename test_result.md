@@ -104,6 +104,37 @@
 
 user_problem_statement: "Complete the integration of the GiLi Point of Sale (PoS) desktop application with the main GiLi backend system. This involves ensuring proper data synchronization between the offline-capable PoS system and the central GiLi web application for products, customers, and transactions."
 
+frontend:
+  - task: "Sales Invoices List - Fix UI to render API response"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/SalesInvoicesList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "Initial invoices list failed due to wrong base URL usage and response handling. Updated fetch URLs to include /api prefix, normalized useApi to accept both axios and fetch results, and stabilized list rendering with robust parsing for array or wrapped responses. Also fixed currency to INR with 2 decimals and hooked stats endpoint."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Sales Invoices List - Verify loads invoices from GET /api/invoices"
+    - "Invoice stats card - Verify GET /api/invoices/stats/overview"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Please run frontend test to visit Sales → Sales Invoice, confirm list renders >0 rows, totals show INR, and pagination badge shows total count from _meta or list length. Also test delete and send buttons return success toast or alerts."
+
 backend:
   - task: "Railway Cloud API Health Check - FINAL VERIFICATION"
     implemented: true
