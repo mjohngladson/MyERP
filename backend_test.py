@@ -11,8 +11,8 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 
-# Get backend URL from environment
-BACKEND_URL = "https://smart-retail-5.preview.emergentagent.com"
+# Get backend URL from environment - Railway Cloud API
+BACKEND_URL = "https://myerp-production.up.railway.app"
 
 class BackendTester:
     def __init__(self):
