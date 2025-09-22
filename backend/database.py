@@ -50,6 +50,42 @@ async def init_sample_data():
     }
     await companies_collection.insert_one(company_data)
     
+    # Create demo users for authentication
+    demo_users_data = [
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Admin User",
+            "email": "admin@gili.com",
+            "password": "admin123",  # In production, this should be hashed
+            "role": "System Manager",
+            "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+            "company_id": company_id,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "John Doe",
+            "email": "john.doe@company.com",
+            "password": "admin123",  # In production, this should be hashed
+            "role": "Sales Manager",
+            "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            "company_id": company_id,
+            "created_at": datetime.utcnow()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Jane Smith",
+            "email": "jane.smith@company.com",
+            "password": "admin123",  # In production, this should be hashed
+            "role": "Purchase Manager",
+            "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+            "company_id": company_id,
+            "created_at": datetime.utcnow()
+        }
+    ]
+    await users_collection.insert_many(demo_users_data)
+    print("✅ Demo users created: admin@gili.com, john.doe@company.com, jane.smith@company.com")
+    
     # Create sample user
     user_id = str(uuid.uuid4())
     user_data = {
