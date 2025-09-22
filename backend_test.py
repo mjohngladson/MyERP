@@ -3011,6 +3011,15 @@ class BackendTester:
             self.test_existing_problematic_transactions,
         ]
         
+        # CRITICAL BUSINESS LOGIC TESTS - Sales Invoice BEFORE Sales Order (PRIORITY)
+        critical_business_tests = [
+            self.test_sales_invoices_api,
+            self.test_pos_transaction_business_flow,
+            self.test_invoice_number_format,
+            self.test_order_number_format,
+            self.test_tax_calculation_verification,
+        ]
+        
         # Core API tests
         tests = [
             self.test_health_check,
