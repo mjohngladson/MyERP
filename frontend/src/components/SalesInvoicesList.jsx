@@ -28,19 +28,29 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [showStats, setShowStats] = useState(true);
   
   // Fetch sales invoices with pagination and filters
-  const { data: invoicesData, loading, error, refetch } = useApi(() => 
+  const { data: invoices, loading, error, refetch } = useApi(() => 
     fetch(`${api.getBaseUrl()}/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${searchTerm}`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .catch(err => {
         console.error('Error fetching invoices:', err);
-        return [];
+        throw err;
       })
   , [currentPage, pageSize, filterStatus, searchTerm]);
 
   // Fetch invoice statistics
   const { data: stats, loading: statsLoading } = useApi(() => 
     fetch(`${api.getBaseUrl()}/invoices/stats/overview`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .catch(err => {
         console.error('Error fetching stats:', err);
         return {};
