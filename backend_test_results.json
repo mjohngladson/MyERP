@@ -1,177 +1,28 @@
 {
   "summary": {
-    "passed": 0,
-    "total": 16,
-    "success_rate": "0.0%",
-    "timestamp": "2025-09-22T04:53:08.346662"
+    "railway_tests_passed": false,
+    "timestamp": "2025-09-22T05:00:40.114650"
   },
   "detailed_results": [
     {
       "test": "Railway DB - Backend Health",
       "success": false,
       "details": "Backend not accessible: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.804830",
+      "timestamp": "2025-09-22T05:00:40.099995",
       "response_data": null
     },
     {
-      "test": "Railway Invoice - Initial Count",
+      "test": "Railway Test Transaction - Creation",
       "success": false,
-      "details": "Failed to get initial invoice count: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.813299",
-      "response_data": null
-    },
-    {
-      "test": "Railway Collections - Customers",
-      "success": false,
-      "details": "Customers collection failed: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.817612",
-      "response_data": null
-    },
-    {
-      "test": "Railway Collections - Products",
-      "success": false,
-      "details": "Products collection failed: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.822303",
-      "response_data": null
-    },
-    {
-      "test": "Railway Collections - Sales Orders",
-      "success": false,
-      "details": "Sales Orders collection failed: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.828826",
+      "details": "HTTP 502",
+      "timestamp": "2025-09-22T05:00:40.107570",
       "response_data": null
     },
     {
       "test": "Railway Collections - Sales Invoices",
       "success": false,
-      "details": "Sales Invoices collection failed: HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.833323",
-      "response_data": null
-    },
-    {
-      "test": "Railway Collections - Overall",
-      "success": false,
-      "details": "Railway database collections failing: 0/4 (0.0%)",
-      "timestamp": "2025-09-22T04:53:07.833370",
-      "response_data": null
-    },
-    {
-      "test": "Railway Performance - Dashboard Stats",
-      "success": false,
-      "details": "Failed with response time: 4.77ms",
-      "timestamp": "2025-09-22T04:53:07.838170",
-      "response_data": null
-    },
-    {
-      "test": "Railway Performance - Customers Query",
-      "success": false,
-      "details": "Failed with response time: 4.59ms",
-      "timestamp": "2025-09-22T04:53:07.842820",
-      "response_data": null
-    },
-    {
-      "test": "Railway Performance - Products Query",
-      "success": false,
-      "details": "Failed with response time: 4.66ms",
-      "timestamp": "2025-09-22T04:53:07.847529",
-      "response_data": null
-    },
-    {
-      "test": "Railway Performance - Sales Invoices Query",
-      "success": false,
-      "details": "Failed with response time: 5.28ms",
-      "timestamp": "2025-09-22T04:53:07.852859",
-      "response_data": null
-    },
-    {
-      "test": "Railway Performance - Overall",
-      "success": false,
-      "details": "No successful performance tests completed",
-      "timestamp": "2025-09-22T04:53:07.852897",
-      "response_data": null
-    },
-    {
-      "test": "Health Check",
-      "success": false,
       "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:07.857646",
-      "response_data": null
-    },
-    {
-      "test": "Database Initialization",
-      "success": false,
-      "details": "Sample data missing - customers: False, transactions: False, stats: False",
-      "timestamp": "2025-09-22T04:53:08.299798",
-      "response_data": null
-    },
-    {
-      "test": "Dashboard Stats",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.304358",
-      "response_data": null
-    },
-    {
-      "test": "Dashboard Transactions",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.308913",
-      "response_data": null
-    },
-    {
-      "test": "Auth Me",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.313209",
-      "response_data": null
-    },
-    {
-      "test": "Sales Orders",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.318351",
-      "response_data": null
-    },
-    {
-      "test": "Sales Customers",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.322458",
-      "response_data": null
-    },
-    {
-      "test": "PoS Health Check",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.327505",
-      "response_data": null
-    },
-    {
-      "test": "PoS Products Sync - Default",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.333253",
-      "response_data": null
-    },
-    {
-      "test": "PoS Customers Sync - Default",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.337986",
-      "response_data": null
-    },
-    {
-      "test": "PoS Transaction Processing",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.342325",
-      "response_data": null
-    },
-    {
-      "test": "Tax Calculation - Product A (\u20b9100\u2192\u20b9118)",
-      "success": false,
-      "details": "HTTP 502",
-      "timestamp": "2025-09-22T04:53:08.346339",
+      "timestamp": "2025-09-22T05:00:40.114436",
       "response_data": null
     }
   ]
