@@ -246,7 +246,7 @@ const MainApp = () => {
       case 'items':
         return <ItemsList onBack={() => setActiveView('dashboard')} />;
       case 'sales-invoices':
-        return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
+        return <SalesInvoicesList onBack={() => setActiveView('dashboard')} />;
       
       // Buying Module
       case 'purchase-orders':
