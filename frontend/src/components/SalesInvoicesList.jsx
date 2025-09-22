@@ -44,7 +44,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
 
   // Fetch invoice statistics
   const { data: stats, loading: statsLoading } = useApi(() => 
-    fetch(`${api.getBaseUrl()}/invoices/stats/overview`)
+    fetch(`${api.getBaseUrl()}/api/invoices/stats/overview`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
