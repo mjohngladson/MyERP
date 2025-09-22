@@ -3084,6 +3084,23 @@ class BackendTester:
         print(f"\n🚨 URGENT TESTS SUMMARY: {urgent_passed}/{urgent_total} passed")
         print("=" * 60)
         
+        # Run critical business logic tests next
+        print("\n🏪 RUNNING CRITICAL BUSINESS LOGIC TESTS - SALES INVOICE BEFORE SALES ORDER")
+        print("=" * 60)
+        critical_passed = 0
+        critical_total = len(critical_business_tests)
+        
+        for test in critical_business_tests:
+            try:
+                result = await test()
+                if result:
+                    critical_passed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+        
+        print(f"\n🏪 CRITICAL BUSINESS TESTS SUMMARY: {critical_passed}/{critical_total} passed")
+        print("=" * 60)
+        
         passed = 0
         total = len(tests)
         
