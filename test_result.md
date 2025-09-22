@@ -136,6 +136,69 @@ agent_communication:
       message: "Please run frontend test to visit Sales → Sales Invoice, confirm list renders >0 rows, totals show INR, and pagination badge shows total count from _meta or list length. Also test delete and send buttons return success toast or alerts."
 
 backend:
+  - task: "Invoice API Sanity Testing - GET /api/invoices/?limit=20"
+    implemented: true
+    working: true
+    file: "routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ INVOICE LIST API VERIFIED: GET /api/invoices/?limit=20 returns 200 status with array of 20 invoices. Each invoice contains all required fields: id (string), invoice_number (string), customer_name (string), total_amount (number), status (string). First element includes _meta.total_count (44 total invoices). Response structure fully compliant with requirements."
+
+  - task: "Invoice API Sanity Testing - GET /api/invoices/stats/overview"
+    implemented: true
+    working: true
+    file: "routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ INVOICE STATS API VERIFIED: GET /api/invoices/stats/overview returns 200 status with all required fields: total_invoices (44), total_amount (7078.32), submitted_count (44), paid_count (0). All fields are properly typed and contain valid business data."
+
+  - task: "Invoice API Sanity Testing - POST/DELETE /api/invoices/"
+    implemented: true
+    working: true
+    file: "routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ INVOICE CRUD API VERIFIED: POST /api/invoices/ successfully creates invoice with 1 item (₹25 + 18% tax = ₹29.5 total) and returns success:true with invoice object containing UUID string id. DELETE /api/invoices/{id} successfully deletes the created invoice and returns success:true. Both operations follow DB rules with UUID string IDs and proper date handling."
+
+  - task: "Invoice API Sanity Testing - Server Configuration"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ SERVER CONFIGURATION VERIFIED: All routes properly prefixed with /api and server accessible at https://salesflow-26.preview.emergentagent.com. Backend running on correct configuration with proper CORS and routing setup."
+
+  - task: "Invoice API ObjectId Serialization Fix"
+    implemented: true
+    working: true
+    file: "routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL BUG FOUND: Invoice stats endpoint returning HTTP 500 due to ObjectId serialization error. MongoDB ObjectId objects in recent_invoices query cannot be JSON serialized."
+        - working: true
+          agent: "testing"
+          comment: "✅ OBJECTID SERIALIZATION FIXED: Updated invoice stats endpoint to properly convert MongoDB ObjectId to string before JSON serialization. Fixed recent_invoices query to handle ObjectId conversion. All invoice endpoints now working correctly."
+
   - task: "Railway Cloud API Health Check - FINAL VERIFICATION"
     implemented: true
     working: true
