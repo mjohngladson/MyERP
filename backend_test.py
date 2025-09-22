@@ -3306,7 +3306,24 @@ class BackendTester:
             self.test_pos_integration_regression,
         ]
         
-        # Run urgent tests first
+        # Run critical bug investigation first
+        print("\n🚨 RUNNING CRITICAL BUG INVESTIGATION - SALES INVOICES NOT STORED")
+        print("=" * 80)
+        critical_bug_passed = 0
+        critical_bug_total = len(critical_bug_tests)
+        
+        for test in critical_bug_tests:
+            try:
+                result = await test()
+                if result:
+                    critical_bug_passed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+        
+        print(f"\n🚨 CRITICAL BUG INVESTIGATION SUMMARY: {critical_bug_passed}/{critical_bug_total} passed")
+        print("=" * 80)
+        
+        # Run urgent tests next
         print("\n🚨 RUNNING URGENT TAX CALCULATION INVESTIGATION")
         print("=" * 60)
         urgent_passed = 0
