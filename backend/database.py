@@ -25,6 +25,7 @@ companies_collection = db.companies
 customers_collection = db.customers
 suppliers_collection = db.suppliers
 items_collection = db.items
+sales_invoices_collection = db.sales_invoices  # Primary collection for PoS transactions
 sales_orders_collection = db.sales_orders
 purchase_orders_collection = db.purchase_orders
 transactions_collection = db.transactions
