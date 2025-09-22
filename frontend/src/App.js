@@ -59,12 +59,15 @@ const MainApp = () => {
   };
 
   const handleSubItemClick = (moduleId, subItem) => {
+    console.log('📱 SubItem clicked:', { moduleId, subItem });
+    
     setActiveModule(moduleId);
     
     // Map sub-items to specific views for all modules
     if (moduleId === 'sales') {
       switch (subItem) {
         case 'Sales Order':
+          console.log('🛒 Setting activeView to sales-orders');
           setActiveView('sales-orders');
           break;
         case 'Quotation':
@@ -80,6 +83,7 @@ const MainApp = () => {
           setActiveView('sales-invoices');
           break;
         default:
+          console.log('🛒 Setting activeView to default sales');
           setActiveView('sales');
       }
     } else if (moduleId === 'buying') {
