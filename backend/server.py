@@ -43,7 +43,8 @@ class StatusCheckCreate(BaseModel):
 async def init_demo_data_endpoint():
     """Force initialize demo data"""
     try:
-        await init_sample_data()
+        from database import force_init_sample_data
+        await force_init_sample_data()
         return {"message": "Demo data initialized successfully"}
     except Exception as e:
         from fastapi import HTTPException
