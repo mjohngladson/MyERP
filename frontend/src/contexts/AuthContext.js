@@ -100,8 +100,15 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
       console.log('🚀 Railway backend response:', data);
       
-      if (!response.ok || !data.success) {
-        return { success: false, error: data.detail || data.message || 'Login failed' };
+      if (!response.ok) {
+        const errorMessage = data.detail || data.message || 'Login failed';
+        console.error('❌ Login failed:', errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      if (!data.user || !data.token) {
+        console.error('❌ Invalid response format:', data);
+        return { success: false, error: 'Invalid server response' };
       }
       
       // Store auth data from Railway backend response
