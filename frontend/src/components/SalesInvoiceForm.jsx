@@ -228,7 +228,7 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
           body: JSON.stringify(invoiceData)
         });
       } else {
-        response = await fetch(`${api.getBaseUrl()}/invoices/`, {
+        response = await fetch(`${api.getBaseUrl()}/api/invoices/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invoiceData)
