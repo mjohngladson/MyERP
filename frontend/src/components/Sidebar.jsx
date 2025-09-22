@@ -148,7 +148,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                     
                     {/* Module items */}
                     <div className={`
-                      overflow-hidden transition-all duration-300
+                      overflow-hidden transition-all duration-300 relative z-10
                       ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                     `}>
                       <div className="ml-6 mt-1 space-y-1">
@@ -156,7 +156,8 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                           <button
                             key={index}
                             onClick={() => handleSubItemClick(module.id, item)}
-                            className="w-full text-left p-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                            className="w-full text-left p-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors relative z-20 cursor-pointer"
+                            style={{ pointerEvents: 'auto' }}
                           >
                             {item || 'Unnamed Item'}
                           </button>
