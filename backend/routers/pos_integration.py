@@ -339,6 +339,22 @@ async def receive_pos_transaction(transaction: PoSTransaction):
     try:
         db = get_database()
         
+        # Get customer info if provided (FIRST - needed for both invoice and order)
+        customer_name = "Walk-in Customer"
+        customer_id = transaction.customer_id or "default_customer"
+        
+        if transaction.customer_id:
+            try:
+                # Try to find customer by ObjectId first
+                customer = await db.customers.find_one({"_id": ObjectId(transaction.customer_id)})
+                if customer:
+                    customer_name = customer.get("name", "Unknown Customer")
+            except:
+                # If ObjectId conversion fails, try to find by id field (string)
+                customer = await db.customers.find_one({"id": transaction.customer_id})
+                if customer:
+                    customer_name = customer.get("name", "Unknown Customer")
+        
         # Create Sales Invoice (FIRST) - This is the actual bill to customer
         invoice_count = await db.sales_invoices.count_documents({})
         invoice_number = f"SINV-{datetime.now().strftime('%Y%m%d')}-{invoice_count + 1:04d}"
@@ -346,23 +362,23 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         sales_invoice = {
             "id": str(uuid.uuid4()),
             "invoice_number": invoice_number,
-            "customer_id": customer_id or "default_customer",
-            "customer_name": transaction.customer_name,
+            "customer_id": customer_id,
+            "customer_name": customer_name,
             "total_amount": transaction.total_amount,
             "status": "submitted",  # Invoices are typically submitted when created
             "invoice_date": datetime.now(),
             "due_date": None,
             "items": [
                 {
-                    "item_id": item.product_id,
-                    "item_name": item.product_name, 
-                    "quantity": item.quantity,
-                    "rate": item.unit_price,
-                    "amount": item.line_total
+                    "item_id": item["product_id"],
+                    "item_name": item.get("product_name", "Unknown Product"), 
+                    "quantity": item["quantity"],
+                    "rate": item["unit_price"],
+                    "amount": item["line_total"]
                 }
                 for item in transaction.items
             ],
-            "company_id": company_id,
+            "company_id": "default_company",  # Default company for PoS transactions
             "subtotal": transaction.subtotal,
             "tax_amount": transaction.tax_amount,
             "discount_amount": transaction.discount_amount,
@@ -389,10 +405,6 @@ async def receive_pos_transaction(transaction: PoSTransaction):
         # Create Sales Order (SECOND) - This is for order tracking/fulfillment
         order_count = await db.sales_orders.count_documents({})
         order_number = f"SO-{datetime.now().strftime('%Y%m%d')}-{order_count + 1:04d}"
-        
-        # Get customer info if provided
-        customer_name = "Walk-in Customer"
-        customer_id = transaction.customer_id or "default_customer"
         
         if transaction.customer_id:
             try:
