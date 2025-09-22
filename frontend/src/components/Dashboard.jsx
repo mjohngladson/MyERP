@@ -267,9 +267,9 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           <div className="divide-y divide-gray-100">
             {transactionsLoading ? (
               <div className="p-6 text-center text-gray-500">Loading transactions...</div>
-            ) : transactions && Array.isArray(transactions) && transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <div key={transaction.id || Math.random()} className="p-6 hover:bg-gray-50 transition-colors">
+            ) : (transactions || []).length > 0 ? (
+              (transactions || []).map((transaction, index) => (
+                <div key={transaction?.id || index} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
