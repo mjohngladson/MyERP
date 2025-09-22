@@ -3232,6 +3232,342 @@ class BackendTester:
             self.log_test("PoS Integration Regression", False, f"Error: {str(e)}")
             return False
 
+    async def test_railway_database_connection(self):
+        """CRITICAL: Test Railway MongoDB database connection and functionality"""
+        try:
+            print("\n🚀 RAILWAY DATABASE CONNECTION TESTING")
+            print("Testing backend connection to Railway cloud MongoDB...")
+            
+            # Test 1: Basic health check to verify backend is running
+            async with self.session.get(f"{self.base_url}/api/") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Railway DB - Backend Health", True, "Backend is running and accessible", data)
+                else:
+                    self.log_test("Railway DB - Backend Health", False, f"Backend not accessible: HTTP {response.status}")
+                    return False
+            
+            # Test 2: Database connection via dashboard stats (requires DB access)
+            async with self.session.get(f"{self.base_url}/api/dashboard/stats") as response:
+                if response.status == 200:
+                    stats = await response.json()
+                    if all(field in stats for field in ["sales_orders", "purchase_orders", "stock_value"]):
+                        self.log_test("Railway DB - Database Connection", True, f"Successfully connected to Railway MongoDB. Stock value: {stats.get('stock_value', 0)}", stats)
+                    else:
+                        self.log_test("Railway DB - Database Connection", False, "Database connection failed - missing required fields", stats)
+                        return False
+                else:
+                    self.log_test("Railway DB - Database Connection", False, f"Database connection failed: HTTP {response.status}")
+                    return False
+            
+            # Test 3: Sample data initialization in Railway database
+            async with self.session.get(f"{self.base_url}/api/sales/customers") as response:
+                if response.status == 200:
+                    customers = await response.json()
+                    if len(customers) > 0:
+                        self.log_test("Railway DB - Sample Data Customers", True, f"Found {len(customers)} customers in Railway database", {"count": len(customers), "sample": customers[0] if customers else None})
+                    else:
+                        self.log_test("Railway DB - Sample Data Customers", False, "No customers found in Railway database")
+                        return False
+                else:
+                    self.log_test("Railway DB - Sample Data Customers", False, f"Failed to retrieve customers: HTTP {response.status}")
+                    return False
+            
+            # Test 4: Products collection in Railway database
+            async with self.session.get(f"{self.base_url}/api/pos/products") as response:
+                if response.status == 200:
+                    products = await response.json()
+                    if isinstance(products, dict) and "products" in products:
+                        product_list = products["products"]
+                        if len(product_list) > 0:
+                            self.log_test("Railway DB - Sample Data Products", True, f"Found {len(product_list)} products in Railway database", {"count": len(product_list), "sample": product_list[0] if product_list else None})
+                        else:
+                            self.log_test("Railway DB - Sample Data Products", False, "No products found in Railway database")
+                            return False
+                    else:
+                        self.log_test("Railway DB - Sample Data Products", False, "Invalid products response format", products)
+                        return False
+                else:
+                    self.log_test("Railway DB - Sample Data Products", False, f"Failed to retrieve products: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Railway DB - Connection Test", False, f"Error testing Railway database: {str(e)}")
+            return False
+    
+    async def test_railway_sales_invoice_creation(self):
+        """CRITICAL: Test sales invoice creation in Railway database with specific test data"""
+        try:
+            print("\n🏪 RAILWAY SALES INVOICE CREATION TEST")
+            print("Creating PoS transaction to verify sales invoice storage in Railway database...")
+            
+            # Step 1: Check existing sales invoices count
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    initial_invoices = await response.json()
+                    initial_count = len(initial_invoices) if isinstance(initial_invoices, list) else 0
+                    self.log_test("Railway Invoice - Initial Count", True, f"Found {initial_count} existing invoices in Railway database")
+                else:
+                    self.log_test("Railway Invoice - Initial Count", False, f"Failed to get initial invoice count: HTTP {response.status}")
+                    return False
+            
+            # Step 2: Create the specific test transaction as requested
+            test_transaction = {
+                "pos_transaction_id": "RAILWAY-TEST-001",
+                "cashier_id": "railway-test-cashier",
+                "store_location": "Railway Test Store",
+                "pos_device_id": "railway-test-device",
+                "receipt_number": "RAILWAY-001",
+                "transaction_timestamp": "2025-01-21T10:00:00Z",
+                "customer_id": None,
+                "customer_name": "Railway Test Customer",
+                "items": [
+                    {
+                        "product_id": "railway-test-product",
+                        "product_name": "Railway Test Product",
+                        "quantity": 2,
+                        "unit_price": 100.0,
+                        "line_total": 200.0
+                    }
+                ],
+                "subtotal": 200.0,
+                "tax_amount": 36.0,
+                "discount_amount": 0.0,
+                "total_amount": 236.0,
+                "payment_method": "cash"
+            }
+            
+            # Step 3: Submit the test transaction
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=test_transaction) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        order_number = result.get("order_number", "Unknown")
+                        self.log_test("Railway Invoice - PoS Transaction", True, f"Test transaction created successfully: {order_number}", result)
+                    else:
+                        self.log_test("Railway Invoice - PoS Transaction", False, f"Transaction creation failed: {result}", result)
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Railway Invoice - PoS Transaction", False, f"Transaction submission failed: HTTP {response.status} - {error_text}")
+                    return False
+            
+            # Step 4: Wait and check if sales invoice was created
+            await asyncio.sleep(3)  # Wait for processing
+            
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    final_invoices = await response.json()
+                    final_count = len(final_invoices) if isinstance(final_invoices, list) else 0
+                    
+                    if final_count > initial_count:
+                        # Find the new invoice
+                        new_invoices = final_invoices[:final_count - initial_count]  # Assuming newest first
+                        railway_invoice = None
+                        
+                        for invoice in final_invoices:
+                            if (invoice.get("customer_name") == "Railway Test Customer" or 
+                                invoice.get("total_amount") == 236.0):
+                                railway_invoice = invoice
+                                break
+                        
+                        if railway_invoice:
+                            self.log_test("Railway Invoice - Creation Success", True, f"✅ CRITICAL SUCCESS: Sales invoice created in Railway database! Invoice: {railway_invoice.get('invoice_number')}, Amount: ₹{railway_invoice.get('total_amount')}", railway_invoice)
+                            
+                            # Verify invoice details match test transaction
+                            if (railway_invoice.get("total_amount") == 236.0 and 
+                                railway_invoice.get("customer_name") == "Railway Test Customer"):
+                                self.log_test("Railway Invoice - Data Integrity", True, "Invoice data matches test transaction perfectly", {
+                                    "expected_amount": 236.0,
+                                    "actual_amount": railway_invoice.get("total_amount"),
+                                    "expected_customer": "Railway Test Customer",
+                                    "actual_customer": railway_invoice.get("customer_name")
+                                })
+                            else:
+                                self.log_test("Railway Invoice - Data Integrity", False, "Invoice data doesn't match test transaction", railway_invoice)
+                                return False
+                        else:
+                            self.log_test("Railway Invoice - Creation Success", False, f"New invoice created but couldn't identify Railway test invoice. Total invoices: {final_count}", {"new_count": final_count - initial_count})
+                            return False
+                    else:
+                        self.log_test("Railway Invoice - Creation Success", False, f"❌ CRITICAL FAILURE: No new sales invoice created in Railway database! Initial: {initial_count}, Final: {final_count}")
+                        return False
+                else:
+                    self.log_test("Railway Invoice - Creation Success", False, f"Failed to check final invoices: HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Railway Invoice - Creation Test", False, f"Error testing Railway invoice creation: {str(e)}")
+            return False
+    
+    async def test_railway_collections_verification(self):
+        """CRITICAL: Test all collections work with Railway database"""
+        try:
+            print("\n📊 RAILWAY COLLECTIONS VERIFICATION")
+            print("Testing all collections (customers, products, sales_orders, sales_invoices) with Railway database...")
+            
+            collections_tested = 0
+            collections_passed = 0
+            
+            # Test 1: Customers collection
+            async with self.session.get(f"{self.base_url}/api/sales/customers") as response:
+                if response.status == 200:
+                    customers = await response.json()
+                    if isinstance(customers, list) and len(customers) > 0:
+                        self.log_test("Railway Collections - Customers", True, f"Customers collection working: {len(customers)} records", {"count": len(customers), "sample": customers[0]})
+                        collections_passed += 1
+                    else:
+                        self.log_test("Railway Collections - Customers", False, "Customers collection empty or invalid format")
+                else:
+                    self.log_test("Railway Collections - Customers", False, f"Customers collection failed: HTTP {response.status}")
+                collections_tested += 1
+            
+            # Test 2: Products collection
+            async with self.session.get(f"{self.base_url}/api/pos/products") as response:
+                if response.status == 200:
+                    products_data = await response.json()
+                    if isinstance(products_data, dict) and "products" in products_data:
+                        products = products_data["products"]
+                        if len(products) > 0:
+                            self.log_test("Railway Collections - Products", True, f"Products collection working: {len(products)} records", {"count": len(products), "sample": products[0]})
+                            collections_passed += 1
+                        else:
+                            self.log_test("Railway Collections - Products", False, "Products collection empty")
+                    else:
+                        self.log_test("Railway Collections - Products", False, "Products collection invalid format")
+                else:
+                    self.log_test("Railway Collections - Products", False, f"Products collection failed: HTTP {response.status}")
+                collections_tested += 1
+            
+            # Test 3: Sales Orders collection
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    orders = await response.json()
+                    if isinstance(orders, list):
+                        self.log_test("Railway Collections - Sales Orders", True, f"Sales Orders collection working: {len(orders)} records", {"count": len(orders), "sample": orders[0] if orders else "No orders"})
+                        collections_passed += 1
+                    else:
+                        self.log_test("Railway Collections - Sales Orders", False, "Sales Orders collection invalid format")
+                else:
+                    self.log_test("Railway Collections - Sales Orders", False, f"Sales Orders collection failed: HTTP {response.status}")
+                collections_tested += 1
+            
+            # Test 4: Sales Invoices collection
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    if isinstance(invoices, list):
+                        self.log_test("Railway Collections - Sales Invoices", True, f"Sales Invoices collection working: {len(invoices)} records", {"count": len(invoices), "sample": invoices[0] if invoices else "No invoices"})
+                        collections_passed += 1
+                    else:
+                        self.log_test("Railway Collections - Sales Invoices", False, "Sales Invoices collection invalid format")
+                else:
+                    self.log_test("Railway Collections - Sales Invoices", False, f"Sales Invoices collection failed: HTTP {response.status}")
+                collections_tested += 1
+            
+            # Summary
+            success_rate = (collections_passed / collections_tested * 100) if collections_tested > 0 else 0
+            if success_rate >= 75:  # 3 out of 4 collections working
+                self.log_test("Railway Collections - Overall", True, f"Railway database collections working well: {collections_passed}/{collections_tested} ({success_rate:.1f}%)")
+                return True
+            else:
+                self.log_test("Railway Collections - Overall", False, f"Railway database collections failing: {collections_passed}/{collections_tested} ({success_rate:.1f}%)")
+                return False
+            
+        except Exception as e:
+            self.log_test("Railway Collections - Verification", False, f"Error testing Railway collections: {str(e)}")
+            return False
+    
+    async def test_railway_performance(self):
+        """Test Railway database performance for all operations"""
+        try:
+            print("\n⚡ RAILWAY DATABASE PERFORMANCE TEST")
+            print("Testing Railway database performance for all operations...")
+            
+            performance_results = []
+            
+            # Test 1: Dashboard stats performance
+            start_time = asyncio.get_event_loop().time()
+            async with self.session.get(f"{self.base_url}/api/dashboard/stats") as response:
+                end_time = asyncio.get_event_loop().time()
+                response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+                
+                if response.status == 200:
+                    performance_results.append(("Dashboard Stats", response_time, True))
+                    self.log_test("Railway Performance - Dashboard Stats", True, f"Response time: {response_time:.2f}ms")
+                else:
+                    performance_results.append(("Dashboard Stats", response_time, False))
+                    self.log_test("Railway Performance - Dashboard Stats", False, f"Failed with response time: {response_time:.2f}ms")
+            
+            # Test 2: Customers query performance
+            start_time = asyncio.get_event_loop().time()
+            async with self.session.get(f"{self.base_url}/api/sales/customers") as response:
+                end_time = asyncio.get_event_loop().time()
+                response_time = (end_time - start_time) * 1000
+                
+                if response.status == 200:
+                    performance_results.append(("Customers Query", response_time, True))
+                    self.log_test("Railway Performance - Customers Query", True, f"Response time: {response_time:.2f}ms")
+                else:
+                    performance_results.append(("Customers Query", response_time, False))
+                    self.log_test("Railway Performance - Customers Query", False, f"Failed with response time: {response_time:.2f}ms")
+            
+            # Test 3: Products query performance
+            start_time = asyncio.get_event_loop().time()
+            async with self.session.get(f"{self.base_url}/api/pos/products") as response:
+                end_time = asyncio.get_event_loop().time()
+                response_time = (end_time - start_time) * 1000
+                
+                if response.status == 200:
+                    performance_results.append(("Products Query", response_time, True))
+                    self.log_test("Railway Performance - Products Query", True, f"Response time: {response_time:.2f}ms")
+                else:
+                    performance_results.append(("Products Query", response_time, False))
+                    self.log_test("Railway Performance - Products Query", False, f"Failed with response time: {response_time:.2f}ms")
+            
+            # Test 4: Sales invoices query performance
+            start_time = asyncio.get_event_loop().time()
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                end_time = asyncio.get_event_loop().time()
+                response_time = (end_time - start_time) * 1000
+                
+                if response.status == 200:
+                    performance_results.append(("Sales Invoices Query", response_time, True))
+                    self.log_test("Railway Performance - Sales Invoices Query", True, f"Response time: {response_time:.2f}ms")
+                else:
+                    performance_results.append(("Sales Invoices Query", response_time, False))
+                    self.log_test("Railway Performance - Sales Invoices Query", False, f"Failed with response time: {response_time:.2f}ms")
+            
+            # Performance analysis
+            successful_tests = [r for r in performance_results if r[2]]
+            if len(successful_tests) > 0:
+                avg_response_time = sum(r[1] for r in successful_tests) / len(successful_tests)
+                max_response_time = max(r[1] for r in successful_tests)
+                
+                # Consider performance good if average < 2000ms and max < 5000ms
+                if avg_response_time < 2000 and max_response_time < 5000:
+                    self.log_test("Railway Performance - Overall", True, f"Railway database performance is good. Avg: {avg_response_time:.2f}ms, Max: {max_response_time:.2f}ms", {
+                        "average_ms": avg_response_time,
+                        "max_ms": max_response_time,
+                        "successful_tests": len(successful_tests),
+                        "total_tests": len(performance_results)
+                    })
+                    return True
+                else:
+                    self.log_test("Railway Performance - Overall", False, f"Railway database performance is slow. Avg: {avg_response_time:.2f}ms, Max: {max_response_time:.2f}ms")
+                    return False
+            else:
+                self.log_test("Railway Performance - Overall", False, "No successful performance tests completed")
+                return False
+            
+        except Exception as e:
+            self.log_test("Railway Performance - Test", False, f"Error testing Railway performance: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run all backend tests with focus on Railway database testing"""
         print("🚀 Starting GiLi Backend API Testing Suite - RAILWAY DATABASE FOCUS")
