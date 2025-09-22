@@ -34,6 +34,7 @@ const MainApp = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeModule, setActiveModule] = useState('dashboard');
   const [activeView, setActiveView] = useState('dashboard');
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
