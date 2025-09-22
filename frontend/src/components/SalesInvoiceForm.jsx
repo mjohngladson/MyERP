@@ -65,7 +65,7 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
 
   const loadItems = async () => {
     try {
-      const response = await fetch(`${api.getBaseUrl()}/items/`);
+      const response = await fetch(`${api.getBaseUrl()}/api/stock/items`);
       const data = await response.json();
       setItems(data || []);
     } catch (error) {
