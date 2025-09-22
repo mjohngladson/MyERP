@@ -62,6 +62,7 @@ app.include_router(auth.router)
 app.include_router(sales.router)
 app.include_router(search.router)
 app.include_router(reporting.router)
+app.include_router(invoices.router)
 app.include_router(get_pos_router())
 
 app.add_middleware(
