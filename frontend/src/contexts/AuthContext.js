@@ -83,34 +83,41 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🔐 Attempting login with Railway backend...');
       
-      // Find user in demo users
-      const foundUser = demoUsers.find(u => 
-        u.email.toLowerCase() === credentials.email.toLowerCase()
-      );
+      // Make actual API call to Railway backend
+      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        })
+      });
       
-      if (!foundUser) {
-        return { success: false, error: 'User not found' };
+      const data = await response.json();
+      console.log('🚀 Railway backend response:', data);
+      
+      if (!response.ok || !data.success) {
+        return { success: false, error: data.detail || data.message || 'Login failed' };
       }
       
-      // For demo purposes, accept any password
-      // In real app, verify password hash
-      
-      // Generate demo token
-      const token = `demo_token_${foundUser.id}_${Date.now()}`;
-      
-      // Store auth data
+      // Store auth data from Railway backend response
+      const { user, token } = data;
       localStorage.setItem('auth_token', token);
-      localStorage.setItem('user_data', JSON.stringify(foundUser));
+      localStorage.setItem('user_data', JSON.stringify(user));
       
-      setUser(foundUser);
+      setUser(user);
       setIsAuthenticated(true);
       
-      return { success: true, user: foundUser };
+      console.log('✅ Login successful with Railway backend');
+      return { success: true, user: user };
+      
     } catch (error) {
-      return { success: false, error: error.message };
+      console.error('❌ Login error:', error);
+      return { success: false, error: error.message || 'Network error' };
     } finally {
       setLoading(false);
     }
