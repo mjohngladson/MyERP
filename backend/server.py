@@ -39,6 +39,16 @@ class StatusCheckCreate(BaseModel):
     client_name: str
 
 # Add your routes to the router instead of directly to app
+@api_router.get("/init-demo-data")
+async def init_demo_data_endpoint():
+    """Force initialize demo data"""
+    try:
+        await init_sample_data()
+        return {"message": "Demo data initialized successfully"}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Error initializing demo data: {str(e)}")
+
 @api_router.get("/")
 async def root():
     return {"message": "GiLi API is running"}
