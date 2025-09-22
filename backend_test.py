@@ -981,7 +981,161 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
-    async def test_critical_sales_invoice_collection_bug(self):
+    async def test_invoices_list_endpoint(self):
+        """Test GET /api/invoices/?limit=20 endpoint"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/invoices/?limit=20") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Invoices List Endpoint", True, f"Retrieved {len(data)} invoices", {"count": len(data)})
+                        
+                        # Check structure of first invoice if any exist
+                        if len(data) > 0:
+                            invoice = data[0]
+                            required_fields = ["id", "invoice_number", "customer_name", "total_amount", "status"]
+                            
+                            if all(field in invoice for field in required_fields):
+                                # Check data types
+                                if (isinstance(invoice["id"], str) and
+                                    isinstance(invoice["invoice_number"], str) and
+                                    isinstance(invoice["customer_name"], str) and
+                                    isinstance(invoice["total_amount"], (int, float)) and
+                                    isinstance(invoice["status"], str)):
+                                    
+                                    # Check for _meta.total_count on first element
+                                    if "_meta" in invoice and "total_count" in invoice["_meta"]:
+                                        self.log_test("Invoices List Structure", True, f"All required fields present with correct types. Meta data included.", invoice)
+                                    else:
+                                        self.log_test("Invoices List Structure", True, f"All required fields present with correct types. No meta data (acceptable).", invoice)
+                                    return True
+                                else:
+                                    self.log_test("Invoices List Structure", False, "Invalid data types in invoice fields", invoice)
+                                    return False
+                            else:
+                                missing = [f for f in required_fields if f not in invoice]
+                                self.log_test("Invoices List Structure", False, f"Missing required fields: {missing}", invoice)
+                                return False
+                        else:
+                            self.log_test("Invoices List Structure", True, "Empty invoices list (valid)", data)
+                            return True
+                    else:
+                        self.log_test("Invoices List Endpoint", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Invoices List Endpoint", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Invoices List Endpoint", False, f"Error: {str(e)}")
+            return False
+
+    async def test_invoices_stats_overview(self):
+        """Test GET /api/invoices/stats/overview endpoint"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/invoices/stats/overview") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["total_invoices", "total_amount", "submitted_count", "paid_count"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify data types
+                        if (isinstance(data["total_invoices"], int) and
+                            isinstance(data["total_amount"], (int, float)) and
+                            isinstance(data["submitted_count"], int) and
+                            isinstance(data["paid_count"], int)):
+                            
+                            self.log_test("Invoices Stats Overview", True, f"Stats retrieved successfully. Total: {data['total_invoices']}, Amount: {data['total_amount']}", data)
+                            return True
+                        else:
+                            self.log_test("Invoices Stats Overview", False, "Invalid data types in stats", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Invoices Stats Overview", False, f"Missing required fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Invoices Stats Overview", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Invoices Stats Overview", False, f"Error: {str(e)}")
+            return False
+
+    async def test_invoice_create_and_delete(self):
+        """Test POST /api/invoices/ and DELETE /api/invoices/{id} endpoints"""
+        try:
+            # Create test invoice with 1 item and small amounts
+            test_invoice = {
+                "customer_name": "Test Customer for Invoice API",
+                "customer_email": "test@example.com",
+                "items": [
+                    {
+                        "item_name": "Test Product",
+                        "description": "Test product for API testing",
+                        "quantity": 1,
+                        "rate": 50.0,
+                        "amount": 50.0
+                    }
+                ],
+                "subtotal": 50.0,
+                "tax_rate": 18,
+                "tax_amount": 9.0,
+                "discount_amount": 0.0,
+                "total_amount": 59.0,
+                "status": "draft",
+                "notes": "Test invoice created by API testing"
+            }
+            
+            # Create invoice
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=test_invoice) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success") and "invoice" in result:
+                        invoice = result["invoice"]
+                        invoice_id = invoice.get("id")
+                        
+                        if invoice_id:
+                            self.log_test("Invoice Creation", True, f"Invoice created successfully with ID: {invoice_id}", {"invoice_number": invoice.get("invoice_number"), "total": invoice.get("total_amount")})
+                            
+                            # Now test deletion
+                            async with self.session.delete(f"{self.base_url}/api/invoices/{invoice_id}") as delete_response:
+                                if delete_response.status == 200:
+                                    delete_result = await delete_response.json()
+                                    if delete_result.get("success"):
+                                        self.log_test("Invoice Deletion", True, f"Invoice {invoice_id} deleted successfully", delete_result)
+                                        return True
+                                    else:
+                                        self.log_test("Invoice Deletion", False, f"Delete operation failed: {delete_result}", delete_result)
+                                        return False
+                                else:
+                                    self.log_test("Invoice Deletion", False, f"Delete request failed with HTTP {delete_response.status}")
+                                    return False
+                        else:
+                            self.log_test("Invoice Creation", False, "No invoice ID returned", result)
+                            return False
+                    else:
+                        self.log_test("Invoice Creation", False, f"Creation failed: {result}", result)
+                        return False
+                else:
+                    self.log_test("Invoice Creation", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Invoice Create and Delete", False, f"Error: {str(e)}")
+            return False
+
+    async def test_server_configuration(self):
+        """Test that server is running on correct host and port with /api prefix"""
+        try:
+            # Test that /api routes are accessible (already tested in health check)
+            async with self.session.get(f"{self.base_url}/api/") as response:
+                if response.status == 200:
+                    self.log_test("Server Configuration", True, f"Server accessible at {self.base_url} with /api prefix working")
+                    return True
+                else:
+                    self.log_test("Server Configuration", False, f"Server not accessible at {self.base_url}")
+                    return False
+        except Exception as e:
+            self.log_test("Server Configuration", False, f"Error: {str(e)}")
+            return False
         """CRITICAL BUG INVESTIGATION - Sales invoices not being stored despite success messages"""
         try:
             print("\n🚨 CRITICAL BUG INVESTIGATION - SALES INVOICE COLLECTION")
