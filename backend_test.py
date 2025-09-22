@@ -3873,25 +3873,327 @@ class BackendTester:
         
         return success_rate >= 66  # At least 2 out of 3 tests should pass
 
+    async def test_railway_cloud_api_health(self):
+        """Test Railway Cloud API Health Check"""
+        try:
+            print("\n🚀 RAILWAY CLOUD API HEALTH CHECK")
+            async with self.session.get(f"{self.base_url}/api/") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "message" in data and "GiLi API" in data["message"]:
+                        self.log_test("Railway Cloud API Health", True, f"Railway API is running: {data['message']}", data)
+                        return True
+                    else:
+                        self.log_test("Railway Cloud API Health", False, f"Unexpected response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Railway Cloud API Health", False, f"Railway API not accessible - HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Railway Cloud API Health", False, f"Railway API connection error: {str(e)}")
+            return False
+
+    async def test_frontend_to_railway_api(self):
+        """Test Frontend-to-Railway API Communication"""
+        try:
+            print("\n🌐 FRONTEND-TO-RAILWAY API COMMUNICATION TEST")
+            
+            # Test multiple endpoints that frontend would call
+            endpoints_to_test = [
+                ("/api/dashboard/stats", "Dashboard Stats"),
+                ("/api/dashboard/transactions", "Dashboard Transactions"),
+                ("/api/auth/me", "Authentication"),
+                ("/api/sales/customers", "Sales Customers"),
+                ("/api/sales/orders", "Sales Orders")
+            ]
+            
+            successful_endpoints = 0
+            total_endpoints = len(endpoints_to_test)
+            
+            for endpoint, name in endpoints_to_test:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        self.log_test(f"Frontend-Railway API - {name}", True, f"Endpoint accessible via Railway cloud", {"endpoint": endpoint, "status": response.status})
+                        successful_endpoints += 1
+                    else:
+                        self.log_test(f"Frontend-Railway API - {name}", False, f"Endpoint failed - HTTP {response.status}", {"endpoint": endpoint})
+            
+            if successful_endpoints == total_endpoints:
+                self.log_test("Frontend-to-Railway API Communication", True, f"All {total_endpoints} frontend endpoints accessible via Railway cloud")
+                return True
+            else:
+                self.log_test("Frontend-to-Railway API Communication", False, f"Only {successful_endpoints}/{total_endpoints} endpoints accessible")
+                return False
+                
+        except Exception as e:
+            self.log_test("Frontend-to-Railway API Communication", False, f"Error: {str(e)}")
+            return False
+
+    async def test_pos_to_railway_api(self):
+        """Test PoS-to-Railway API Communication"""
+        try:
+            print("\n🏪 POS-TO-RAILWAY API COMMUNICATION TEST")
+            
+            # Test PoS specific endpoints
+            pos_endpoints = [
+                ("/api/pos/health", "PoS Health Check"),
+                ("/api/pos/products", "PoS Products Sync"),
+                ("/api/pos/customers", "PoS Customers Sync"),
+                ("/api/pos/sync", "PoS Full Sync")
+            ]
+            
+            successful_pos_endpoints = 0
+            total_pos_endpoints = len(pos_endpoints)
+            
+            for endpoint, name in pos_endpoints:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        self.log_test(f"PoS-Railway API - {name}", True, f"PoS endpoint accessible via Railway cloud", {"endpoint": endpoint, "status": response.status})
+                        successful_pos_endpoints += 1
+                    else:
+                        self.log_test(f"PoS-Railway API - {name}", False, f"PoS endpoint failed - HTTP {response.status}", {"endpoint": endpoint})
+            
+            if successful_pos_endpoints == total_pos_endpoints:
+                self.log_test("PoS-to-Railway API Communication", True, f"All {total_pos_endpoints} PoS endpoints accessible via Railway cloud")
+                return True
+            else:
+                self.log_test("PoS-to-Railway API Communication", False, f"Only {successful_pos_endpoints}/{total_pos_endpoints} PoS endpoints accessible")
+                return False
+                
+        except Exception as e:
+            self.log_test("PoS-to-Railway API Communication", False, f"Error: {str(e)}")
+            return False
+
+    async def test_railway_cloud_end_to_end_transaction(self):
+        """Create End-to-End Test Transaction via Railway API"""
+        try:
+            print("\n🔄 RAILWAY CLOUD END-TO-END TRANSACTION TEST")
+            
+            # Create the exact test transaction requested in the review
+            railway_test_transaction = {
+                "pos_transaction_id": "RAILWAY-CLOUD-API-TEST-001",
+                "cashier_id": "railway-cloud-cashier",
+                "store_location": "Railway Cloud Store",
+                "pos_device_id": "railway-cloud-device",
+                "receipt_number": "RAILWAY-CLOUD-001",
+                "transaction_timestamp": "2025-01-21T13:00:00Z",
+                "customer_id": None,
+                "customer_name": "Railway Cloud API Test Customer",
+                "items": [
+                    {
+                        "product_id": "railway-cloud-product",
+                        "product_name": "Railway Cloud Test Product",
+                        "quantity": 1,
+                        "unit_price": 200.0,
+                        "line_total": 200.0
+                    }
+                ],
+                "subtotal": 200.0,
+                "tax_amount": 36.0,
+                "discount_amount": 0.0,
+                "total_amount": 236.0,
+                "payment_method": "digital"
+            }
+            
+            # Submit transaction to Railway API
+            async with self.session.post(f"{self.base_url}/api/pos/transactions", json=railway_test_transaction) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if result.get("success"):
+                        order_number = result.get("order_number", "Unknown")
+                        invoice_number = result.get("invoice_number", "Unknown")
+                        
+                        self.log_test("Railway Cloud End-to-End Transaction", True, 
+                                    f"✅ Railway test transaction processed successfully. Order: {order_number}, Invoice: {invoice_number}, Amount: ₹{railway_test_transaction['total_amount']}", 
+                                    result)
+                        
+                        # Verify the transaction appears in sales orders
+                        await asyncio.sleep(2)  # Wait for processing
+                        async with self.session.get(f"{self.base_url}/api/sales/orders") as orders_response:
+                            if orders_response.status == 200:
+                                orders = await orders_response.json()
+                                railway_order = next((o for o in orders if o.get("order_number") == order_number), None)
+                                if railway_order:
+                                    self.log_test("Railway Transaction Verification - Sales Order", True, 
+                                                f"Railway test transaction found in sales orders with amount ₹{railway_order.get('total_amount')}")
+                                else:
+                                    self.log_test("Railway Transaction Verification - Sales Order", False, 
+                                                "Railway test transaction not found in sales orders")
+                        
+                        return True
+                    else:
+                        self.log_test("Railway Cloud End-to-End Transaction", False, f"Transaction failed: {result}", result)
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Railway Cloud End-to-End Transaction", False, f"HTTP {response.status}: {error_text}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Railway Cloud End-to-End Transaction", False, f"Error: {str(e)}")
+            return False
+
+    async def test_railway_sales_invoice_creation_verification(self):
+        """Test Sales Invoice Creation in Railway Database"""
+        try:
+            print("\n📄 RAILWAY SALES INVOICE CREATION TEST")
+            
+            # Check current invoices count
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
+                if response.status == 200:
+                    initial_invoices = await response.json()
+                    initial_count = len(initial_invoices)
+                    
+                    self.log_test("Railway Sales Invoices - Initial Check", True, 
+                                f"Found {initial_count} existing sales invoices in Railway database", 
+                                {"count": initial_count, "sample": initial_invoices[0] if initial_invoices else None})
+                    
+                    # Look for our test transaction invoice
+                    railway_invoice = None
+                    for invoice in initial_invoices:
+                        if ("RAILWAY-CLOUD-API-TEST-001" in str(invoice.get("pos_metadata", {})) or
+                            invoice.get("customer_name") == "Railway Cloud API Test Customer"):
+                            railway_invoice = invoice
+                            break
+                    
+                    if railway_invoice:
+                        expected_amount = 236.0
+                        actual_amount = railway_invoice.get("total_amount", 0)
+                        
+                        if abs(actual_amount - expected_amount) < 0.01:
+                            self.log_test("Railway Sales Invoice Creation", True, 
+                                        f"✅ Railway test invoice found with correct amount: {railway_invoice.get('invoice_number')} = ₹{actual_amount}", 
+                                        railway_invoice)
+                            return True
+                        else:
+                            self.log_test("Railway Sales Invoice Creation", False, 
+                                        f"Railway test invoice found but amount incorrect: expected ₹{expected_amount}, got ₹{actual_amount}", 
+                                        railway_invoice)
+                            return False
+                    else:
+                        self.log_test("Railway Sales Invoice Creation", False, 
+                                    "Railway test transaction invoice not found in Railway database")
+                        return False
+                else:
+                    self.log_test("Railway Sales Invoices - Initial Check", False, f"Cannot access invoices API - HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Railway Sales Invoice Creation", False, f"Error: {str(e)}")
+            return False
+
+    async def test_railway_database_connectivity_verification(self):
+        """Test Railway Database Connectivity and Collections"""
+        try:
+            print("\n🗄️ RAILWAY DATABASE CONNECTIVITY TEST")
+            
+            # Test multiple collections to verify database connectivity
+            collections_to_test = [
+                ("/api/sales/customers", "customers"),
+                ("/api/pos/products", "products"),
+                ("/api/sales/orders", "sales_orders"),
+                ("/api/invoices/", "sales_invoices")
+            ]
+            
+            accessible_collections = 0
+            total_collections = len(collections_to_test)
+            collection_data = {}
+            
+            for endpoint, collection_name in collections_to_test:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if isinstance(data, list):
+                            count = len(data)
+                        elif isinstance(data, dict) and "products" in data:
+                            count = len(data["products"])
+                        else:
+                            count = 1
+                        
+                        collection_data[collection_name] = count
+                        
+                        self.log_test(f"Railway Database - {collection_name}", True, 
+                                    f"Collection accessible with {count} records", 
+                                    {"collection": collection_name, "count": count})
+                        accessible_collections += 1
+                    else:
+                        self.log_test(f"Railway Database - {collection_name}", False, 
+                                    f"Collection not accessible - HTTP {response.status}")
+            
+            if accessible_collections == total_collections:
+                self.log_test("Railway Database Connectivity", True, 
+                            f"All {total_collections} collections accessible in Railway database", 
+                            collection_data)
+                return True
+            else:
+                self.log_test("Railway Database Connectivity", False, 
+                            f"Only {accessible_collections}/{total_collections} collections accessible")
+                return False
+                
+        except Exception as e:
+            self.log_test("Railway Database Connectivity", False, f"Error: {str(e)}")
+            return False
+
+    async def run_railway_cloud_integration_tests(self):
+        """Run Railway Cloud Integration Tests"""
+        print("🚀 RAILWAY CLOUD API INTEGRATION TESTING")
+        print(f"🌐 Testing Railway Cloud API: {self.base_url}")
+        print("=" * 80)
+        
+        # Railway-specific tests
+        railway_tests = [
+            self.test_railway_cloud_api_health,
+            self.test_frontend_to_railway_api,
+            self.test_pos_to_railway_api,
+            self.test_railway_cloud_end_to_end_transaction,
+            self.test_railway_sales_invoice_creation_verification,
+            self.test_railway_database_connectivity_verification,
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        for test in railway_tests:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            
+            print("-" * 40)
+        
+        # Print Railway-specific summary
+        total = passed + failed
+        success_rate = (passed / total * 100) if total > 0 else 0
+        
+        print("=" * 80)
+        print("🏁 RAILWAY CLOUD INTEGRATION TESTING COMPLETE")
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        print("=" * 80)
+        
+        return success_rate > 80
+
 async def main():
-    """Main test runner"""
+    """Main function to run Railway Cloud Integration Tests"""
     async with BackendTester() as tester:
-        # Run Railway-specific tests as requested
-        railway_success = await tester.run_railway_tests()
+        # Run Railway-specific integration tests
+        success = await tester.run_railway_cloud_integration_tests()
         
-        # Save detailed results to file
-        with open('/app/backend_test_results.json', 'w') as f:
-            json.dump({
-                "summary": {
-                    "railway_tests_passed": railway_success,
-                    "timestamp": datetime.now().isoformat()
-                },
-                "detailed_results": tester.test_results
-            }, f, indent=2)
-        
-        print(f"\n📄 Detailed results saved to: /app/backend_test_results.json")
-        return railway_success
+        if success:
+            print("🎉 Railway Cloud Integration Tests PASSED!")
+            return 0
+        else:
+            print("💥 Railway Cloud Integration Tests FAILED!")
+            return 1
 
 if __name__ == "__main__":
-    success = asyncio.run(main())
-    exit(0 if success else 1)
+    import sys
+    sys.exit(asyncio.run(main()))
