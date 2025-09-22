@@ -12,7 +12,8 @@ export const useApi = (apiCall, dependencies = [], initialData = null) => {
         setLoading(true);
         setError(null);
         const response = await apiCall();
-        setData(response.data);
+        const normalized = (response && response.data !== undefined) ? response.data : response;
+        setData(normalized);
       } catch (err) {
         setError(err.response?.data?.detail || err.message);
       } finally {
