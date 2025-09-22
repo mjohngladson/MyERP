@@ -3722,6 +3722,54 @@ class BackendTester:
             self.log_test("Railway Performance - Test", False, f"Error testing Railway performance: {str(e)}")
             return False
 
+    async def run_invoice_sanity_tests(self):
+        """Run invoice sanity tests as requested in review"""
+        print("🧾 Starting Invoice Sanity Tests")
+        print(f"🌐 Testing against: {self.base_url}")
+        print("=" * 60)
+        
+        # Invoice-specific tests as requested
+        invoice_tests = [
+            self.test_server_configuration,
+            self.test_invoices_list_endpoint,
+            self.test_invoices_stats_overview,
+            self.test_invoice_create_and_delete,
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        for test in invoice_tests:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        total = passed + failed
+        success_rate = (passed / total * 100) if total > 0 else 0
+        
+        print("=" * 60)
+        print("🏁 INVOICE SANITY TESTS COMPLETE")
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        print("=" * 60)
+        
+        # Print detailed results
+        print("\n📋 DETAILED TEST RESULTS:")
+        for result in self.test_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"{status} {result['test']}: {result['details']}")
+        
+        return passed, total, self.test_results
+
     async def run_all_tests(self):
         """Run all backend tests with focus on Railway database testing"""
         print("🚀 Starting GiLi Backend API Testing Suite - RAILWAY DATABASE FOCUS")
