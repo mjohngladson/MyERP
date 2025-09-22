@@ -545,6 +545,66 @@ backend:
           agent: "testing"
           comment: "✅ PoS Integration Regression Testing PASSED: All existing PoS endpoints remain functional after fixes. Health check, products sync, and transaction processing all working correctly."
 
+  - task: "Sales Invoice Creation API - Critical Business Logic"
+    implemented: true
+    working: true
+    file: "routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented critical business logic fix where Sales Invoices are created BEFORE Sales Orders in PoS transactions. This matches proper ERP business processes where invoices are the primary billing documents."
+        - working: true
+          agent: "testing"
+          comment: "✅ Sales Invoice Creation API VERIFIED: GET /api/invoices/ endpoint working correctly, retrieved 3 sales invoices with proper SINV-YYYYMMDD-XXXX format. Invoice structure validation passed with all required fields (id, invoice_number, customer_id, customer_name, total_amount, status, items)."
+
+  - task: "PoS Transaction Business Flow - Invoice First, Order Second"
+    implemented: true
+    working: true
+    file: "routers/pos_integration.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented proper ERP business flow where PoS transactions create Sales Invoice (billing document) FIRST, then Sales Order (tracking document) SECOND. This is the correct sequence for ERP systems."
+        - working: true
+          agent: "testing"
+          comment: "✅ PoS Business Flow VERIFIED: PoS transactions now correctly create Sales Invoice FIRST (SINV-20250922-0003 for ₹236.0), then Sales Order SECOND (SO-20250922-0038 for ₹236.0). Proper ERP sequence confirmed with both documents containing correct amounts and metadata."
+
+  - task: "Invoice and Order Number Format Standardization"
+    implemented: true
+    working: true
+    file: "routers/pos_integration.py, routers/invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Standardized number formats: Sales Invoices use SINV-YYYYMMDD-XXXX format, Sales Orders use SO-YYYYMMDD-XXXX format for proper document identification and sequencing."
+        - working: true
+          agent: "testing"
+          comment: "✅ Number Format Standardization VERIFIED: All 3 invoices follow correct SINV-YYYYMMDD-XXXX format. Sales orders follow SO-YYYYMMDD-XXXX format. Document numbering system working correctly for proper ERP document management."
+
+  - task: "18% Tax Calculation Verification in PoS Transactions"
+    implemented: true
+    working: true
+    file: "routers/pos_integration.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Verified that PoS transactions correctly process 18% tax calculations and store accurate amounts in both Sales Invoices and Sales Orders."
+        - working: true
+          agent: "testing"
+          comment: "✅ Tax Calculation Verification PASSED: 18% tax calculations working correctly - Product A (₹100→₹118) and Product B (₹200→₹236) both processed and stored accurately in backend. Tax metadata preserved in both invoice and order documents."
+
 backend:
   - task: "Basic Health Check API"
     implemented: true
