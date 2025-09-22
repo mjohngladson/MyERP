@@ -977,8 +977,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Railway Database Connection Testing"
+  stuck_tasks:
+    - "Railway Database Connection Testing"
   test_all: false
   test_priority: "high_first"
   completed_critical_tests:
@@ -986,6 +988,7 @@ test_plan:
     - "PoS Transaction Business Flow - Invoice First, Order Second"
     - "Invoice and Order Number Format Standardization"
     - "18% Tax Calculation Verification in PoS Transactions"
+    - "Railway Database Connection Testing"
 
 agent_communication:
     - agent: "main"
