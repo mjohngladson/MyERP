@@ -85,9 +85,14 @@ export const AuthProvider = ({ children }) => {
       
       console.log('🔐 Attempting login with Railway backend...');
       
-      // Railway production - hardcoded backend URL for immediate fix
-      const backendUrl = 'https://myerp-production.up.railway.app';
-      console.log('🌐 Using hardcoded Railway backend URL:', backendUrl);
+      // Use env-configured backend URL
+      const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.REACT_APP_BACKEND_URL)
+        || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL);
+      if (!backendUrl) {
+        console.warn('⚠️ REACT_APP_BACKEND_URL is not set. Using relative /api for auth.');
+      } else {
+        console.log('🌐 Using backend URL from env:', backendUrl);
+      }
       
       // Make actual API call to Railway backend
       const response = await fetch(`${backendUrl}/api/auth/login`, {
