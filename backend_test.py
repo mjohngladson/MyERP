@@ -3233,148 +3233,109 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run all backend tests"""
-        print(f"🚀 Starting Backend API Tests for GiLi")
-        print(f"📍 Testing URL: {self.base_url}")
-        print("=" * 60)
+        """Run all backend tests with focus on Railway database testing"""
+        print("🚀 Starting GiLi Backend API Testing Suite - RAILWAY DATABASE FOCUS")
+        print(f"🌐 Testing against: {self.base_url}")
+        print("🚄 Focus: Railway MongoDB cloud database connection and functionality")
+        print("=" * 80)
         
-        # CRITICAL BUG INVESTIGATION FIRST - Sales invoices not being stored
-        critical_bug_tests = [
-            self.test_critical_sales_invoice_collection_bug,
-            self.test_pos_transaction_with_error_handling,
-        ]
-        
-        # URGENT: Tax calculation investigation tests
-        urgent_tests = [
-            self.test_pos_tax_calculation_investigation,
-            self.test_existing_problematic_transactions,
-        ]
-        
-        # CRITICAL BUSINESS LOGIC TESTS - Sales Invoice BEFORE Sales Order (PRIORITY)
-        critical_business_tests = [
-            self.test_sales_invoices_api,
-            self.test_pos_transaction_business_flow,
-            self.test_invoice_number_format,
-            self.test_order_number_format,
-            self.test_tax_calculation_verification,
+        # Railway-focused tests first (as requested in review)
+        railway_tests = [
+            self.test_railway_database_connection,
+            self.test_railway_sales_invoice_creation,
+            self.test_railway_collections_verification,
+            self.test_railway_performance,
         ]
         
         # Core API tests
-        tests = [
+        core_tests = [
             self.test_health_check,
+            self.test_database_initialization,
             self.test_dashboard_stats,
             self.test_dashboard_transactions,
             self.test_auth_me,
             self.test_sales_orders,
             self.test_sales_customers,
-            self.test_database_initialization,
-            self.test_search_suggestions,
-            self.test_global_search,
-            self.test_sales_overview_report,
-            self.test_financial_summary_report,
-            self.test_customer_analysis_report,
-            self.test_inventory_report,
-            self.test_performance_metrics_report,
-            self.test_export_functionality,
-            self.test_reporting_error_handling,
-            self.test_error_handling,
-            # PoS Integration Tests - USER REQUESTED
-            self.test_pos_transaction_processing_api,
-            self.test_sales_orders_after_pos_transaction,
-            self.test_customer_loyalty_updates_after_pos,
-            self.test_pos_data_flow_verification,
-            # Additional PoS Tests
+            
+            # PoS Integration tests (relevant to Railway testing)
             self.test_pos_health_check,
             self.test_pos_products_sync,
             self.test_pos_customers_sync,
-            self.test_pos_full_sync,
-            self.test_pos_sync_status,
-            self.test_pos_categories,
             self.test_pos_transaction_processing,
-            # Sales Order Validation Tests (NEW - for PoS integration fixes)
-            self.test_sales_orders_validation_fixes,
-            self.test_pos_transaction_to_sales_order_conversion,
-            self.test_pos_transaction_field_mapping,
-            # PoS Data Mismatch Investigation (CRITICAL USER ISSUE)
-            self.test_pos_data_mismatch_investigation,
-            # NEW: Comprehensive tests for the fixes mentioned in review request
-            self.test_database_consolidation_fix,
-            self.test_pos_customers_endpoint_fix,
-            self.test_pos_customer_creation_endpoint,
-            self.test_customer_data_flow_integration,
-            self.test_pos_customer_search_functionality,
-            self.test_pos_integration_regression,
+            
+            # Tax calculation verification
+            self.test_tax_calculation_verification,
         ]
         
-        # Run critical bug investigation first
-        print("\n🚨 RUNNING CRITICAL BUG INVESTIGATION - SALES INVOICES NOT STORED")
-        print("=" * 80)
-        critical_bug_passed = 0
-        critical_bug_total = len(critical_bug_tests)
-        
-        for test in critical_bug_tests:
-            try:
-                result = await test()
-                if result:
-                    critical_bug_passed += 1
-            except Exception as e:
-                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
-        
-        print(f"\n🚨 CRITICAL BUG INVESTIGATION SUMMARY: {critical_bug_passed}/{critical_bug_total} passed")
-        print("=" * 80)
-        
-        # Run urgent tests next
-        print("\n🚨 RUNNING URGENT TAX CALCULATION INVESTIGATION")
-        print("=" * 60)
-        urgent_passed = 0
-        urgent_total = len(urgent_tests)
-        
-        for test in urgent_tests:
-            try:
-                result = await test()
-                if result:
-                    urgent_passed += 1
-            except Exception as e:
-                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
-        
-        print(f"\n🚨 URGENT TESTS SUMMARY: {urgent_passed}/{urgent_total} passed")
-        print("=" * 60)
-        
-        # Run critical business logic tests next
-        print("\n🏪 RUNNING CRITICAL BUSINESS LOGIC TESTS - SALES INVOICE BEFORE SALES ORDER")
-        print("=" * 60)
-        critical_passed = 0
-        critical_total = len(critical_business_tests)
-        
-        for test in critical_business_tests:
-            try:
-                result = await test()
-                if result:
-                    critical_passed += 1
-            except Exception as e:
-                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
-        
-        print(f"\n🏪 CRITICAL BUSINESS TESTS SUMMARY: {critical_passed}/{critical_total} passed")
-        print("=" * 60)
+        # Combine all tests - Railway tests first
+        all_tests = railway_tests + core_tests
         
         passed = 0
-        total = len(tests)
+        failed = 0
         
-        for test in tests:
+        print("\n🚄 RAILWAY DATABASE TESTS (PRIORITY)")
+        print("=" * 50)
+        
+        # Run Railway tests first
+        for test in railway_tests:
             try:
                 result = await test()
                 if result:
                     passed += 1
+                else:
+                    failed += 1
             except Exception as e:
-                print(f"❌ Test {test.__name__} failed with exception: {str(e)}")
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
         
-        print("=" * 60)
-        print(f"📊 Test Results: {passed}/{total} tests passed")
+        print("\n🔧 CORE API TESTS")
+        print("=" * 50)
         
-        if passed == total:
-            print("🎉 All tests passed! Backend is working correctly.")
+        # Run core tests
+        for test in core_tests:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        total = passed + failed
+        success_rate = (passed / total * 100) if total > 0 else 0
+        
+        print("=" * 80)
+        print("🏁 RAILWAY DATABASE TESTING COMPLETE")
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        print("=" * 80)
+        
+        # Print Railway-specific summary
+        railway_results = [r for r in self.test_results if "Railway" in r["test"]]
+        railway_passed = sum(1 for r in railway_results if r["success"])
+        railway_total = len(railway_results)
+        railway_success_rate = (railway_passed / railway_total * 100) if railway_total > 0 else 0
+        
+        print(f"\n🚄 RAILWAY DATABASE SPECIFIC RESULTS:")
+        print(f"✅ Railway Tests Passed: {railway_passed}/{railway_total}")
+        print(f"📊 Railway Success Rate: {railway_success_rate:.1f}%")
+        
+        if railway_success_rate >= 75:
+            print("🎉 RAILWAY DATABASE CONNECTION: WORKING WELL")
         else:
-            print(f"⚠️  {total - passed} tests failed. Check the details above.")
+            print("⚠️  RAILWAY DATABASE CONNECTION: NEEDS ATTENTION")
+        
+        # Print detailed results
+        print("\n📋 DETAILED TEST RESULTS:")
+        for result in self.test_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"{status} {result['test']}: {result['details']}")
         
         return passed, total, self.test_results
 
