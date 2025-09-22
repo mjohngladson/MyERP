@@ -151,7 +151,7 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
         
         // If item selected from dropdown, populate details
         if (field === 'item_id') {
-          const selectedItem = items.find(i => i.id === value);
+          const selectedItem = items.find(i => i.id === value || i.sku === value);
           if (selectedItem) {
             updatedItem.item_name = selectedItem.name;
             updatedItem.description = selectedItem.description || '';
