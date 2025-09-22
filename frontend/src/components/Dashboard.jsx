@@ -267,9 +267,9 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           <div className="divide-y divide-gray-100">
             {transactionsLoading ? (
               <div className="p-6 text-center text-gray-500">Loading transactions...</div>
-            ) : transactions && transactions.length > 0 ? (
+            ) : transactions && Array.isArray(transactions) && transactions.length > 0 ? (
               transactions.map((transaction) => (
-                <div key={transaction.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div key={transaction.id || Math.random()} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
@@ -278,9 +278,9 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
                         </div>
                         <div>
                           <h3 className="font-medium text-gray-800">
-                            {transaction.type.replace('_', ' ').toUpperCase()}
+                            {(transaction.type || 'Transaction').replace('_', ' ').toUpperCase()}
                           </h3>
-                          <p className="text-sm text-gray-600">{transaction.reference_number}</p>
+                          <p className="text-sm text-gray-600">{transaction.reference_number || 'N/A'}</p>
                           {transaction.party_name && (
                             <p className="text-xs text-gray-500">{transaction.party_name}</p>
                           )}
@@ -288,7 +288,7 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-800">{formatCurrency(transaction.amount)}</p>
+                      <p className="font-semibold text-gray-800">{formatCurrency(transaction.amount || 0)}</p>
                       <p className="text-sm text-gray-500">{formatDate(transaction.date)}</p>
                     </div>
                     <button className="ml-4 p-1 hover:bg-gray-100 rounded-md">
