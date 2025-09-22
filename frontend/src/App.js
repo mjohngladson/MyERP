@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
 import SalesInvoicesList from './components/SalesInvoicesList';
+import SalesInvoiceForm from './components/SalesInvoiceForm';
 import SalesOrdersList from './components/SalesOrdersList';
 import CustomersList from './components/CustomersList';
 import QuotationsList from './components/QuotationsList';
