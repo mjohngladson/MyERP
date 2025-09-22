@@ -91,7 +91,7 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${api.getBaseUrl()}/invoices/${invoiceId}`);
+      const response = await fetch(`${api.getBaseUrl()}/api/invoices/${invoiceId}`);
       const data = await response.json();
       setInvoice(data);
     } catch (error) {
