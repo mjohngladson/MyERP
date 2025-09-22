@@ -3238,7 +3238,13 @@ class BackendTester:
         print(f"📍 Testing URL: {self.base_url}")
         print("=" * 60)
         
-        # URGENT: Tax calculation investigation tests first
+        # CRITICAL BUG INVESTIGATION FIRST - Sales invoices not being stored
+        critical_bug_tests = [
+            self.test_critical_sales_invoice_collection_bug,
+            self.test_pos_transaction_with_error_handling,
+        ]
+        
+        # URGENT: Tax calculation investigation tests
         urgent_tests = [
             self.test_pos_tax_calculation_investigation,
             self.test_existing_problematic_transactions,
