@@ -3,18 +3,175 @@
     "passed": 33,
     "total": 38,
     "success_rate": "86.8%",
-    "timestamp": "2025-09-22T04:27:41.185874"
+    "timestamp": "2025-09-22T04:40:20.985146"
   },
   "detailed_results": [
     {
-      "test": "Tax Calculation Test 1 - Submission",
+      "test": "Sales Invoice Collection - API Access",
       "success": true,
-      "details": "Transaction submitted successfully: SO-20250922-0048",
-      "timestamp": "2025-09-22T04:27:36.499907",
+      "details": "Sales Invoice API accessible, found 20 invoices",
+      "timestamp": "2025-09-22T04:40:07.954106",
+      "response_data": {
+        "count": 20,
+        "sample": {
+          "id": "68d0d05a2acbd454af9d2096",
+          "invoice_number": "SINV-20250922-0025",
+          "customer_id": "default_customer",
+          "customer_name": "Walk-in Customer",
+          "total_amount": 118.0,
+          "status": "submitted",
+          "invoice_date": "2025-09-22T04:28:10.326000",
+          "due_date": null,
+          "items": [
+            {
+              "item_id": "investigation-product",
+              "item_name": "Investigation Product",
+              "quantity": 1,
+              "rate": 100.0,
+              "amount": 118.0
+            }
+          ],
+          "company_id": "default_company",
+          "created_at": "2025-09-22T04:28:10.327000",
+          "updated_at": "2025-09-22T04:28:10.327000",
+          "subtotal": 100.0,
+          "tax_amount": 18.0,
+          "discount_amount": 0.0,
+          "pos_metadata": {
+            "pos_transaction_id": "INVESTIGATION-TEST-001",
+            "receipt_number": "INV-TEST-001",
+            "pos_device_id": "test-device",
+            "store_location": "Investigation Store",
+            "cashier_id": "test-cashier",
+            "payment_method": "cash",
+            "payment_details": {
+              "amount_paid": 118.0
+            },
+            "original_subtotal": 100.0,
+            "tax_amount": 18.0,
+            "discount_amount": 0.0
+          }
+        }
+      }
+    },
+    {
+      "test": "Sales Invoice Collection - Data Existence",
+      "success": true,
+      "details": "\u2705 Found 20 sales invoices in collection",
+      "timestamp": "2025-09-22T04:40:07.954148",
+      "response_data": null
+    },
+    {
+      "test": "PoS Transaction - Test Creation",
+      "success": true,
+      "details": "Test transaction created successfully: SO-20250922-0061",
+      "timestamp": "2025-09-22T04:40:07.972100",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d0382acbd454af9d2070",
-        "order_number": "SO-20250922-0048",
+        "sales_order_id": "68d0d327e8364d40f2752aad",
+        "order_number": "SO-20250922-0061",
+        "transaction_processed": true,
+        "inventory_updated": true,
+        "message": "Transaction successfully integrated into GiLi system"
+      }
+    },
+    {
+      "test": "Sales Invoice Creation - After PoS Transaction",
+      "success": false,
+      "details": "\u274c CRITICAL: No new sales invoice created despite success message! Before: 20, After: 20",
+      "timestamp": "2025-09-22T04:40:09.982668",
+      "response_data": null
+    },
+    {
+      "test": "Database Connection - Sales Orders",
+      "success": true,
+      "details": "Sales orders collection accessible: 20 orders",
+      "timestamp": "2025-09-22T04:40:09.990665",
+      "response_data": {
+        "count": 20
+      }
+    },
+    {
+      "test": "Database Connection - Customers",
+      "success": true,
+      "details": "Customers collection accessible: 13 customers",
+      "timestamp": "2025-09-22T04:40:10.000400",
+      "response_data": {
+        "count": 13
+      }
+    },
+    {
+      "test": "Backend Logs Monitoring",
+      "success": true,
+      "details": "Backend logs show '\u2705 Created Sales Invoice' messages - indicates code execution but potential storage failure",
+      "timestamp": "2025-09-22T04:40:10.000455",
+      "response_data": null
+    },
+    {
+      "test": "PoS Error Test - Standard Transaction",
+      "success": true,
+      "details": "Transaction successful: SO-20250922-0062",
+      "timestamp": "2025-09-22T04:40:10.064872",
+      "response_data": {
+        "success": true,
+        "sales_order_id": "68d0d32ae8364d40f2752ab0",
+        "order_number": "SO-20250922-0062",
+        "transaction_processed": true,
+        "inventory_updated": true,
+        "message": "Transaction successfully integrated into GiLi system"
+      }
+    },
+    {
+      "test": "PoS Error Test - High Value Transaction",
+      "success": true,
+      "details": "Transaction successful: SO-20250922-0063",
+      "timestamp": "2025-09-22T04:40:11.078767",
+      "response_data": {
+        "success": true,
+        "sales_order_id": "68d0d32be8364d40f2752ab3",
+        "order_number": "SO-20250922-0063",
+        "transaction_processed": true,
+        "inventory_updated": true,
+        "message": "Transaction successfully integrated into GiLi system"
+      }
+    },
+    {
+      "test": "PoS Error Test - Multi-Item Transaction",
+      "success": true,
+      "details": "Transaction successful: SO-20250922-0064",
+      "timestamp": "2025-09-22T04:40:12.092997",
+      "response_data": {
+        "success": true,
+        "sales_order_id": "68d0d32ce8364d40f2752ab6",
+        "order_number": "SO-20250922-0064",
+        "transaction_processed": true,
+        "inventory_updated": true,
+        "message": "Transaction successfully integrated into GiLi system"
+      }
+    },
+    {
+      "test": "PoS Error Test - Invoice Creation Verification",
+      "success": false,
+      "details": "\u274c CRITICAL: Invoice count mismatch! Expected: 23, Actual: 20. Successful transactions: 3",
+      "timestamp": "2025-09-22T04:40:16.105851",
+      "response_data": null
+    },
+    {
+      "test": "PoS Error Test - Summary",
+      "success": true,
+      "details": "Completed error testing: 3 successful, 0 failed transactions",
+      "timestamp": "2025-09-22T04:40:16.105897",
+      "response_data": null
+    },
+    {
+      "test": "Tax Calculation Test 1 - Submission",
+      "success": true,
+      "details": "Transaction submitted successfully: SO-20250922-0065",
+      "timestamp": "2025-09-22T04:40:16.117869",
+      "response_data": {
+        "success": true,
+        "sales_order_id": "68d0d330e8364d40f2752ab9",
+        "order_number": "SO-20250922-0065",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -24,10 +181,10 @@
       "test": "Tax Calculation Test 1 - Verification",
       "success": true,
       "details": "\u2705 CORRECT: Stored amount 118.0 matches expected 118.0",
-      "timestamp": "2025-09-22T04:27:36.514928",
+      "timestamp": "2025-09-22T04:40:16.125156",
       "response_data": {
-        "id": "68d0d0382acbd454af9d2070",
-        "order_number": "SO-20250922-0048",
+        "id": "68d0d330e8364d40f2752ab9",
+        "order_number": "SO-20250922-0065",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 118.0,
@@ -44,18 +201,18 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:36.493000"
+        "created_at": "2025-09-22T04:40:16.113000"
       }
     },
     {
       "test": "Tax Calculation Test 2 - Submission",
       "success": true,
-      "details": "Transaction submitted successfully: SO-20250922-0049",
-      "timestamp": "2025-09-22T04:27:36.537546",
+      "details": "Transaction submitted successfully: SO-20250922-0066",
+      "timestamp": "2025-09-22T04:40:16.176786",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d0382acbd454af9d2073",
-        "order_number": "SO-20250922-0049",
+        "sales_order_id": "68d0d330e8364d40f2752abc",
+        "order_number": "SO-20250922-0066",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -65,10 +222,10 @@
       "test": "Tax Calculation Test 2 - Verification",
       "success": true,
       "details": "\u2705 CORRECT: Stored amount 236.0 matches expected 236.0",
-      "timestamp": "2025-09-22T04:27:36.553429",
+      "timestamp": "2025-09-22T04:40:16.185255",
       "response_data": {
-        "id": "68d0d0382acbd454af9d2073",
-        "order_number": "SO-20250922-0049",
+        "id": "68d0d330e8364d40f2752abc",
+        "order_number": "SO-20250922-0066",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 236.0,
@@ -85,14 +242,14 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:36.531000"
+        "created_at": "2025-09-22T04:40:16.132000"
       }
     },
     {
       "test": "Existing Transaction Analysis",
       "success": true,
       "details": "No problematic transactions found with those specific order numbers",
-      "timestamp": "2025-09-22T04:27:36.563015",
+      "timestamp": "2025-09-22T04:40:16.193028",
       "response_data": {
         "total_orders": 20
       }
@@ -100,25 +257,25 @@
     {
       "test": "Sales Invoices API - GET Endpoint",
       "success": true,
-      "details": "Retrieved 14 sales invoices",
-      "timestamp": "2025-09-22T04:27:36.572962",
+      "details": "Retrieved 20 sales invoices",
+      "timestamp": "2025-09-22T04:40:16.201694",
       "response_data": {
-        "count": 14
+        "count": 20
       }
     },
     {
       "test": "Sales Invoices API - Invoice Structure",
       "success": true,
-      "details": "Invoice structure valid: SINV-20250922-0014",
-      "timestamp": "2025-09-22T04:27:36.573005",
+      "details": "Invoice structure valid: SINV-20250922-0031",
+      "timestamp": "2025-09-22T04:40:16.201733",
       "response_data": {
-        "id": "68d0d0382acbd454af9d2072",
-        "invoice_number": "SINV-20250922-0014",
+        "id": "68d0d330e8364d40f2752abb",
+        "invoice_number": "SINV-20250922-0031",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 236.0,
         "status": "submitted",
-        "invoice_date": "2025-09-22T04:27:36.528000",
+        "invoice_date": "2025-09-22T04:40:16.130000",
         "due_date": null,
         "items": [
           {
@@ -130,8 +287,8 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:36.528000",
-        "updated_at": "2025-09-22T04:27:36.528000",
+        "created_at": "2025-09-22T04:40:16.130000",
+        "updated_at": "2025-09-22T04:40:16.130000",
         "subtotal": 200.0,
         "tax_amount": 36.0,
         "discount_amount": 0.0,
@@ -152,12 +309,12 @@
     {
       "test": "PoS Business Flow - Transaction Processing",
       "success": true,
-      "details": "PoS transaction processed successfully: SO-20250922-0050",
-      "timestamp": "2025-09-22T04:27:36.588126",
+      "details": "PoS transaction processed successfully: SO-20250922-0067",
+      "timestamp": "2025-09-22T04:40:16.213028",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d0382acbd454af9d2076",
-        "order_number": "SO-20250922-0050",
+        "sales_order_id": "68d0d330e8364d40f2752abf",
+        "order_number": "SO-20250922-0067",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -166,16 +323,16 @@
     {
       "test": "PoS Business Flow - Sales Invoice Creation",
       "success": true,
-      "details": "Sales Invoice created correctly: SINV-20250922-0015 for \u20b9236.0",
-      "timestamp": "2025-09-22T04:27:37.602063",
+      "details": "Sales Invoice created correctly: SINV-20250922-0032 for \u20b9236.0",
+      "timestamp": "2025-09-22T04:40:17.222725",
       "response_data": {
-        "id": "68d0d0382acbd454af9d2075",
-        "invoice_number": "SINV-20250922-0015",
+        "id": "68d0d330e8364d40f2752abe",
+        "invoice_number": "SINV-20250922-0032",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 236.0,
         "status": "submitted",
-        "invoice_date": "2025-09-22T04:27:36.579000",
+        "invoice_date": "2025-09-22T04:40:16.206000",
         "due_date": null,
         "items": [
           {
@@ -187,14 +344,14 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:36.579000",
-        "updated_at": "2025-09-22T04:27:36.579000",
+        "created_at": "2025-09-22T04:40:16.206000",
+        "updated_at": "2025-09-22T04:40:16.206000",
         "subtotal": 200.0,
         "tax_amount": 36.0,
         "discount_amount": 0.0,
         "pos_metadata": {
-          "pos_transaction_id": "TEST-FLOW-20250922-042736",
-          "receipt_number": "RCP-20250922-042736",
+          "pos_transaction_id": "TEST-FLOW-20250922-044016",
+          "receipt_number": "RCP-20250922-044016",
           "pos_device_id": "test-device-001",
           "store_location": "Test Store Main",
           "cashier_id": "test-cashier-001",
@@ -212,17 +369,17 @@
     {
       "test": "PoS Business Flow - Sales Order Creation",
       "success": true,
-      "details": "Sales Order created correctly: SO-20250922-0050 for \u20b9236.0",
-      "timestamp": "2025-09-22T04:27:37.612629",
+      "details": "Sales Order created correctly: SO-20250922-0067 for \u20b9236.0",
+      "timestamp": "2025-09-22T04:40:17.230427",
       "response_data": {
-        "id": "68d0d0382acbd454af9d2076",
-        "order_number": "SO-20250922-0050",
+        "id": "68d0d330e8364d40f2752abf",
+        "order_number": "SO-20250922-0067",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 236.0,
         "status": "delivered",
-        "order_date": "2025-09-22T04:27:36.573000",
-        "delivery_date": "2025-09-22T04:27:36.573000",
+        "order_date": "2025-09-22T04:40:16.201000",
+        "delivery_date": "2025-09-22T04:40:16.201000",
         "items": [
           {
             "item_id": "test-product-flow",
@@ -233,17 +390,17 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:36.582000"
+        "created_at": "2025-09-22T04:40:16.209000"
       }
     },
     {
       "test": "PoS Business Flow - ERP Sequence",
       "success": true,
       "details": "\u2705 CRITICAL: Sales Invoice created BEFORE Sales Order (proper ERP flow)",
-      "timestamp": "2025-09-22T04:27:37.612721",
+      "timestamp": "2025-09-22T04:40:17.230475",
       "response_data": {
-        "invoice_number": "SINV-20250922-0015",
-        "order_number": "SO-20250922-0050",
+        "invoice_number": "SINV-20250922-0032",
+        "order_number": "SO-20250922-0067",
         "amount": 236.0,
         "tax_calculation": "18% tax correctly applied"
       }
@@ -251,28 +408,30 @@
     {
       "test": "Invoice Number Format",
       "success": true,
-      "details": "All 15 invoices have correct SINV-YYYYMMDD-XXXX format",
-      "timestamp": "2025-09-22T04:27:37.624237",
+      "details": "All 20 invoices have correct SINV-YYYYMMDD-XXXX format",
+      "timestamp": "2025-09-22T04:40:17.238055",
       "response_data": {
-        "sample": "SINV-20250922-0015"
+        "sample": "SINV-20250922-0032"
       }
     },
     {
       "test": "Order Number Format",
-      "success": false,
-      "details": "Only 15/20 orders have correct format",
-      "timestamp": "2025-09-22T04:27:37.635471",
-      "response_data": null
+      "success": true,
+      "details": "All 20 orders have correct SO-YYYYMMDD-XXXX format",
+      "timestamp": "2025-09-22T04:40:17.245912",
+      "response_data": {
+        "sample": "SO-20250922-0067"
+      }
     },
     {
       "test": "Tax Calculation - Product A (\u20b9100\u2192\u20b9118)",
       "success": true,
       "details": "18% tax calculation correct for Product A: \u20b9100 + \u20b918 tax = \u20b9118",
-      "timestamp": "2025-09-22T04:27:37.650437",
+      "timestamp": "2025-09-22T04:40:17.297870",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d0392acbd454af9d2079",
-        "order_number": "SO-20250922-0051",
+        "sales_order_id": "68d0d331e8364d40f2752ac2",
+        "order_number": "SO-20250922-0068",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -282,11 +441,11 @@
       "test": "Tax Calculation - Product B (\u20b9200\u2192\u20b9236)",
       "success": true,
       "details": "18% tax calculation correct for Product B: \u20b9200 + \u20b936 tax = \u20b9236",
-      "timestamp": "2025-09-22T04:27:37.706732",
+      "timestamp": "2025-09-22T04:40:17.352363",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d0392acbd454af9d207c",
-        "order_number": "SO-20250922-0052",
+        "sales_order_id": "68d0d331e8364d40f2752ac5",
+        "order_number": "SO-20250922-0069",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -296,7 +455,7 @@
       "test": "Tax Calculation - Backend Storage",
       "success": true,
       "details": "Tax calculations correctly stored in backend: 4 invoices verified",
-      "timestamp": "2025-09-22T04:27:38.717364",
+      "timestamp": "2025-09-22T04:40:18.360709",
       "response_data": {
         "test_invoices": 4
       }
@@ -305,7 +464,7 @@
       "test": "Health Check",
       "success": true,
       "details": "API is running",
-      "timestamp": "2025-09-22T04:27:38.725454",
+      "timestamp": "2025-09-22T04:40:18.365943",
       "response_data": {
         "message": "GiLi API is running"
       }
@@ -314,11 +473,11 @@
       "test": "Dashboard Stats",
       "success": true,
       "details": "All required fields present with numeric values",
-      "timestamp": "2025-09-22T04:27:38.778307",
+      "timestamp": "2025-09-22T04:40:18.374280",
       "response_data": {
-        "sales_orders": 7157.76,
+        "sales_orders": 10421.2,
         "purchase_orders": 0.0,
-        "outstanding_amount": 1073.664,
+        "outstanding_amount": 1563.18,
         "stock_value": 11000.0
       }
     },
@@ -326,7 +485,7 @@
       "test": "Dashboard Transactions",
       "success": true,
       "details": "Retrieved 3 transactions",
-      "timestamp": "2025-09-22T04:27:38.789159",
+      "timestamp": "2025-09-22T04:40:18.421752",
       "response_data": {
         "count": 3,
         "sample": {
@@ -347,7 +506,7 @@
       "test": "Auth Me",
       "success": true,
       "details": "User profile retrieved: John Doe",
-      "timestamp": "2025-09-22T04:27:38.798907",
+      "timestamp": "2025-09-22T04:40:18.429306",
       "response_data": {
         "id": "b97fcc92-b15c-41b0-9c1f-b7ab6e4d14ed",
         "name": "John Doe",
@@ -361,18 +520,18 @@
       "test": "Sales Orders",
       "success": true,
       "details": "Retrieved 20 sales orders",
-      "timestamp": "2025-09-22T04:27:38.809528",
+      "timestamp": "2025-09-22T04:40:18.436557",
       "response_data": {
         "count": 20,
         "sample": {
-          "id": "68d0d0392acbd454af9d207c",
-          "order_number": "SO-20250922-0052",
+          "id": "68d0d331e8364d40f2752ac5",
+          "order_number": "SO-20250922-0069",
           "customer_id": "default_customer",
           "customer_name": "Walk-in Customer",
           "total_amount": 236.0,
           "status": "delivered",
-          "order_date": "2025-09-22T04:27:37.650000",
-          "delivery_date": "2025-09-22T04:27:37.650000",
+          "order_date": "2025-09-22T04:40:17.297000",
+          "delivery_date": "2025-09-22T04:40:17.297000",
           "items": [
             {
               "item_id": "tax-test-product-b",
@@ -383,25 +542,25 @@
             }
           ],
           "company_id": "default_company",
-          "created_at": "2025-09-22T04:27:37.659000"
+          "created_at": "2025-09-22T04:40:17.305000"
         }
       }
     },
     {
       "test": "Sales Customers",
       "success": true,
-      "details": "Retrieved 11 customers",
-      "timestamp": "2025-09-22T04:27:38.819142",
+      "details": "Retrieved 13 customers",
+      "timestamp": "2025-09-22T04:40:18.443987",
       "response_data": {
-        "count": 11,
+        "count": 13,
         "sample": {
-          "id": "28b41f31-c415-4385-b02b-73c9fe028c00",
-          "name": "Integration Test Customer 1758514800",
-          "email": "integration.test.1758514800@example.com",
-          "phone": "+1234564800",
-          "address": "1758514800 Integration Test Street",
+          "id": "6e317f62-a2f3-4adb-8cac-553b6ee50908",
+          "name": "Integration Test Customer 1758515261",
+          "email": "integration.test.1758515261@example.com",
+          "phone": "+1234565261",
+          "address": "1758515261 Integration Test Street",
           "company_id": "default_company",
-          "created_at": "2025-09-22T04:20:00.316000"
+          "created_at": "2025-09-22T04:27:41.034000"
         }
       }
     },
@@ -409,9 +568,9 @@
       "test": "Database Initialization",
       "success": true,
       "details": "Sample data properly initialized",
-      "timestamp": "2025-09-22T04:27:38.890265",
+      "timestamp": "2025-09-22T04:40:18.508066",
       "response_data": {
-        "customers": 11,
+        "customers": 13,
         "transactions": 3,
         "stats_populated": true
       }
@@ -420,7 +579,7 @@
       "test": "Search Suggestions - Short Query",
       "success": true,
       "details": "Short query returned 4 suggestions",
-      "timestamp": "2025-09-22T04:27:38.943714",
+      "timestamp": "2025-09-22T04:40:18.515838",
       "response_data": {
         "suggestions": [
           {
@@ -450,7 +609,7 @@
       "test": "Search Suggestions - ABC Query",
       "success": true,
       "details": "Found ABC Corp in 1 suggestions",
-      "timestamp": "2025-09-22T04:27:38.956300",
+      "timestamp": "2025-09-22T04:40:18.563827",
       "response_data": {
         "suggestions": [
           {
@@ -465,7 +624,7 @@
       "test": "Search Suggestions - Product Query",
       "success": true,
       "details": "Found 2 product suggestions",
-      "timestamp": "2025-09-22T04:27:39.009861",
+      "timestamp": "2025-09-22T04:40:18.612804",
       "response_data": {
         "suggestions": [
           {
@@ -485,7 +644,7 @@
       "test": "Search Suggestions - Case Insensitive",
       "success": true,
       "details": "Case-insensitive search working",
-      "timestamp": "2025-09-22T04:27:39.062821",
+      "timestamp": "2025-09-22T04:40:18.621177",
       "response_data": {
         "suggestions": [
           {
@@ -500,7 +659,7 @@
       "test": "Search Suggestions - Response Structure",
       "success": true,
       "details": "All required fields present in suggestions",
-      "timestamp": "2025-09-22T04:27:39.075041",
+      "timestamp": "2025-09-22T04:40:18.668901",
       "response_data": {
         "text": "ABC Corp",
         "type": "customer",
@@ -511,7 +670,7 @@
       "test": "Global Search - Short Query",
       "success": true,
       "details": "Short query correctly returned empty results",
-      "timestamp": "2025-09-22T04:27:39.083807",
+      "timestamp": "2025-09-22T04:40:18.674056",
       "response_data": {
         "query": "A",
         "total_results": 0,
@@ -523,7 +682,7 @@
       "test": "Global Search - ABC Query",
       "success": true,
       "details": "Found ABC Corp in 2 results",
-      "timestamp": "2025-09-22T04:27:39.097771",
+      "timestamp": "2025-09-22T04:40:18.685826",
       "response_data": {
         "total": 2,
         "categories": {
@@ -540,7 +699,7 @@
       "test": "Global Search - Product Query",
       "success": true,
       "details": "Found 2 product results",
-      "timestamp": "2025-09-22T04:27:39.154455",
+      "timestamp": "2025-09-22T04:40:18.737779",
       "response_data": {
         "total": 2,
         "categories": {
@@ -557,7 +716,7 @@
       "test": "Global Search - Item Code Query",
       "success": true,
       "details": "Found Product A by item code in 1 results",
-      "timestamp": "2025-09-22T04:27:39.169781",
+      "timestamp": "2025-09-22T04:40:18.748921",
       "response_data": {
         "total": 1,
         "categories": {
@@ -574,7 +733,7 @@
       "test": "Global Search - XYZ Query",
       "success": true,
       "details": "Found XYZ Suppliers in 2 results",
-      "timestamp": "2025-09-22T04:27:39.184609",
+      "timestamp": "2025-09-22T04:40:18.759090",
       "response_data": {
         "total": 2,
         "categories": {
@@ -591,7 +750,7 @@
       "test": "Global Search - Limit Parameter",
       "success": true,
       "details": "Limit parameter working, got 1 results",
-      "timestamp": "2025-09-22T04:27:39.198796",
+      "timestamp": "2025-09-22T04:40:18.768566",
       "response_data": {
         "total": 1,
         "results_count": 1
@@ -601,7 +760,7 @@
       "test": "Global Search - Category Filter",
       "success": true,
       "details": "Category filtering working, all 1 results are customers",
-      "timestamp": "2025-09-22T04:27:39.248529",
+      "timestamp": "2025-09-22T04:40:18.815830",
       "response_data": {
         "categories": {
           "customers": 1,
@@ -617,7 +776,7 @@
       "test": "Global Search - Result Structure",
       "success": true,
       "details": "All required fields present in results",
-      "timestamp": "2025-09-22T04:27:39.263300",
+      "timestamp": "2025-09-22T04:40:18.866847",
       "response_data": {
         "id": "36ac1e84-fba6-4331-a5d4-4b85cf4e9fea",
         "type": "customer",
@@ -632,7 +791,7 @@
       "test": "Global Search - Relevance Sorting",
       "success": true,
       "details": "Results properly sorted by relevance: [0.8, 0.8]",
-      "timestamp": "2025-09-22T04:27:39.278458",
+      "timestamp": "2025-09-22T04:40:18.880039",
       "response_data": {
         "scores": [
           0.8,
@@ -644,7 +803,7 @@
       "test": "Global Search - Empty Query",
       "success": true,
       "details": "Empty query correctly returned no results",
-      "timestamp": "2025-09-22T04:27:39.326782",
+      "timestamp": "2025-09-22T04:40:18.885867",
       "response_data": {
         "query": "",
         "total_results": 0,
@@ -656,7 +815,7 @@
       "test": "Global Search - Special Characters",
       "success": true,
       "details": "Special characters handled gracefully, got 0 results",
-      "timestamp": "2025-09-22T04:27:39.334070",
+      "timestamp": "2025-09-22T04:40:18.932862",
       "response_data": {
         "query": "@",
         "total_results": 0,
@@ -668,7 +827,7 @@
       "test": "Sales Overview Report - Default",
       "success": true,
       "details": "Sales overview report working. Total Sales: 25000.0, Orders: 1",
-      "timestamp": "2025-09-22T04:27:39.391344",
+      "timestamp": "2025-09-22T04:40:18.985017",
       "response_data": {
         "totalSales": 25000.0,
         "totalOrders": 1,
@@ -724,8 +883,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-08-23T04:27:39.339338",
-          "end": "2025-09-22T04:27:39.339338",
+          "start": "2025-08-23T04:40:18.936203",
+          "end": "2025-09-22T04:40:18.936203",
           "days": 30
         }
       }
@@ -734,7 +893,7 @@
       "test": "Sales Overview Report - 7 days",
       "success": true,
       "details": "Report for 7 days working",
-      "timestamp": "2025-09-22T04:27:39.407052",
+      "timestamp": "2025-09-22T04:40:18.996818",
       "response_data": {
         "days": 7,
         "totalSales": 0
@@ -744,7 +903,7 @@
       "test": "Sales Overview Report - 90 days",
       "success": true,
       "details": "Report for 90 days working",
-      "timestamp": "2025-09-22T04:27:39.462499",
+      "timestamp": "2025-09-22T04:40:19.009448",
       "response_data": {
         "days": 90,
         "totalSales": 25000.0
@@ -754,7 +913,7 @@
       "test": "Sales Overview Report - 365 days",
       "success": true,
       "details": "Report for 365 days working",
-      "timestamp": "2025-09-22T04:27:39.479503",
+      "timestamp": "2025-09-22T04:40:19.061755",
       "response_data": {
         "days": 365,
         "totalSales": 25000.0
@@ -764,7 +923,7 @@
       "test": "Sales Overview Report - Trend Structure",
       "success": true,
       "details": "Sales trend structure valid",
-      "timestamp": "2025-09-22T04:27:39.536364",
+      "timestamp": "2025-09-22T04:40:19.074266",
       "response_data": {
         "month": "Apr",
         "sales": 0,
@@ -775,7 +934,7 @@
       "test": "Financial Summary Report - Default",
       "success": true,
       "details": "Financial summary working. Revenue: 25000.0, Expenses: 25000.0, Profit: 0.0",
-      "timestamp": "2025-09-22T04:27:39.546490",
+      "timestamp": "2025-09-22T04:40:19.081118",
       "response_data": {
         "totalRevenue": 25000.0,
         "totalExpenses": 25000.0,
@@ -804,8 +963,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-08-23T04:27:39.540530",
-          "end": "2025-09-22T04:27:39.540530",
+          "start": "2025-08-23T04:40:19.078062",
+          "end": "2025-09-22T04:40:19.078062",
           "days": 30
         }
       }
@@ -814,7 +973,7 @@
       "test": "Financial Summary Report - 7 days",
       "success": true,
       "details": "Financial report for 7 days working",
-      "timestamp": "2025-09-22T04:27:39.555342",
+      "timestamp": "2025-09-22T04:40:19.087584",
       "response_data": {
         "days": 7,
         "netProfit": 0
@@ -824,7 +983,7 @@
       "test": "Financial Summary Report - 90 days",
       "success": true,
       "details": "Financial report for 90 days working",
-      "timestamp": "2025-09-22T04:27:39.604484",
+      "timestamp": "2025-09-22T04:40:19.135931",
       "response_data": {
         "days": 90,
         "netProfit": 0.0
@@ -834,7 +993,7 @@
       "test": "Financial Summary Report - Expense Structure",
       "success": true,
       "details": "Expense breakdown structure valid",
-      "timestamp": "2025-09-22T04:27:39.614043",
+      "timestamp": "2025-09-22T04:40:19.142640",
       "response_data": {
         "category": "Cost of Goods",
         "amount": 15000.0,
@@ -844,13 +1003,13 @@
     {
       "test": "Customer Analysis Report - Default",
       "success": true,
-      "details": "Customer analysis working. Total: 11, Active: 1, Churn: 90.91%",
-      "timestamp": "2025-09-22T04:27:39.624973",
+      "details": "Customer analysis working. Total: 13, Active: 1, Churn: 92.31%",
+      "timestamp": "2025-09-22T04:40:19.150399",
       "response_data": {
-        "totalCustomers": 11,
+        "totalCustomers": 13,
         "activeCustomers": 1,
-        "newCustomers": 11,
-        "churnRate": 90.91,
+        "newCustomers": 13,
+        "churnRate": 92.31,
         "segments": [
           {
             "name": "High Value",
@@ -864,7 +1023,7 @@
           },
           {
             "name": "New",
-            "count": 11,
+            "count": 13,
             "revenue": 25000.0
           },
           {
@@ -874,8 +1033,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-08-23T04:27:39.617896",
-          "end": "2025-09-22T04:27:39.617896",
+          "start": "2025-08-23T04:40:19.145666",
+          "end": "2025-09-22T04:40:19.145666",
           "days": 30
         }
       }
@@ -884,7 +1043,7 @@
       "test": "Customer Analysis Report - Segments",
       "success": true,
       "details": "Customer segments working: ['High Value', 'Regular', 'New', 'At Risk']",
-      "timestamp": "2025-09-22T04:27:39.675494",
+      "timestamp": "2025-09-22T04:40:19.199034",
       "response_data": {
         "segments": 4
       }
@@ -893,27 +1052,27 @@
       "test": "Customer Analysis Report - 7 days",
       "success": true,
       "details": "Customer analysis for 7 days working",
-      "timestamp": "2025-09-22T04:27:39.686294",
+      "timestamp": "2025-09-22T04:40:19.206992",
       "response_data": {
         "days": 7,
-        "totalCustomers": 11
+        "totalCustomers": 13
       }
     },
     {
       "test": "Customer Analysis Report - 90 days",
       "success": true,
       "details": "Customer analysis for 90 days working",
-      "timestamp": "2025-09-22T04:27:39.697720",
+      "timestamp": "2025-09-22T04:40:19.256078",
       "response_data": {
         "days": 90,
-        "totalCustomers": 11
+        "totalCustomers": 13
       }
     },
     {
       "test": "Inventory Report - Basic",
       "success": true,
       "details": "Inventory report working. Total Items: 2, Stock Value: 11000.0",
-      "timestamp": "2025-09-22T04:27:39.748404",
+      "timestamp": "2025-09-22T04:40:19.262788",
       "response_data": {
         "totalItems": 2,
         "totalStockValue": 11000.0,
@@ -947,7 +1106,7 @@
       "test": "Inventory Report - Top Items",
       "success": true,
       "details": "Top items structure valid. First item: Product B",
-      "timestamp": "2025-09-22T04:27:39.757965",
+      "timestamp": "2025-09-22T04:40:19.309850",
       "response_data": {
         "name": "Product B",
         "code": "PROD-B-001",
@@ -960,7 +1119,7 @@
       "test": "Inventory Report - Stock Summary",
       "success": true,
       "details": "Stock summary structure valid: {'in_stock': 2, 'low_stock': 0, 'out_of_stock': 0}",
-      "timestamp": "2025-09-22T04:27:39.767757",
+      "timestamp": "2025-09-22T04:40:19.316824",
       "response_data": {
         "in_stock": 2,
         "low_stock": 0,
@@ -971,7 +1130,7 @@
       "test": "Performance Metrics Report - Default",
       "success": true,
       "details": "Performance metrics working. KPIs: 4, Sales: 25000.0",
-      "timestamp": "2025-09-22T04:27:39.819144",
+      "timestamp": "2025-09-22T04:40:19.367878",
       "response_data": {
         "kpis": [
           {
@@ -990,10 +1149,10 @@
           },
           {
             "name": "Customer Retention",
-            "value": 9.090909090909092,
+            "value": 7.6923076923076925,
             "target": 85,
             "unit": "percentage",
-            "achievement": 10.695187165775403
+            "achievement": 9.049773755656108
           },
           {
             "name": "Inventory Turnover",
@@ -1006,7 +1165,7 @@
         "totalSales": 25000.0,
         "totalPurchases": 15000.0,
         "activeCustomers": 1,
-        "customerRetentionRate": 9.09,
+        "customerRetentionRate": 7.69,
         "inventoryTurnover": 1.36,
         "weeklyPerformance": [
           {
@@ -1031,8 +1190,8 @@
           }
         ],
         "dateRange": {
-          "start": "2025-08-23T04:27:39.772089",
-          "end": "2025-09-22T04:27:39.772089",
+          "start": "2025-08-23T04:40:19.320849",
+          "end": "2025-09-22T04:40:19.320849",
           "days": 30
         }
       }
@@ -1041,7 +1200,7 @@
       "test": "Performance Metrics Report - Weekly Performance",
       "success": true,
       "details": "Weekly performance structure valid: 4 weeks",
-      "timestamp": "2025-09-22T04:27:39.829825",
+      "timestamp": "2025-09-22T04:40:19.377051",
       "response_data": {
         "week": "Week 1",
         "sales": 25000.0,
@@ -1052,7 +1211,7 @@
       "test": "Performance Metrics Report - Sales Revenue Achievement",
       "success": true,
       "details": "Achievement calculation correct: 83.33333333333334%",
-      "timestamp": "2025-09-22T04:27:39.840033",
+      "timestamp": "2025-09-22T04:40:19.385265",
       "response_data": {
         "name": "Sales Revenue",
         "value": 25000.0,
@@ -1065,7 +1224,7 @@
       "test": "Performance Metrics Report - Sales Orders Achievement",
       "success": true,
       "details": "Achievement calculation correct: 16.666666666666664%",
-      "timestamp": "2025-09-22T04:27:39.840068",
+      "timestamp": "2025-09-22T04:40:19.385300",
       "response_data": {
         "name": "Sales Orders",
         "value": 1,
@@ -1077,21 +1236,21 @@
     {
       "test": "Performance Metrics Report - Customer Retention Achievement",
       "success": true,
-      "details": "Achievement calculation correct: 10.695187165775403%",
-      "timestamp": "2025-09-22T04:27:39.840076",
+      "details": "Achievement calculation correct: 9.049773755656108%",
+      "timestamp": "2025-09-22T04:40:19.385308",
       "response_data": {
         "name": "Customer Retention",
-        "value": 9.090909090909092,
+        "value": 7.6923076923076925,
         "target": 85,
         "unit": "percentage",
-        "achievement": 10.695187165775403
+        "achievement": 9.049773755656108
       }
     },
     {
       "test": "Performance Metrics Report - Inventory Turnover Achievement",
       "success": true,
       "details": "Achievement calculation correct: 34.090909090909086%",
-      "timestamp": "2025-09-22T04:27:39.840083",
+      "timestamp": "2025-09-22T04:40:19.385315",
       "response_data": {
         "name": "Inventory Turnover",
         "value": 1.3636363636363635,
@@ -1104,7 +1263,7 @@
       "test": "Performance Metrics Report - 7 days",
       "success": true,
       "details": "Performance metrics for 7 days working",
-      "timestamp": "2025-09-22T04:27:39.852825",
+      "timestamp": "2025-09-22T04:40:19.433881",
       "response_data": {
         "days": 7,
         "totalSales": 0
@@ -1114,7 +1273,7 @@
       "test": "Performance Metrics Report - 90 days",
       "success": true,
       "details": "Performance metrics for 90 days working",
-      "timestamp": "2025-09-22T04:27:39.904620",
+      "timestamp": "2025-09-22T04:40:19.442513",
       "response_data": {
         "days": 90,
         "totalSales": 25000.0
@@ -1124,147 +1283,147 @@
       "test": "Export Functionality - sales_overview PDF",
       "success": true,
       "details": "PDF export initiated for sales_overview",
-      "timestamp": "2025-09-22T04:27:39.911886",
+      "timestamp": "2025-09-22T04:40:19.488980",
       "response_data": {
         "message": "Report export initiated for sales_overview",
-        "export_id": "e7ba38f4-603d-4c26-8028-22371f590197",
+        "export_id": "f463a0ca-52b6-4472-be72-4b1baacbf649",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/e7ba38f4-603d-4c26-8028-22371f590197",
-        "estimated_completion": "2025-09-22T04:28:09.908576"
+        "download_url": "/api/reports/download/f463a0ca-52b6-4472-be72-4b1baacbf649",
+        "estimated_completion": "2025-09-22T04:40:49.446431"
       }
     },
     {
       "test": "Export Functionality - sales_overview Excel",
       "success": true,
       "details": "Excel export initiated for sales_overview",
-      "timestamp": "2025-09-22T04:27:39.919217",
+      "timestamp": "2025-09-22T04:40:19.534770",
       "response_data": {
         "message": "Report export initiated for sales_overview",
-        "export_id": "7f05a9ab-f668-4720-9c11-d2589b0c2d14",
+        "export_id": "a1f37468-34ac-4c80-8d6a-49e559225d0e",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/7f05a9ab-f668-4720-9c11-d2589b0c2d14",
-        "estimated_completion": "2025-09-22T04:28:09.915907"
+        "download_url": "/api/reports/download/a1f37468-34ac-4c80-8d6a-49e559225d0e",
+        "estimated_completion": "2025-09-22T04:40:49.492579"
       }
     },
     {
       "test": "Export Functionality - financial_summary PDF",
       "success": true,
       "details": "PDF export initiated for financial_summary",
-      "timestamp": "2025-09-22T04:27:39.926316",
+      "timestamp": "2025-09-22T04:40:19.540335",
       "response_data": {
         "message": "Report export initiated for financial_summary",
-        "export_id": "9a5e4a50-9e98-4792-bef1-09199017d3bc",
+        "export_id": "30b160a6-dcba-4caf-8ad8-851617cb5cdb",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/9a5e4a50-9e98-4792-bef1-09199017d3bc",
-        "estimated_completion": "2025-09-22T04:28:09.923070"
+        "download_url": "/api/reports/download/30b160a6-dcba-4caf-8ad8-851617cb5cdb",
+        "estimated_completion": "2025-09-22T04:40:49.538275"
       }
     },
     {
       "test": "Export Functionality - financial_summary Excel",
       "success": true,
       "details": "Excel export initiated for financial_summary",
-      "timestamp": "2025-09-22T04:27:39.974410",
+      "timestamp": "2025-09-22T04:40:19.545829",
       "response_data": {
         "message": "Report export initiated for financial_summary",
-        "export_id": "ddcaa24b-fbae-4132-a11b-fefd69e40cb4",
+        "export_id": "1ce09257-422d-4684-8960-8fb6a8225943",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/ddcaa24b-fbae-4132-a11b-fefd69e40cb4",
-        "estimated_completion": "2025-09-22T04:28:09.930624"
+        "download_url": "/api/reports/download/1ce09257-422d-4684-8960-8fb6a8225943",
+        "estimated_completion": "2025-09-22T04:40:49.544078"
       }
     },
     {
       "test": "Export Functionality - customer_analysis PDF",
       "success": true,
       "details": "PDF export initiated for customer_analysis",
-      "timestamp": "2025-09-22T04:27:40.024313",
+      "timestamp": "2025-09-22T04:40:19.592017",
       "response_data": {
         "message": "Report export initiated for customer_analysis",
-        "export_id": "93ba5fa9-1f4c-4af4-b154-d94cc5b846d5",
+        "export_id": "3050f3d5-8314-40bc-85b3-9acc6eb6658d",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/93ba5fa9-1f4c-4af4-b154-d94cc5b846d5",
-        "estimated_completion": "2025-09-22T04:28:09.980498"
+        "download_url": "/api/reports/download/3050f3d5-8314-40bc-85b3-9acc6eb6658d",
+        "estimated_completion": "2025-09-22T04:40:49.548909"
       }
     },
     {
       "test": "Export Functionality - customer_analysis Excel",
       "success": true,
       "details": "Excel export initiated for customer_analysis",
-      "timestamp": "2025-09-22T04:27:40.032484",
+      "timestamp": "2025-09-22T04:40:19.597552",
       "response_data": {
         "message": "Report export initiated for customer_analysis",
-        "export_id": "bb7d44ff-5e46-4f06-9436-7c124c143c69",
+        "export_id": "f1566f49-3aa9-44f3-91dd-1fab3e441b61",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/bb7d44ff-5e46-4f06-9436-7c124c143c69",
-        "estimated_completion": "2025-09-22T04:28:10.028759"
+        "download_url": "/api/reports/download/f1566f49-3aa9-44f3-91dd-1fab3e441b61",
+        "estimated_completion": "2025-09-22T04:40:49.595753"
       }
     },
     {
       "test": "Export Functionality - inventory_report PDF",
       "success": true,
       "details": "PDF export initiated for inventory_report",
-      "timestamp": "2025-09-22T04:27:40.081357",
+      "timestamp": "2025-09-22T04:40:19.644886",
       "response_data": {
         "message": "Report export initiated for inventory_report",
-        "export_id": "3753ea80-db94-4adf-a2c9-c4950b287aec",
+        "export_id": "c764e8ea-3c9c-4b7a-a84c-9c9b094ef065",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/3753ea80-db94-4adf-a2c9-c4950b287aec",
-        "estimated_completion": "2025-09-22T04:28:10.036866"
+        "download_url": "/api/reports/download/c764e8ea-3c9c-4b7a-a84c-9c9b094ef065",
+        "estimated_completion": "2025-09-22T04:40:49.601497"
       }
     },
     {
       "test": "Export Functionality - inventory_report Excel",
       "success": true,
       "details": "Excel export initiated for inventory_report",
-      "timestamp": "2025-09-22T04:27:40.089359",
+      "timestamp": "2025-09-22T04:40:19.690920",
       "response_data": {
         "message": "Report export initiated for inventory_report",
-        "export_id": "e3671521-a877-4424-ac54-60d356b6c6ba",
+        "export_id": "3135f65b-ad4e-4838-9a04-baa8cc5205ab",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/e3671521-a877-4424-ac54-60d356b6c6ba",
-        "estimated_completion": "2025-09-22T04:28:10.086131"
+        "download_url": "/api/reports/download/3135f65b-ad4e-4838-9a04-baa8cc5205ab",
+        "estimated_completion": "2025-09-22T04:40:49.648131"
       }
     },
     {
       "test": "Export Functionality - performance_metrics PDF",
       "success": true,
       "details": "PDF export initiated for performance_metrics",
-      "timestamp": "2025-09-22T04:27:40.097280",
+      "timestamp": "2025-09-22T04:40:19.696895",
       "response_data": {
         "message": "Report export initiated for performance_metrics",
-        "export_id": "c8bf1dc0-a505-4e20-933f-f27d15104023",
+        "export_id": "238a22d2-b573-4015-993a-7ad59dea8333",
         "format": "pdf",
         "status": "processing",
-        "download_url": "/api/reports/download/c8bf1dc0-a505-4e20-933f-f27d15104023",
-        "estimated_completion": "2025-09-22T04:28:10.093545"
+        "download_url": "/api/reports/download/238a22d2-b573-4015-993a-7ad59dea8333",
+        "estimated_completion": "2025-09-22T04:40:49.694958"
       }
     },
     {
       "test": "Export Functionality - performance_metrics Excel",
       "success": true,
       "details": "Excel export initiated for performance_metrics",
-      "timestamp": "2025-09-22T04:27:40.145480",
+      "timestamp": "2025-09-22T04:40:19.742894",
       "response_data": {
         "message": "Report export initiated for performance_metrics",
-        "export_id": "54f93478-e646-49fe-bd53-f9690f3f62ec",
+        "export_id": "08bc2c5d-ba2f-4ecc-99cb-f725b7e13af2",
         "format": "excel",
         "status": "processing",
-        "download_url": "/api/reports/download/54f93478-e646-49fe-bd53-f9690f3f62ec",
-        "estimated_completion": "2025-09-22T04:28:10.102008"
+        "download_url": "/api/reports/download/08bc2c5d-ba2f-4ecc-99cb-f725b7e13af2",
+        "estimated_completion": "2025-09-22T04:40:49.700356"
       }
     },
     {
       "test": "Export Functionality - Download",
       "success": true,
       "details": "Download endpoint working",
-      "timestamp": "2025-09-22T04:27:40.195522",
+      "timestamp": "2025-09-22T04:40:19.788742",
       "response_data": {
         "message": "File download would start here",
         "export_id": "test-export-id-123",
@@ -1275,25 +1434,25 @@
       "test": "Reporting Error Handling - Invalid Report Type",
       "success": false,
       "details": "Expected error status, got 200",
-      "timestamp": "2025-09-22T04:27:40.204196",
+      "timestamp": "2025-09-22T04:40:19.794362",
       "response_data": null
     },
     {
       "test": "Error Handling",
       "success": true,
       "details": "404 returned for invalid endpoint",
-      "timestamp": "2025-09-22T04:27:40.211864",
+      "timestamp": "2025-09-22T04:40:19.839842",
       "response_data": null
     },
     {
       "test": "PoS Transaction Processing API",
       "success": true,
-      "details": "PoS transaction processed successfully. Order: SO-20250922-0053, Sales Order ID: 68d0d03c2acbd454af9d207f",
-      "timestamp": "2025-09-22T04:27:40.267331",
+      "details": "PoS transaction processed successfully. Order: SO-20250922-0070, Sales Order ID: 68d0d333e8364d40f2752ac8",
+      "timestamp": "2025-09-22T04:40:19.851284",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d03c2acbd454af9d207f",
-        "order_number": "SO-20250922-0053",
+        "sales_order_id": "68d0d333e8364d40f2752ac8",
+        "order_number": "SO-20250922-0070",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -1302,12 +1461,12 @@
     {
       "test": "PoS Transaction Processing API",
       "success": true,
-      "details": "PoS transaction processed successfully. Order: SO-20250922-0054, Sales Order ID: 68d0d03c2acbd454af9d2082",
-      "timestamp": "2025-09-22T04:27:40.282436",
+      "details": "PoS transaction processed successfully. Order: SO-20250922-0071, Sales Order ID: 68d0d333e8364d40f2752acb",
+      "timestamp": "2025-09-22T04:40:19.902998",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d03c2acbd454af9d2082",
-        "order_number": "SO-20250922-0054",
+        "sales_order_id": "68d0d333e8364d40f2752acb",
+        "order_number": "SO-20250922-0071",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -1316,11 +1475,11 @@
     {
       "test": "Sales Orders After PoS Transaction",
       "success": true,
-      "details": "PoS transaction found in sales orders. Order: SO-20250922-0054, Amount: 118.0",
-      "timestamp": "2025-09-22T04:27:40.291530",
+      "details": "PoS transaction found in sales orders. Order: SO-20250922-0071, Amount: 118.0",
+      "timestamp": "2025-09-22T04:40:19.910994",
       "response_data": {
-        "id": "68d0d03c2acbd454af9d2082",
-        "order_number": "SO-20250922-0054",
+        "id": "68d0d333e8364d40f2752acb",
+        "order_number": "SO-20250922-0071",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 118.0,
@@ -1337,24 +1496,24 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:40.276000"
+        "created_at": "2025-09-22T04:40:19.858000"
       }
     },
     {
       "test": "Customer Loyalty Updates After PoS",
       "success": false,
       "details": "Failed to create customer: HTTP 422",
-      "timestamp": "2025-09-22T04:27:40.300800",
+      "timestamp": "2025-09-22T04:40:19.916316",
       "response_data": null
     },
     {
       "test": "PoS Data Flow Verification",
       "success": false,
       "details": "Data flow verification failed. Failed checks: [\"\u274c Customer name incorrect: expected 'Data Flow Test Customer', got 'Walk-in Customer'\"]",
-      "timestamp": "2025-09-22T04:27:40.326017",
+      "timestamp": "2025-09-22T04:40:19.936497",
       "response_data": {
-        "order_number": "SO-20250922-0055",
-        "sales_order_id": "68d0d03c2acbd454af9d2085",
+        "order_number": "SO-20250922-0072",
+        "sales_order_id": "68d0d333e8364d40f2752ace",
         "all_checks": [
           "\u2705 Total amount correct",
           "\u2705 Status correct (delivered)",
@@ -1364,8 +1523,8 @@
           "\u274c Customer name incorrect: expected 'Data Flow Test Customer', got 'Walk-in Customer'"
         ],
         "matching_order": {
-          "id": "68d0d03c2acbd454af9d2085",
-          "order_number": "SO-20250922-0055",
+          "id": "68d0d333e8364d40f2752ace",
+          "order_number": "SO-20250922-0072",
           "customer_id": "default_customer",
           "customer_name": "Walk-in Customer",
           "total_amount": 166.09,
@@ -1389,22 +1548,22 @@
             }
           ],
           "company_id": "default_company",
-          "created_at": "2025-09-22T04:27:40.309000"
+          "created_at": "2025-09-22T04:40:19.925000"
         }
       }
     },
     {
       "test": "PoS Health Check",
       "success": true,
-      "details": "PoS API healthy. Products: 2, Customers: 11",
-      "timestamp": "2025-09-22T04:27:40.377350",
+      "details": "PoS API healthy. Products: 2, Customers: 13",
+      "timestamp": "2025-09-22T04:40:19.990356",
       "response_data": {
         "status": "healthy",
-        "timestamp": "2025-09-22T04:27:40.333427",
+        "timestamp": "2025-09-22T04:40:19.942725",
         "database": "connected",
         "products_available": 2,
-        "customers_available": 11,
-        "transactions_24h": 7,
+        "customers_available": 13,
+        "transactions_24h": 15,
         "api_version": "1.0.0"
       }
     },
@@ -1412,7 +1571,7 @@
       "test": "PoS Products Sync - Default",
       "success": true,
       "details": "Retrieved 2 products for PoS",
-      "timestamp": "2025-09-22T04:27:40.386094",
+      "timestamp": "2025-09-22T04:40:20.002292",
       "response_data": {
         "count": 2,
         "sample": {
@@ -1436,7 +1595,7 @@
       "test": "PoS Products Sync - Search",
       "success": true,
       "details": "Product search returned 2 results",
-      "timestamp": "2025-09-22T04:27:40.396010",
+      "timestamp": "2025-09-22T04:40:20.050403",
       "response_data": {
         "count": 2
       }
@@ -1445,7 +1604,7 @@
       "test": "PoS Products Sync - Category Filter",
       "success": true,
       "details": "Category filter returned 1 results",
-      "timestamp": "2025-09-22T04:27:40.445415",
+      "timestamp": "2025-09-22T04:40:20.057547",
       "response_data": {
         "count": 1
       }
@@ -1454,7 +1613,7 @@
       "test": "PoS Products Sync - Limit",
       "success": true,
       "details": "Limit parameter working, got 2 products",
-      "timestamp": "2025-09-22T04:27:40.495251",
+      "timestamp": "2025-09-22T04:40:20.064128",
       "response_data": {
         "count": 2
       }
@@ -1462,10 +1621,10 @@
     {
       "test": "PoS Customers Sync - Default",
       "success": true,
-      "details": "Retrieved 11 customers for PoS",
-      "timestamp": "2025-09-22T04:27:40.514468",
+      "details": "Retrieved 13 customers for PoS",
+      "timestamp": "2025-09-22T04:40:20.083026",
       "response_data": {
-        "count": 11,
+        "count": 13,
         "sample": {
           "id": "68ae19d31f9c6916dd1b3b16",
           "name": "Walk-in Customer",
@@ -1482,7 +1641,7 @@
       "test": "PoS Customers Sync - Search",
       "success": true,
       "details": "Customer search returned 1 results",
-      "timestamp": "2025-09-22T04:27:40.573435",
+      "timestamp": "2025-09-22T04:40:20.140852",
       "response_data": {
         "count": 1
       }
@@ -1491,7 +1650,7 @@
       "test": "PoS Customers Sync - Limit",
       "success": true,
       "details": "Limit parameter working, got 5 customers",
-      "timestamp": "2025-09-22T04:27:40.593434",
+      "timestamp": "2025-09-22T04:40:20.156623",
       "response_data": {
         "count": 5
       }
@@ -1499,13 +1658,13 @@
     {
       "test": "PoS Full Sync",
       "success": true,
-      "details": "Full sync successful. Products: 2, Customers: 11",
-      "timestamp": "2025-09-22T04:27:40.656235",
+      "details": "Full sync successful. Products: 2, Customers: 13",
+      "timestamp": "2025-09-22T04:40:20.216048",
       "response_data": {
         "success": true,
-        "sync_timestamp": "2025-09-22T04:27:40.598340",
+        "sync_timestamp": "2025-09-22T04:40:20.160136",
         "products_updated": 2,
-        "customers_updated": 11,
+        "customers_updated": 13,
         "transactions_processed": 0,
         "errors": []
       }
@@ -1514,22 +1673,22 @@
       "test": "PoS Sync Status",
       "success": true,
       "details": "Sync status retrieved for device test-pos-device-001: completed",
-      "timestamp": "2025-09-22T04:27:40.706540",
+      "timestamp": "2025-09-22T04:40:20.222977",
       "response_data": {
         "device_id": "test-pos-device-001",
-        "last_sync": "2025-09-22T04:27:40.598000",
+        "last_sync": "2025-09-22T04:40:20.160000",
         "status": "completed",
         "products_updated": 2,
-        "customers_updated": 11,
+        "customers_updated": 13,
         "errors": [],
-        "completed_at": "2025-09-22T04:27:40.611000"
+        "completed_at": "2025-09-22T04:40:20.172000"
       }
     },
     {
       "test": "PoS Categories",
       "success": true,
       "details": "Retrieved 2 categories",
-      "timestamp": "2025-09-22T04:27:40.715964",
+      "timestamp": "2025-09-22T04:40:20.229225",
       "response_data": {
         "categories": [
           "Electronics",
@@ -1541,12 +1700,12 @@
     {
       "test": "PoS Transaction Processing",
       "success": true,
-      "details": "Transaction processed successfully. Sales Order ID: 68d0d03c2acbd454af9d2089",
-      "timestamp": "2025-09-22T04:27:40.771346",
+      "details": "Transaction processed successfully. Sales Order ID: 68d0d334e8364d40f2752ad2",
+      "timestamp": "2025-09-22T04:40:20.281006",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d03c2acbd454af9d2089",
-        "order_number": "SO-20250922-0056",
+        "sales_order_id": "68d0d334e8364d40f2752ad2",
+        "order_number": "SO-20250922-0073",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -1556,16 +1715,16 @@
       "test": "Sales Orders Validation Fixes",
       "success": true,
       "details": "Sales order validation working. Status: delivered, Items: 1",
-      "timestamp": "2025-09-22T04:27:40.781094",
+      "timestamp": "2025-09-22T04:40:20.288578",
       "response_data": {
-        "id": "68d0d03c2acbd454af9d2089",
-        "order_number": "SO-20250922-0056",
+        "id": "68d0d334e8364d40f2752ad2",
+        "order_number": "SO-20250922-0073",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 110.0,
         "status": "delivered",
-        "order_date": "2025-09-22T04:27:40.716000",
-        "delivery_date": "2025-09-22T04:27:40.716000",
+        "order_date": "2025-09-22T04:40:20.229000",
+        "delivery_date": "2025-09-22T04:40:20.229000",
         "items": [
           {
             "item_id": "test-product-id",
@@ -1576,18 +1735,18 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:40.724000"
+        "created_at": "2025-09-22T04:40:20.236000"
       }
     },
     {
       "test": "PoS Transaction Processing",
       "success": true,
-      "details": "PoS transaction processed successfully. Order: SO-20250922-0057",
-      "timestamp": "2025-09-22T04:27:40.838378",
+      "details": "PoS transaction processed successfully. Order: SO-20250922-0074",
+      "timestamp": "2025-09-22T04:40:20.300296",
       "response_data": {
         "success": true,
-        "sales_order_id": "68d0d03c2acbd454af9d208c",
-        "order_number": "SO-20250922-0057",
+        "sales_order_id": "68d0d334e8364d40f2752ad5",
+        "order_number": "SO-20250922-0074",
         "transaction_processed": true,
         "inventory_updated": true,
         "message": "Transaction successfully integrated into GiLi system"
@@ -1597,10 +1756,10 @@
       "test": "PoS to SalesOrder Conversion Validation",
       "success": true,
       "details": "All Pydantic validation issues fixed: \u2705 order_number field present; \u2705 customer_id is valid string; \u2705 status is valid: delivered; \u2705 items have all required fields (item_id, item_name, rate, amount)",
-      "timestamp": "2025-09-22T04:27:40.848733",
+      "timestamp": "2025-09-22T04:40:20.306655",
       "response_data": {
-        "id": "68d0d03c2acbd454af9d208c",
-        "order_number": "SO-20250922-0057",
+        "id": "68d0d334e8364d40f2752ad5",
+        "order_number": "SO-20250922-0074",
         "customer_id": "default_customer",
         "customer_name": "Walk-in Customer",
         "total_amount": 70.85,
@@ -1624,17 +1783,17 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:40.790000"
+        "created_at": "2025-09-22T04:40:20.295000"
       }
     },
     {
       "test": "PoS Field Mapping",
       "success": false,
       "details": "Field mapping issues: \u274c Order number should be POS-prefixed; \u2705 PoS 'completed' status mapped to 'delivered'; \u2705 Customer ID properly mapped; \u2705 Total amount properly mapped; \u2705 Items properly mapped (product_id->item_id, product_name->item_name, unit_price->rate, line_total->amount)",
-      "timestamp": "2025-09-22T04:27:40.873926",
+      "timestamp": "2025-09-22T04:40:20.324350",
       "response_data": {
-        "id": "68d0d03c2acbd454af9d208f",
-        "order_number": "SO-20250922-0058",
+        "id": "68d0d334e8364d40f2752ad8",
+        "order_number": "SO-20250922-0075",
         "customer_id": "66f8b123456789abcdef0003",
         "customer_name": "Walk-in Customer",
         "total_amount": 104.0,
@@ -1651,43 +1810,43 @@
           }
         ],
         "company_id": "default_company",
-        "created_at": "2025-09-22T04:27:40.857000"
+        "created_at": "2025-09-22T04:40:20.313000"
       }
     },
     {
       "test": "PoS Data Mismatch - Raw Data Check",
       "success": false,
       "details": "Target transactions ['POS-20250824-0006', 'POS-20250824-0005'] not found in raw data",
-      "timestamp": "2025-09-22T04:27:40.883332",
+      "timestamp": "2025-09-22T04:40:20.330720",
       "response_data": null
     },
     {
       "test": "Database Consolidation Fix",
       "success": true,
-      "details": "Backend using gili_production database with 11 customers",
-      "timestamp": "2025-09-22T04:27:40.940319",
+      "details": "Backend using gili_production database with 13 customers",
+      "timestamp": "2025-09-22T04:40:20.403245",
       "response_data": {
-        "customers_count": 11
+        "customers_count": 13
       }
     },
     {
       "test": "PoS Customers Endpoint Fix",
       "success": true,
-      "details": "PoS customers endpoint using main collection - 8 matching customers",
-      "timestamp": "2025-09-22T04:27:40.969842",
+      "details": "PoS customers endpoint using main collection - 9 matching customers",
+      "timestamp": "2025-09-22T04:40:20.487188",
       "response_data": {
-        "pos_customers": 11,
-        "main_customers": 11,
-        "matching_names": 8
+        "pos_customers": 13,
+        "main_customers": 13,
+        "matching_names": 9
       }
     },
     {
       "test": "PoS Customer Creation Endpoint",
       "success": true,
       "details": "Customer created successfully and synced to main collection",
-      "timestamp": "2025-09-22T04:27:41.028899",
+      "timestamp": "2025-09-22T04:40:20.500454",
       "response_data": {
-        "customer_id": "96113b15-48b3-4af5-976e-aad907e9c08a",
+        "customer_id": "1d61f218-eaa4-44da-b05e-ffde9076b215",
         "customer_name": "Test PoS Customer"
       }
     },
@@ -1695,10 +1854,10 @@
       "test": "Customer Data Flow Integration",
       "success": true,
       "details": "Complete data flow working - customer synced between PoS and main UI",
-      "timestamp": "2025-09-22T04:27:41.068066",
+      "timestamp": "2025-09-22T04:40:20.692782",
       "response_data": {
-        "customer_id": "6e317f62-a2f3-4adb-8cac-553b6ee50908",
-        "customer_name": "Integration Test Customer 1758515261",
+        "customer_id": "b995be34-c95e-4e5e-a616-7588dab864f8",
+        "customer_name": "Integration Test Customer 1758516020",
         "pos_lookup": "found",
         "main_lookup": "found"
       }
@@ -1707,18 +1866,18 @@
       "test": "PoS Customer Search Functionality",
       "success": true,
       "details": "Customer search working - found 1 results for 'Wal'",
-      "timestamp": "2025-09-22T04:27:41.149415",
+      "timestamp": "2025-09-22T04:40:20.801395",
       "response_data": {
         "search_term": "Wal",
         "results_count": 1,
-        "total_customers": 13
+        "total_customers": 15
       }
     },
     {
       "test": "PoS Integration Regression",
       "success": true,
       "details": "All existing PoS endpoints still functional after fixes",
-      "timestamp": "2025-09-22T04:27:41.185619",
+      "timestamp": "2025-09-22T04:40:20.984205",
       "response_data": {
         "health_check": true,
         "products_sync": true,
