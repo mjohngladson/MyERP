@@ -1,10 +1,18 @@
 import axios from 'axios';
 
-// Railway production - hardcoded backend URL for immediate fix
-const BACKEND_URL = 'https://myerp-production.up.railway.app';
-const API_BASE = `${BACKEND_URL}/api`;
+// Backend URL strictly from environment variables per platform rules
+const ENV_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.REACT_APP_BACKEND_URL)
+  || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL)
+  || '';
 
-console.log('🔧 API Service - Using hardcoded Railway backend URL:', BACKEND_URL);
+const BACKEND_URL = ENV_URL;
+const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+
+if (!BACKEND_URL) {
+  console.warn('⚠️ REACT_APP_BACKEND_URL is not set. Falling back to relative /api.');
+} else {
+  console.log('🔧 API Service - Using backend URL from env:', BACKEND_URL);
+}
 
 // Network status detection
 let isOnline = navigator.onLine;
