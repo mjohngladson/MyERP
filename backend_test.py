@@ -4384,16 +4384,16 @@ class BackendTester:
         return success_rate > 80
 
 async def main():
-    """Main function to run Railway Cloud Integration Tests"""
+    """Main function to run Invoice Sanity Tests"""
     async with BackendTester() as tester:
-        # Run Railway-specific integration tests
-        success = await tester.run_railway_cloud_integration_tests()
+        # Run invoice sanity tests as requested in review
+        passed, total, results = await tester.run_invoice_sanity_tests()
         
-        if success:
-            print("🎉 Railway Cloud Integration Tests PASSED!")
+        if passed == total:
+            print("🎉 Invoice Sanity Tests PASSED!")
             return 0
         else:
-            print("💥 Railway Cloud Integration Tests FAILED!")
+            print("💥 Some Invoice Sanity Tests FAILED!")
             return 1
 
 if __name__ == "__main__":
