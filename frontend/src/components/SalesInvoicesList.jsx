@@ -57,11 +57,11 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       })
   );
 
-  const invoices = Array.isArray(invoicesData) ? invoicesData : (invoicesData?.items || invoicesData?.data || []);
-  const totalCount = (Array.isArray(invoicesData) ? (invoicesData[0]?._meta?.total_count || invoicesData?.total_count) : (invoicesData?.total_count || invoicesData?.meta?.total_count)) || (invoices?.length || 0);
+  const invoicesList = Array.isArray(invoicesData) ? invoicesData : (invoicesData?.items || invoicesData?.data || []);
+  const totalCount = (Array.isArray(invoicesData) ? (invoicesData[0]?._meta?.total_count || invoicesData?.total_count) : (invoicesData?.total_count || invoicesData?.meta?.total_count)) || (invoicesList?.length || 0);
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  const filteredInvoices = invoices.filter(invoice => {
+  const filteredInvoices = invoicesList.filter(invoice => {
     if (!invoice) return false;
     
     const matchesSearch = searchTerm === '' || 
