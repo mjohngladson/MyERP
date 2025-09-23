@@ -31,7 +31,11 @@ async def get_sales_orders(
     skip: int = Query(0, ge=0),
     status: Optional[str] = Query(None),
     customer_id: Optional[str] = Query(None),
-    search: Optional[str] = Query(None)
+    search: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None, description='order_number|order_date|total_amount'),
+    sort_dir: Optional[str] = Query('desc', description='asc|desc'),
+    from_date: Optional[str] = Query(None, description='YYYY-MM-DD'),
+    to_date: Optional[str] = Query(None, description='YYYY-MM-DD')
 ):
     try:
         query = {}
