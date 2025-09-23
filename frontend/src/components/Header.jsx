@@ -11,11 +11,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import GlobalSearch from './GlobalSearch';
-import { useNavigate } from 'react-router-dom';
 
-const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
+const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = () => {}, onNavigate = () => {} }) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -40,7 +38,11 @@ const Header = ({ toggleSidebar, onProfileClick, onSettingsClick }) => {
   };
 
   const handleSearchNavigate = (path) => {
-    navigate(path);
+    try {
+      onNavigate(path);
+    } catch (e) {
+      // no-op fallback if navigation not provided
+    }
   };
 
   // Global keyboard shortcut (Ctrl+K)

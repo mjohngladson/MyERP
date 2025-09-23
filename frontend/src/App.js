@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import SalesOrdersList from './components/SalesOrdersList';
 import SalesOrderForm from './components/SalesOrderForm';
@@ -14,6 +15,8 @@ import PurchaseOrdersList from './components/PurchaseOrdersList';
 import PurchaseOrderForm from './components/PurchaseOrderForm';
 import PurchaseOrderView from './components/PurchaseOrderView';
 import LoginPage from './components/LoginPage';
+import ProfilePage from './components/ProfilePage';
+import SettingsPage from './components/SettingsPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -88,6 +91,11 @@ function AppContent() {
       case 'purchase-order-view':
         return <PurchaseOrderView orderId={pageState.purchaseOrderView?.id} initialOrder={pageState.purchaseOrderView} onBack={() => setActiveModule('purchase-order-list')} />;
 
+      case 'profile':
+        return <ProfilePage />;
+      case 'settings':
+        return <SettingsPage />;
+
       default:
         return <Dashboard />;
     }
@@ -133,9 +141,27 @@ function AppContent() {
         setActiveModule={setActiveModule}
         onSubItemClick={handleSubItemClick}
       />
-      <main className="flex-1 ml-0 lg:ml-0">
-        {renderContent()}
-      </main>
+      <div className="flex-1 ml-0 lg:ml-0 flex flex-col min-h-screen">
+        <Header 
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+          onProfileClick={() => setActiveModule('profile')} 
+          onSettingsClick={() => setActiveModule('settings')} 
+          onNavigate={(path) => {
+            // Map a few common paths if GlobalSearch is used
+            const routes = {
+              '/sales/orders': 'sales-order-list',
+              '/sales/quotations': 'quotation-list',
+              '/sales/invoices': 'sales-invoice-list',
+              '/buying/purchase-orders': 'purchase-order-list',
+            };
+            const key = routes[path];
+            if (key) setActiveModule(key);
+          }}
+        />
+        <main className="flex-1">
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 }
