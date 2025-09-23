@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
       ...prev,
       [moduleId]: !prev[moduleId]
     }));
-    setActiveModule(moduleId);
+    // Do not change activeModule here; only expand/collapse the module
   };
 
   const handleSubItemClick = (moduleId, subItem) => {
