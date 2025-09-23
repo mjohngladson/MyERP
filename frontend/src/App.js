@@ -13,6 +13,7 @@ import SalesInvoicesList from './components/SalesInvoicesList';
 import SalesInvoiceForm from './components/SalesInvoiceForm';
 import SalesInvoiceView from './components/SalesInvoiceView';
 import SalesOrdersList from './components/SalesOrdersList';
+import SalesOrderForm from './components/SalesOrderForm';
 import CustomersList from './components/CustomersList';
 import QuotationsList from './components/QuotationsList';
 import ItemsList from './components/ItemsList';
@@ -40,24 +41,12 @@ const MainApp = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
+    try { const response = await axios.get(`${API}/`); console.log(response.data.message); } catch (e) { console.error(e, `errored out requesting / api`); }
   };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      helloWorldApi();
-    }
-  }, [isAuthenticated]);
+  useEffect(() => { if (isAuthenticated) { helloWorldApi(); } }, [isAuthenticated]);
 
-  const handleModuleClick = (moduleId) => {
-    setActiveModule(moduleId);
-    setActiveView(moduleId);
-  };
+  const handleModuleClick = (moduleId) => { setActiveModule(moduleId); setActiveView(moduleId); };
 
   const handleSubItemClick = (moduleId, subItem) => {
     setActiveModule(moduleId);
@@ -134,61 +123,44 @@ const MainApp = () => {
 
   const renderActiveComponent = () => {
     switch (activeView) {
-      case 'dashboard':
-        return <Dashboard onViewAllTransactions={() => setActiveView('all-transactions')} onAdvancedReporting={() => setActiveView('advanced-reporting')} />;
-      case 'profile':
-        return <ProfilePage onBack={() => setActiveView('dashboard')} />;
-      case 'settings':
-        return <SettingsPage onBack={() => setActiveView('dashboard')} />;
+      case 'dashboard': return <Dashboard onViewAllTransactions={() => setActiveView('all-transactions')} onAdvancedReporting={() => setActiveView('advanced-reporting')} />;
+      case 'profile': return <ProfilePage onBack={() => setActiveView('dashboard')} />;
+      case 'settings': return <SettingsPage onBack={() => setActiveView('dashboard')} />;
       // Sales
       case 'sales-orders':
-        return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
-      case 'sales-invoices':
         return (
-          <SalesInvoicesList
-            onBack={() => setActiveView('dashboard')}
-            onCreateInvoice={() => setActiveView('sales-invoice-form')}
-            onEditInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-edit'); }}
-            onViewInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-view'); }}
-          />
+          <SalesOrdersList onBack={() => setActiveView('dashboard')} onViewOrder={(order)=>{setSelectedItem(order); /* could add view */}} onEditOrder={(order)=>{setSelectedItem(order); setActiveView('sales-order-edit');}} onCreateOrder={()=>setActiveView('sales-order-form')} />
         );
+      case 'sales-order-form':
+        return <SalesOrderForm onBack={() => setActiveView('sales-orders')} onSave={() => setActiveView('sales-orders')} />;
+      case 'sales-order-edit':
+        return <SalesOrderForm orderId={selectedItem?.id} onBack={() => setActiveView('sales-orders')} onSave={() => setActiveView('sales-orders')} />;
+      case 'sales-invoices':
+        return <SalesInvoicesList onBack={() => setActiveView('dashboard')} onCreateInvoice={() => setActiveView('sales-invoice-form')} onEditInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-edit'); }} onViewInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-view'); }} />;
       case 'sales-invoice-form':
         return <SalesInvoiceForm onBack={() => setActiveView('sales-invoices')} onSave={() => setActiveView('sales-invoices')} />;
       case 'sales-invoice-edit':
         return <SalesInvoiceForm invoiceId={selectedItem?.id} onBack={() => setActiveView('sales-invoices')} onSave={() => setActiveView('sales-invoices')} />;
-      case 'sales-invoice-view':
-        return <SalesInvoiceView invoiceId={selectedItem?.id} initialInvoice={selectedItem} onBack={() => setActiveView('sales-invoices')} />;
       // Buying
-      case 'purchase-orders':
-        return <PurchaseOrdersList onBack={() => setActiveView('dashboard')} />;
-      case 'suppliers':
-        return <SuppliersList onBack={() => setActiveView('dashboard')} />;
+      case 'purchase-orders': return <PurchaseOrdersList onBack={() => setActiveView('dashboard')} />;
+      case 'suppliers': return <SuppliersList onBack={() => setActiveView('dashboard')} />;
       // Stock
-      case 'stock-entry':
-        return <StockEntryList onBack={() => setActiveView('dashboard')} />;
-      case 'warehouses':
-        return <WarehousesList onBack={() => setActiveView('dashboard')} />;
+      case 'stock-entry': return <StockEntryList onBack={() => setActiveView('dashboard')} />;
+      case 'warehouses': return <WarehousesList onBack={() => setActiveView('dashboard')} />;
       // CRM
-      case 'leads':
-        return <LeadsList onBack={() => setActiveView('dashboard')} />;
+      case 'leads': return <LeadsList onBack={() => setActiveView('dashboard')} />;
       // Projects
-      case 'projects':
-        return <ProjectsList onBack={() => setActiveView('dashboard')} />;
+      case 'projects': return <ProjectsList onBack={() => setActiveView('dashboard')} />;
       // HR
-      case 'employees':
-        return <EmployeesList onBack={() => setActiveView('dashboard')} />;
+      case 'employees': return <EmployeesList onBack={() => setActiveView('dashboard')} />;
       // Other
-      case 'all-transactions':
-        return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
-      case 'advanced-reporting':
-        return <AdvancedReporting onBack={() => setActiveView('dashboard')} />;
+      case 'all-transactions': return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
+      case 'advanced-reporting': return <AdvancedReporting onBack={() => setActiveView('dashboard')} />;
       default:
         return (
           <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {activeView.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-              </h2>
+            <div className="bg-white rounded-xl p-8 shadow-sm border text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">{activeView.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</h2>
               <p className="text-gray-600 mb-6">This feature is currently under development. Please check back later for full functionality.</p>
               <div className="text-sm text-gray-500 mb-4">Module: {activeModule} | View: {activeView}</div>
               <button onClick={() => setActiveView('dashboard')} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Back to Dashboard</button>
@@ -211,28 +183,14 @@ const MainApp = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  if (!isAuthenticated) { return <LoginPage />; }
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        activeModule={activeModule}
-        setActiveModule={handleModuleClick}
-        onSubItemClick={handleSubItemClick}
-      />
+      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} activeModule={activeModule} setActiveModule={handleModuleClick} onSubItemClick={handleSubItemClick} />
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-        <Header 
-          toggleSidebar={toggleSidebar}
-          onProfileClick={() => setActiveView('profile')}
-          onSettingsClick={() => setActiveView('settings')}
-        />
-        <main className="flex-1 overflow-auto">
-          {renderActiveComponent()}
-        </main>
+        <Header toggleSidebar={toggleSidebar} onProfileClick={() => setActiveView('profile')} onSettingsClick={() => setActiveView('settings')} />
+        <main className="flex-1 overflow-auto">{renderActiveComponent()}</main>
       </div>
     </div>
   );

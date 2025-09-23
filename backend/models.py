@@ -8,7 +8,8 @@ from enum import Enum
 class OrderStatus(str, Enum):
     DRAFT = "draft"
     SUBMITTED = "submitted"
-    DELIVERED = "delivered"
+    DELIVERED = "delivered"  # kept for backward compatibility
+    FULFILLED = "fulfilled"
     CANCELLED = "cancelled"
 
 class TransactionType(str, Enum):
@@ -173,14 +174,19 @@ class SalesOrder(BaseModel):
     status: OrderStatus = OrderStatus.DRAFT
     order_date: datetime = Field(default_factory=datetime.utcnow)
     delivery_date: Optional[datetime] = None
+    shipping_address: Optional[str] = None
+    notes: Optional[str] = None
     items: List[SalesOrderItem] = []
     company_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class SalesOrderCreate(BaseModel):
     customer_id: str
     total_amount: float
     delivery_date: Optional[datetime] = None
+    shipping_address: Optional[str] = None
+    notes: Optional[str] = None
     items: List[SalesOrderItem] = []
     company_id: str
 
