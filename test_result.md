@@ -130,6 +130,8 @@ metadata:
   run_ui: true
 
 test_plan:
+frontend:
+
   current_focus:
     - "Invoice Backend API Testing - COMPLETED ✅"
   stuck_tasks: []
