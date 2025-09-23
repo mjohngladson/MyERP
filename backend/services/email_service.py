@@ -67,6 +67,7 @@ def generate_invoice_html(invoice: Dict[str, Any], brand: Optional[Dict[str, Any
 
     address_html = "<br/>".join(b.get("address_lines", []))
 
+    pref_html = f"<p style='margin:0 0 12px 0;color:#374151'>{preface}</p>" if preface else ""
     html = f"""
     <!DOCTYPE html>
     <html>
