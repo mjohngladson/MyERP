@@ -3770,68 +3770,140 @@ class BackendTester:
         
         return passed, total, self.test_results
 
+    async def test_purchase_orders_minimal_smoke_test(self):
+        """Run minimal Purchase Orders smoke tests as requested in review"""
+        print("\n🛒 RUNNING MINIMAL PURCHASE ORDERS SMOKE TESTS")
+        print("=" * 60)
+        
+        created_order_id = None
+        
+        try:
+            # 1. Test GET /api/purchase/orders?limit=1
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=1") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Purchase Orders - GET List (limit=1)", True, f"Retrieved {len(data)} orders", {"count": len(data)})
+                        
+                        # Check structure if orders exist
+                        if len(data) > 0:
+                            order = data[0]
+                            required_fields = ["id", "order_number", "supplier_name", "total_amount", "status"]
+                            if all(field in order for field in required_fields):
+                                self.log_test("Purchase Orders - List Structure", True, f"Order structure valid: {order['order_number']}", order)
+                            else:
+                                missing = [f for f in required_fields if f not in order]
+                                self.log_test("Purchase Orders - List Structure", False, f"Missing fields: {missing}", order)
+                                return False
+                    else:
+                        self.log_test("Purchase Orders - GET List (limit=1)", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - GET List (limit=1)", False, f"HTTP {response.status}")
+                    return False
+            
+            # 2. Test POST /api/purchase/orders (create new order)
+            test_payload = {
+                "supplier_id": "test-supplier-001",
+                "supplier_name": "Test Supplier for Smoke Test",
+                "items": [
+                    {
+                        "item_id": "item-001",
+                        "item_name": "Test Item A",
+                        "quantity": 2,
+                        "rate": 50.0
+                    },
+                    {
+                        "item_id": "item-002", 
+                        "item_name": "Test Item B",
+                        "quantity": 1,
+                        "rate": 100.0
+                    }
+                ],
+                "discount_amount": 10.0,
+                "tax_rate": 18.0,
+                "notes": "Smoke test purchase order"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/orders", json=test_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "order" in data:
+                        order = data["order"]
+                        created_order_id = order.get("id")
+                        
+                        # Verify totals calculation
+                        expected_subtotal = 200.0  # (2*50) + (1*100)
+                        expected_discounted = 190.0  # 200 - 10
+                        expected_tax = 34.2  # 190 * 18%
+                        expected_total = 224.2  # 190 + 34.2
+                        
+                        if (abs(order.get("subtotal", 0) - expected_subtotal) < 0.01 and
+                            abs(order.get("total_amount", 0) - expected_total) < 0.01):
+                            self.log_test("Purchase Orders - POST Create", True, f"Order created successfully with correct totals. ID: {created_order_id}, Total: ₹{order['total_amount']}", order)
+                        else:
+                            self.log_test("Purchase Orders - POST Create", False, f"Totals calculation incorrect. Expected: ₹{expected_total}, Got: ₹{order.get('total_amount', 0)}", order)
+                            return False
+                    else:
+                        self.log_test("Purchase Orders - POST Create", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - POST Create", False, f"HTTP {response.status}")
+                    return False
+            
+            # 3. Test GET /api/purchase/orders/{id} (get specific order)
+            if created_order_id:
+                async with self.session.get(f"{self.base_url}/api/purchase/orders/{created_order_id}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("id") == created_order_id:
+                            self.log_test("Purchase Orders - GET by ID", True, f"Retrieved order by ID: {data['order_number']}", {"id": created_order_id, "order_number": data.get("order_number")})
+                        else:
+                            self.log_test("Purchase Orders - GET by ID", False, f"ID mismatch. Expected: {created_order_id}, Got: {data.get('id')}", data)
+                            return False
+                    else:
+                        self.log_test("Purchase Orders - GET by ID", False, f"HTTP {response.status}")
+                        return False
+            
+            # 4. Test DELETE /api/purchase/orders/{id} (delete the created order)
+            if created_order_id:
+                async with self.session.delete(f"{self.base_url}/api/purchase/orders/{created_order_id}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success"):
+                            self.log_test("Purchase Orders - DELETE", True, f"Order deleted successfully: {created_order_id}", data)
+                            created_order_id = None  # Mark as deleted
+                        else:
+                            self.log_test("Purchase Orders - DELETE", False, "Delete operation failed", data)
+                            return False
+                    else:
+                        self.log_test("Purchase Orders - DELETE", False, f"HTTP {response.status}")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Purchase Orders - Minimal Smoke Test", False, f"Error during testing: {str(e)}")
+            return False
+
     async def run_all_tests(self):
-        """Run all backend tests with focus on Railway database testing"""
-        print("🚀 Starting GiLi Backend API Testing Suite - RAILWAY DATABASE FOCUS")
+        """Run minimal backend tests focusing on Purchase Orders smoke tests"""
+        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS SMOKE TEST")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🚄 Focus: Railway MongoDB cloud database connection and functionality")
+        print("🛒 Focus: Purchase Orders minimal smoke tests after restart")
         print("=" * 80)
         
-        # Railway-focused tests first (as requested in review)
-        railway_tests = [
-            self.test_railway_database_connection,
-            self.test_railway_sales_invoice_creation,
-            self.test_railway_collections_verification,
-            self.test_railway_performance,
+        # Tests to run (as requested in review)
+        tests_to_run = [
+            self.test_health_check,  # Verify /api/ returns "GiLi API is running"
+            self.test_purchase_orders_minimal_smoke_test,  # Main focus
         ]
-        
-        # Core API tests
-        core_tests = [
-            self.test_health_check,
-            self.test_database_initialization,
-            self.test_dashboard_stats,
-            self.test_dashboard_transactions,
-            self.test_auth_me,
-            self.test_sales_orders,
-            self.test_sales_customers,
-            
-            # PoS Integration tests (relevant to Railway testing)
-            self.test_pos_health_check,
-            self.test_pos_products_sync,
-            self.test_pos_customers_sync,
-            self.test_pos_transaction_processing,
-            
-            # Tax calculation verification
-            self.test_tax_calculation_verification,
-        ]
-        
-        # Combine all tests - Railway tests first
-        all_tests = railway_tests + core_tests
         
         passed = 0
         failed = 0
         
-        print("\n🚄 RAILWAY DATABASE TESTS (PRIORITY)")
-        print("=" * 50)
-        
-        # Run Railway tests first
-        for test in railway_tests:
-            try:
-                result = await test()
-                if result:
-                    passed += 1
-                else:
-                    failed += 1
-            except Exception as e:
-                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
-                failed += 1
-            print("-" * 40)
-        
-        print("\n🔧 CORE API TESTS")
-        print("=" * 50)
-        
-        # Run core tests
-        for test in core_tests:
+        # Run tests
+        for test in tests_to_run:
             try:
                 result = await test()
                 if result:
@@ -3848,26 +3920,11 @@ class BackendTester:
         success_rate = (passed / total * 100) if total > 0 else 0
         
         print("=" * 80)
-        print("🏁 RAILWAY DATABASE TESTING COMPLETE")
+        print("🏁 PURCHASE ORDERS SMOKE TESTING COMPLETE")
         print(f"✅ Passed: {passed}")
         print(f"❌ Failed: {failed}")
         print(f"📊 Success Rate: {success_rate:.1f}%")
         print("=" * 80)
-        
-        # Print Railway-specific summary
-        railway_results = [r for r in self.test_results if "Railway" in r["test"]]
-        railway_passed = sum(1 for r in railway_results if r["success"])
-        railway_total = len(railway_results)
-        railway_success_rate = (railway_passed / railway_total * 100) if railway_total > 0 else 0
-        
-        print(f"\n🚄 RAILWAY DATABASE SPECIFIC RESULTS:")
-        print(f"✅ Railway Tests Passed: {railway_passed}/{railway_total}")
-        print(f"📊 Railway Success Rate: {railway_success_rate:.1f}%")
-        
-        if railway_success_rate >= 75:
-            print("🎉 RAILWAY DATABASE CONNECTION: WORKING WELL")
-        else:
-            print("⚠️  RAILWAY DATABASE CONNECTION: NEEDS ATTENTION")
         
         # Print detailed results
         print("\n📋 DETAILED TEST RESULTS:")
