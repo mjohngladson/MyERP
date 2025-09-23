@@ -150,25 +150,31 @@ frontend:
     implemented: true
     working: false
     file: "frontend/src/components/PurchaseOrdersList.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL FRONTEND INTEGRATION ISSUE: Purchase Orders list component renders correctly but does not fetch data from backend. SUCCESSFUL: (1) ✅ Navigation to Buying → Purchase Order works (2) ✅ Component renders without runtime errors (3) ✅ UI structure is correct. CRITICAL FAILURE: (1) ❌ List shows 0 rows despite backend having data (GET /api/purchase/orders returns PO-20250923-0001 for ₹106.2) (2) ❌ Network monitoring shows NO API calls to /api/purchase/orders endpoint when component loads (3) ❌ Component is not properly wired to fetch data on mount. ROOT CAUSE: Frontend component missing proper API integration to load Purchase Orders data. Backend API is working perfectly but frontend doesn't call it."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL NAVIGATION ISSUE CONFIRMED: Purchase Orders page is completely unreachable due to broken sidebar navigation. DETAILED FINDINGS: (1) ❌ Sidebar navigation system broken - clicking 'Purchase Order' button does not navigate to the page, remains on Dashboard (2) ❌ onSubItemClick handler in App.js not properly wired to sidebar clicks (3) ❌ NO API calls to /api/purchase/orders because navigation never reaches the component (4) ❌ Overlay/z-index issues preventing proper click handling in sidebar. ROOT CAUSE: The navigation system itself is broken, not the component. PurchaseOrdersList.jsx component is properly implemented with useApi hooks and would make API calls if navigation worked. IMPACT: Users cannot access Purchase Orders functionality at all."
 
   - task: "Quotations List - Frontend API Integration"
     implemented: true
     working: false
     file: "frontend/src/components/QuotationsList.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL FRONTEND INTEGRATION ISSUE: Quotations list component renders correctly but does not fetch data from backend. SUCCESSFUL: (1) ✅ Navigation to Sales → Quotation works (2) ✅ Component renders without runtime errors (3) ✅ UI structure is correct. CRITICAL FAILURE: (1) ❌ List shows 0 rows despite backend having data (GET /api/quotations returns QTN-20250924-008 for ₹236.0 with sent_at timestamp) (2) ❌ Network monitoring shows NO API calls to /api/quotations endpoint when component loads (3) ❌ Component is not properly wired to fetch data on mount. ROOT CAUSE: Frontend component missing proper API integration to load Quotations data. Backend API is working perfectly but frontend doesn't call it."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL NAVIGATION ISSUE CONFIRMED: Quotations page is completely unreachable due to broken sidebar navigation. DETAILED FINDINGS: (1) ❌ Sidebar navigation system broken - clicking 'Quotation' button does not navigate to the page, remains on Dashboard (2) ❌ onSubItemClick handler in App.js not properly wired to sidebar clicks (3) ❌ NO API calls to /api/quotations because navigation never reaches the component (4) ❌ Overlay/z-index issues preventing proper click handling in sidebar. ROOT CAUSE: The navigation system itself is broken, not the component. QuotationsList.jsx component is properly implemented with useApi hooks and would make API calls if navigation worked. IMPACT: Users cannot access Quotations functionality at all."
 
 metadata:
   created_by: "main_agent"
