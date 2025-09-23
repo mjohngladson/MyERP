@@ -70,16 +70,74 @@ async def get_sales_orders(
                     date_query["$lte"] = end_dt
             if date_query:
                 query["order_date"] = date_query
-        total_count = await sales_orders_collection.count_documents(query)
-        # Sorting
-        sort_field = {
+        # Sorting & retrieval using aggregation for robust date handling and count
+        sort_field = (sort_by or '').lower()
+        sort_map = {
             'order_number': 'order_number',
-            'order_date': 'order_date',
+            'order_date': 'order_date_sort',
             'total_amount': 'total_amount'
-        }.get((sort_by or '').lower(), 'created_at')
+        }
+        sort_key = sort_map.get(sort_field, 'created_at')
         sort_direction = DESCENDING if (sort_dir or 'desc').lower() == 'desc' else ASCENDING
-        cursor = sales_orders_collection.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit)
-        orders = await cursor.to_list(length=limit)
+
+        # Build pipeline
+        match_stage = query.copy()
+        pipeline = [
+            { '$addFields': {
+                'order_date_sort': { '$toDate': { '$ifNull': [ '$order_date', '$created_at' ] } }
+            }},
+        ]
+        if match_stage:
+            pipeline.append({ '$match': match_stage })
+        # Apply date range on normalized field if provided
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                try:
+                    y,m,d = map(int, from_date.split('-'))
+                    date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+                except Exception:
+                    pass
+            if to_date:
+                try:
+                    y,m,d = map(int, to_date.split('-'))
+                    date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+                except Exception:
+                    pass
+            if date_match:
+                pipeline.append({ '$match': { 'order_date_sort': date_match } })
+        pipeline.extend([
+            { '$sort': { sort_key: sort_direction } },
+            { '$skip': skip },
+            { '$limit': limit }
+        ])
+
+        orders = await sales_orders_collection.aggregate(pipeline).to_list(length=limit)
+
+        # Count pipeline
+        count_pipeline = pipeline[:1]  # $addFields
+        count_match = []
+        if match_stage:
+            count_match.append({ '$match': match_stage })
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                try:
+                    y,m,d = map(int, from_date.split('-'))
+                    date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+                except Exception:
+                    pass
+            if to_date:
+                try:
+                    y,m,d = map(int, to_date.split('-'))
+                    date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+                except Exception:
+                    pass
+            if date_match:
+                count_match.append({ '$match': { 'order_date_sort': date_match } })
+        count_pipeline = count_pipeline + count_match + [{ '$count': 'total' }]
+        total_docs = await sales_orders_collection.aggregate(count_pipeline).to_list(length=1)
+        total_count = (total_docs[0]['total'] if total_docs else 0)
 
         transformed = []
         for order in orders:
@@ -93,9 +151,6 @@ async def get_sales_orders(
             order.setdefault("status", "draft")
             order.setdefault("items", [])
             order.setdefault("company_id", "default_company")
-            # map delivered -> fulfilled for external
-            if order.get("status") == "delivered":
-                order["status"] = "fulfilled"
             order["_meta"] = {"total_count": total_count, "page_size": limit, "current_page": (skip // limit) + 1}
             transformed.append(order)
         return transformed
