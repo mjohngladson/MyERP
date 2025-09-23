@@ -24,7 +24,7 @@ def format_inr(amount: float) -> str:
         return f"₹{amount}"
 
 
-def generate_invoice_html(invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None) -> str:
+def generate_invoice_html(invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None, preface: Optional[str] = None) -> str:
     b = brand or BRAND_PLACEHOLDER
     inv_no = invoice.get("invoice_number", "SINV")
     inv_date = invoice.get("invoice_date") or invoice.get("created_at")
