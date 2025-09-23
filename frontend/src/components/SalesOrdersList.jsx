@@ -88,18 +88,7 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="hidden sm:flex items-center space-x-2 mr-2">
-              <label className="text-sm text-gray-600">Sort</label>
-              <select value={sortBy} onChange={(e)=>setSortBy(e.target.value)} className="px-2 py-2 border rounded text-sm">
-                <option value="order_date">Date</option>
-                <option value="order_number">Order #</option>
-                <option value="total_amount">Amount</option>
-              </select>
-              <select value={sortDir} onChange={(e)=>setSortDir(e.target.value)} className="px-2 py-2 border rounded text-sm">
-                <option value="desc">Desc</option>
-                <option value="asc">Asc</option>
-              </select>
-            </div>
+
             <div className="hidden lg:flex items-center space-x-2 mr-2">
               <label className="text-sm text-gray-600">From</label>
               <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
