@@ -255,6 +255,8 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
         to_email = (email_data or {}).get("email") or inv.get("customer_email")
         phone = (email_data or {}).get("phone")
         include_pdf = bool((email_data or {}).get("include_pdf"))
+        custom_subject = (email_data or {}).get("subject")
+        custom_message = (email_data or {}).get("message")
 
         if not to_email and not phone:
             raise HTTPException(status_code=400, detail="Provide at least an email or phone to send")
