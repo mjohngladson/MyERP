@@ -114,6 +114,29 @@ frontend:
     needs_retesting: false
     status_history:
         - working: false
+  - task: "PO List - Last sent tooltip & Resend button"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/PurchaseOrdersList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added info tooltip showing Last sent/Last attempt with relative time, and Resend button when previous send exists."
+  - task: "Quotations - Delete action wired"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/QuotationsList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented deleteQuotation calling DELETE /api/quotations/{id} and list refetch."
+
           agent: "main"
           comment: "Initial invoices list failed due to wrong base URL usage and response handling. Updated fetch URLs to include /api prefix, normalized useApi to accept both axios and fetch results, and stabilized list rendering with robust parsing for array or wrapped responses. Also fixed currency to INR with 2 decimals and hooked stats endpoint."
         - working: false
