@@ -14,6 +14,7 @@ import SalesInvoiceForm from './components/SalesInvoiceForm';
 import SalesInvoiceView from './components/SalesInvoiceView';
 import SalesOrdersList from './components/SalesOrdersList';
 import SalesOrderForm from './components/SalesOrderForm';
+import SalesOrderView from './components/SalesOrderView';
 import CustomersList from './components/CustomersList';
 import QuotationsList from './components/QuotationsList';
 import ItemsList from './components/ItemsList';
@@ -135,6 +136,8 @@ const MainApp = () => {
         return <SalesOrderForm onBack={() => setActiveView('sales-orders')} onSave={() => setActiveView('sales-orders')} />;
       case 'sales-order-edit':
         return <SalesOrderForm orderId={selectedItem?.id} onBack={() => setActiveView('sales-orders')} onSave={() => setActiveView('sales-orders')} />;
+      case 'sales-order-view':
+        return <SalesOrderView orderId={selectedItem?.id} initialOrder={selectedItem} onBack={() => setActiveView('sales-orders')} />;
       case 'sales-invoices':
         return <SalesInvoicesList onBack={() => setActiveView('dashboard')} onCreateInvoice={() => setActiveView('sales-invoice-form')} onEditInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-edit'); }} onViewInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-view'); }} />;
       case 'sales-invoice-form':
