@@ -109,7 +109,7 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-600">Error loading sales orders</p>
         </div>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm border"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><DollarSign className="text-gray-400" size={32}/></div><h3 className="text-xl font-semibold text-gray-800 mb-2">No Sales Orders Found</h3><p className="text-gray-600 mb-6">{searchTerm || filterStatus !== 'all' ? 'No orders match your search.' : 'Create your first sales order.'}</p><button onClick={onCreateOrder} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto"><Plus size={20} /><span>Create Sales Order</span></button></div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
