@@ -300,37 +300,42 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
         errors = {}
         if results.get("email") and not results["email"].get("success"):
             err = (results["email"].get("error") or "Email failed")
-            if "401" in err or "Unauthorized" in err:
-                err += " - SendGrid unauthorized. Check API key and verify your sender email/domain."
+            if any(x in str(err) for x in ["401", "Unauthorized", "unauthorized"]):
+                err = f"{err} - SendGrid unauthorized. Check API key and verify your sender email/domain."
             errors["email"] = err
         if results.get("sms") and not results["sms"].get("success"):
-            sms_code = str(results["sms"].get("code")) if isinstance(results["sms"], dict) else None
+            sms_code = str(results["sms"].get("code")) if isinstance(results["sms"], dict) and results["sms"].get("code") is not None else None
             err = (results["sms"].get("error") or results["sms"].get("message") or "SMS failed") if isinstance(results["sms"], dict) else "SMS failed"
             if sms_code == "21211":
-                err += " - Invalid phone format. Use E.164 e.g. +919876543210."
+                err = f"{err} - Invalid phone format. Use E.164 e.g. +919876543210."
             if sms_code == "21608":
-                err += " - Twilio trial can only send to verified numbers or upgrade your account."
+                err = f"{err} - Twilio trial can send only to verified numbers or upgrade your account."
             errors["sms"] = err
 
+        # Always save last send attempt result
+        sent_at_iso = None
+        update_fields = {
+            "last_send_result": results,
+            "last_send_errors": errors,
+            "last_send_attempt_at": datetime.now(timezone.utc).isoformat(),
+        }
         if overall_success:
-            # Save sent_at and sent_via
             sent_at_iso = datetime.now(timezone.utc).isoformat()
-            update_fields = {
+            update_fields.update({
                 "sent_at": sent_at_iso,
                 "sent_via": sent_via,
-                "last_send_result": results
-            }
-            await sales_invoices_collection.update_one({"_id": inv["_id"]}, {"$set": update_fields})
-            message = f"Invoice sent via {', '.join(sent_via)}"
-        else:
-            message = "Sending failed"
+            })
+        await sales_invoices_collection.update_one({"_id": inv["_id"]}, {"$set": update_fields})
+
+        message = f"Invoice sent via {', '.join(sent_via)}" if overall_success else "Sending failed"
 
         return {
             "success": overall_success,
             "message": message,
             "result": results,
             "errors": errors,
-            "sent_via": sent_via
+            "sent_via": sent_via,
+            "sent_at": sent_at_iso,
         }
 
     except HTTPException:
