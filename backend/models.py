@@ -206,6 +206,34 @@ class SalesOrderCreate(BaseModel):
     discount_amount: float = 0.0
     company_id: str
 
+# ----------------------- Purchase Order Models -----------------------
+class PurchaseOrderItem(BaseModel):
+    item_id: str
+    item_name: str
+    quantity: float
+    rate: float
+    amount: float
+
+class PurchaseOrder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_number: str
+    supplier_id: str
+    supplier_name: str
+    total_amount: float
+    status: OrderStatus = OrderStatus.DRAFT
+    order_date: datetime = Field(default_factory=datetime.utcnow)
+    expected_date: Optional[datetime] = None
+    items: List[PurchaseOrderItem] = []
+    company_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PurchaseOrderCreate(BaseModel):
+    supplier_id: str
+    total_amount: float
+    expected_date: Optional[datetime] = None
+    items: List[PurchaseOrderItem] = []
+    company_id: str
+
 # ----------------------- Quotation Models -----------------------
 class QuotationItem(BaseModel):
     item_id: str
