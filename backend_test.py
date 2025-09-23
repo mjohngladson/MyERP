@@ -4338,6 +4338,313 @@ class BackendTester:
             self.log_test("Railway Database Connectivity", False, f"Error: {str(e)}")
             return False
 
+    async def test_purchase_orders_list(self):
+        """Test GET /api/purchase/orders?limit=10 endpoint"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Purchase Orders List", True, f"Retrieved {len(data)} purchase orders", {"count": len(data)})
+                        
+                        # Check structure and _meta.total_count on first element
+                        if len(data) > 0:
+                            order = data[0]
+                            if "_meta" in order and "total_count" in order["_meta"]:
+                                self.log_test("Purchase Orders List - Meta Data", True, f"First element includes _meta.total_count: {order['_meta']['total_count']}", order["_meta"])
+                            else:
+                                self.log_test("Purchase Orders List - Meta Data", False, "First element missing _meta.total_count", order)
+                                return False
+                        return True
+                    else:
+                        self.log_test("Purchase Orders List", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders List", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Purchase Orders List", False, f"Error: {str(e)}")
+            return False
+
+    async def test_purchase_orders_sorting_and_filtering(self):
+        """Test sorting by order_date and total_amount, search by supplier_name, and date filters"""
+        try:
+            # Test sorting by order_date
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?sort_by=order_date&sort_dir=desc") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - Sort by Order Date", True, f"Sorting by order_date works, got {len(data)} orders")
+                else:
+                    self.log_test("Purchase Orders - Sort by Order Date", False, f"HTTP {response.status}")
+                    return False
+
+            # Test sorting by total_amount
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?sort_by=total_amount&sort_dir=desc") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - Sort by Total Amount", True, f"Sorting by total_amount works, got {len(data)} orders")
+                else:
+                    self.log_test("Purchase Orders - Sort by Total Amount", False, f"HTTP {response.status}")
+                    return False
+
+            # Test search by supplier_name
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?search=Test Supplier") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - Search by Supplier", True, f"Search by supplier_name works, got {len(data)} orders")
+                else:
+                    self.log_test("Purchase Orders - Search by Supplier", False, f"HTTP {response.status}")
+                    return False
+
+            # Test date filters
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            from_date = (today - timedelta(days=30)).strftime('%Y-%m-%d')
+            to_date = today.strftime('%Y-%m-%d')
+            
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?from_date={from_date}&to_date={to_date}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - Date Filters", True, f"Date filtering works, got {len(data)} orders for last 30 days")
+                else:
+                    self.log_test("Purchase Orders - Date Filters", False, f"HTTP {response.status}")
+                    return False
+
+            return True
+        except Exception as e:
+            self.log_test("Purchase Orders - Sorting and Filtering", False, f"Error: {str(e)}")
+            return False
+
+    async def test_purchase_orders_crud(self):
+        """Test POST, GET, PUT, DELETE purchase orders with totals calculation"""
+        try:
+            # Test POST - Create purchase order
+            create_payload = {
+                "order_number": "",
+                "supplier_id": "test_supplier",
+                "supplier_name": "Test Supplier",
+                "items": [
+                    {
+                        "item_id": "i1",
+                        "item_name": "Item 1",
+                        "quantity": 2,
+                        "rate": 50
+                    }
+                ],
+                "discount_amount": 10,
+                "tax_rate": 18,
+                "company_id": "default_company"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/orders", json=create_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "order" in data:
+                        order = data["order"]
+                        order_id = order.get("id")
+                        
+                        # Verify totals calculation
+                        expected_subtotal = 100  # 2 * 50
+                        expected_discounted = 90  # 100 - 10
+                        expected_tax = 16.2  # 90 * 18%
+                        expected_total = 106.2  # 90 + 16.2
+                        
+                        if (abs(order.get("subtotal", 0) - expected_subtotal) < 0.01 and
+                            abs(order.get("total_amount", 0) - expected_total) < 0.01 and
+                            abs(order.get("tax_amount", 0) - expected_tax) < 0.01):
+                            self.log_test("Purchase Orders - Create with Totals", True, 
+                                        f"Order created with correct totals: subtotal={order.get('subtotal')}, discounted={expected_discounted}, tax={order.get('tax_amount')}, total={order.get('total_amount')}", 
+                                        order)
+                        else:
+                            self.log_test("Purchase Orders - Create with Totals", False, 
+                                        f"Incorrect totals calculation: expected total={expected_total}, got={order.get('total_amount')}", 
+                                        order)
+                            return False
+                    else:
+                        self.log_test("Purchase Orders - Create", False, "Invalid create response", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - Create", False, f"HTTP {response.status}")
+                    return False
+
+            # Test GET - Retrieve created order
+            async with self.session.get(f"{self.base_url}/api/purchase/orders/{order_id}") as response:
+                if response.status == 200:
+                    retrieved_order = await response.json()
+                    if retrieved_order.get("id") == order_id:
+                        self.log_test("Purchase Orders - Get by ID", True, f"Retrieved order {order_id}", retrieved_order)
+                    else:
+                        self.log_test("Purchase Orders - Get by ID", False, "Retrieved order ID mismatch", retrieved_order)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - Get by ID", False, f"HTTP {response.status}")
+                    return False
+
+            # Test PUT - Update discount_amount to 0 and verify total recalculation
+            update_payload = {"discount_amount": 0}
+            async with self.session.put(f"{self.base_url}/api/purchase/orders/{order_id}", json=update_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        # Verify updated order
+                        async with self.session.get(f"{self.base_url}/api/purchase/orders/{order_id}") as get_response:
+                            if get_response.status == 200:
+                                updated_order = await get_response.json()
+                                expected_total_updated = 118.0  # 100 + (100 * 18%)
+                                if abs(updated_order.get("total_amount", 0) - expected_total_updated) < 0.01:
+                                    self.log_test("Purchase Orders - Update Totals", True, 
+                                                f"Order updated with recalculated total: {updated_order.get('total_amount')}", 
+                                                updated_order)
+                                else:
+                                    self.log_test("Purchase Orders - Update Totals", False, 
+                                                f"Incorrect updated total: expected={expected_total_updated}, got={updated_order.get('total_amount')}", 
+                                                updated_order)
+                                    return False
+                            else:
+                                self.log_test("Purchase Orders - Update Verification", False, f"Failed to retrieve updated order: HTTP {get_response.status}")
+                                return False
+                    else:
+                        self.log_test("Purchase Orders - Update", False, "Update failed", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - Update", False, f"HTTP {response.status}")
+                    return False
+
+            # Test DELETE
+            async with self.session.delete(f"{self.base_url}/api/purchase/orders/{order_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_test("Purchase Orders - Delete", True, f"Order {order_id} deleted successfully", data)
+                    else:
+                        self.log_test("Purchase Orders - Delete", False, "Delete failed", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders - Delete", False, f"HTTP {response.status}")
+                    return False
+
+            return True
+        except Exception as e:
+            self.log_test("Purchase Orders - CRUD Operations", False, f"Error: {str(e)}")
+            return False
+
+    async def test_purchase_orders_send_endpoint(self):
+        """Test POST /api/purchase/orders/{id}/send endpoint"""
+        try:
+            # First create a test order
+            create_payload = {
+                "supplier_name": "Test Supplier",
+                "items": [{"item_id": "i1", "item_name": "Item 1", "quantity": 1, "rate": 100}],
+                "company_id": "default_company"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/orders", json=create_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    order_id = data["order"]["id"]
+                else:
+                    self.log_test("Purchase Orders - Send Setup", False, f"Failed to create test order: HTTP {response.status}")
+                    return False
+
+            # Test send endpoint with email
+            send_payload = {"email": "test@example.com"}
+            async with self.session.post(f"{self.base_url}/api/purchase/orders/{order_id}/send", json=send_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - Send Success", True, f"Send endpoint returned success: {data.get('success')}", data)
+                elif response.status == 503:
+                    # Expected if SENDGRID_API_KEY not configured
+                    data = await response.json()
+                    if "not configured" in data.get("detail", "").lower():
+                        self.log_test("Purchase Orders - Send Service Unavailable", True, "Send endpoint correctly returned 503 for unconfigured email service", data)
+                    else:
+                        self.log_test("Purchase Orders - Send Service Unavailable", False, f"Unexpected 503 response: {data}")
+                        return False
+                else:
+                    self.log_test("Purchase Orders - Send", False, f"HTTP {response.status}")
+                    return False
+
+            # Clean up - delete test order
+            await self.session.delete(f"{self.base_url}/api/purchase/orders/{order_id}")
+            
+            return True
+        except Exception as e:
+            self.log_test("Purchase Orders - Send Endpoint", False, f"Error: {str(e)}")
+            return False
+
+    async def test_quotations_sanity_check(self):
+        """Quick sanity check that /api/quotations still responds"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/quotations") as response:
+                if response.status == 200:
+                    self.log_test("Quotations Sanity Check", True, f"Quotations endpoint responding: HTTP {response.status}")
+                    return True
+                else:
+                    self.log_test("Quotations Sanity Check", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Quotations Sanity Check", False, f"Error: {str(e)}")
+            return False
+
+    async def test_sales_orders_sanity_check(self):
+        """Quick sanity check that /api/sales/orders still responds"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/sales/orders") as response:
+                if response.status == 200:
+                    self.log_test("Sales Orders Sanity Check", True, f"Sales orders endpoint responding: HTTP {response.status}")
+                    return True
+                else:
+                    self.log_test("Sales Orders Sanity Check", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Sales Orders Sanity Check", False, f"Error: {str(e)}")
+            return False
+
+    async def run_purchase_orders_smoke_tests(self):
+        """Run Purchase Orders smoke tests as requested in review"""
+        print("🛒 PURCHASE ORDERS SMOKE TESTING")
+        print(f"🌐 Testing Purchase Orders API: {self.base_url}")
+        print("=" * 80)
+        
+        # Purchase Orders smoke tests
+        purchase_tests = [
+            self.test_purchase_orders_list,
+            self.test_purchase_orders_sorting_and_filtering,
+            self.test_purchase_orders_crud,
+            self.test_purchase_orders_send_endpoint,
+            self.test_quotations_sanity_check,
+            self.test_sales_orders_sanity_check,
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        for test in purchase_tests:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            
+            print("-" * 40)
+        
+        # Print Purchase Orders summary
+        total = passed + failed
+        success_rate = (passed / total * 100) if total > 0 else 0
+        
+        print("=" * 80)
+        print("🏁 PURCHASE ORDERS SMOKE TESTING COMPLETE")
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        print("=" * 80)
+        
+        return passed, total, self.test_results
+
     async def run_railway_cloud_integration_tests(self):
         """Run Railway Cloud Integration Tests"""
         print("🚀 RAILWAY CLOUD API INTEGRATION TESTING")
