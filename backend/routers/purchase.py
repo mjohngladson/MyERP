@@ -3,8 +3,23 @@ from typing import List, Optional
 from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo import ASCENDING, DESCENDING
+import os
 
 from database import purchase_orders_collection, suppliers_collection, items_collection
+
+# Optional email/SMS/PDF services (reused pattern from invoices/sales)
+try:
+    from services.email_service import SendGridEmailService, BRAND_PLACEHOLDER
+    from services.pdf_service import generate_invoice_pdf
+except Exception:
+    SendGridEmailService = None
+    BRAND_PLACEHOLDER = {"company_name": "Your Company"}
+    def generate_invoice_pdf(doc, brand):
+        return None
+try:
+    from services.sms_service import TwilioSmsService
+except Exception:
+    TwilioSmsService = None
 
 router = APIRouter(prefix="/api/purchase", tags=["purchase"])
 
@@ -124,7 +139,7 @@ async def create_purchase_order(payload: dict):
     try:
         now = datetime.now(timezone.utc)
         payload.setdefault('status', 'draft')
-        payload['id'] = str(ObjectId())
+        payload['id'] = payload.get('id') or str(ObjectId())
         payload['created_at'] = now
         payload['updated_at'] = now
         # order number
@@ -136,6 +151,9 @@ async def create_purchase_order(payload: dict):
             s = await suppliers_collection.find_one({ 'id': payload['supplier_id'] })
             if s:
                 payload['supplier_name'] = s.get('name', payload.get('supplier_name',''))
+                payload['supplier_email'] = s.get('email', '')
+                payload['supplier_phone'] = s.get('phone', '')
+                payload['supplier_address'] = s.get('address', '')
         # items normalization + totals
         items = []
         for it in (payload.get('items') or []):
@@ -236,3 +254,72 @@ async def delete_purchase_order(order_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting purchase order: {str(e)}")
+
+@router.post("/orders/{order_id}/send")
+async def send_purchase_order(order_id: str, body: dict):
+    """Send purchase order via email and/or SMS. Body: { email?: str, phone?: str, include_pdf?: bool, subject?, message? }"""
+    try:
+        order = await purchase_orders_collection.find_one({"id": order_id})
+        if not order:
+            try:
+                order = await purchase_orders_collection.find_one({"_id": ObjectId(order_id)})
+            except Exception:
+                pass
+        if not order:
+            raise HTTPException(status_code=404, detail="Purchase order not found")
+
+        to_email = (body or {}).get("email") or order.get("supplier_email")
+        phone = (body or {}).get("phone") or order.get("supplier_phone")
+        include_pdf = bool((body or {}).get("include_pdf"))
+        subject = (body or {}).get("subject") or f"Purchase Order {order.get('order_number','')} from {BRAND_PLACEHOLDER.get('company_name','Your Company')}"
+        preface = (body or {}).get("message") or f"Dear {order.get('supplier_name','Supplier')}, Please find your purchase order details below."
+
+        if not to_email and not phone:
+            raise HTTPException(status_code=400, detail="Provide at least an email or phone to send")
+
+        results = {"email": None, "sms": None}
+        sent_via = []
+
+        # Email
+        if to_email:
+            if SendGridEmailService is None or not os.environ.get("SENDGRID_API_KEY"):
+                raise HTTPException(status_code=503, detail="Email service not configured. Set SENDGRID_API_KEY.")
+            pdf_bytes = None
+            if include_pdf:
+                try:
+                    pdf_bytes = generate_invoice_pdf(order, BRAND_PLACEHOLDER)
+                except Exception:
+                    pdf_bytes = None
+            svc = SendGridEmailService()
+            email_resp = svc.send_invoice(to_email, order, BRAND_PLACEHOLDER, pdf_bytes=pdf_bytes, subject_override=subject, preface=preface)
+            results["email"] = email_resp
+            if email_resp.get("success"):
+                sent_via.append("email")
+
+        # SMS
+        if phone:
+            if TwilioSmsService is None or not (os.environ.get("TWILIO_ACCOUNT_SID") and os.environ.get("TWILIO_AUTH_TOKEN") and os.environ.get("TWILIO_FROM_PHONE")):
+                results["sms"] = {"success": False, "configured": False, "message": "SMS not configured"}
+            else:
+                sms = TwilioSmsService()
+                sms_resp = sms.send_sms(phone, f"Purchase Order {order.get('order_number','')} total ₹{order.get('total_amount',0)}.")
+                results["sms"] = sms_resp
+                if sms_resp.get("success"):
+                    sent_via.append("sms")
+
+        # Save result on document
+        sent_at_iso = None
+        update_fields = {
+            "last_send_result": results,
+            "last_send_attempt_at": datetime.now(timezone.utc).isoformat()
+        }
+        if sent_via:
+            sent_at_iso = datetime.now(timezone.utc).isoformat()
+            update_fields.update({"sent_at": sent_at_iso, "sent_via": sent_via})
+        await purchase_orders_collection.update_one({"_id": order["_id"]}, {"$set": update_fields})
+
+        return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": sent_at_iso}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending purchase order: {str(e)}")
