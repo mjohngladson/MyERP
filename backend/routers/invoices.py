@@ -29,7 +29,11 @@ async def get_sales_invoices(
     skip: int = Query(0, description="Number of invoices to skip"),
     status: Optional[str] = Query(None, description="Filter by status"),
     customer_id: Optional[str] = Query(None, description="Filter by customer"),
-    search: Optional[str] = Query(None, description="Search in invoice number or customer name")
+    search: Optional[str] = Query(None, description="Search in invoice number or customer name"),
+    sort_by: Optional[str] = Query(None, description='invoice_number|invoice_date|total_amount'),
+    sort_dir: Optional[str] = Query('desc', description='asc|desc'),
+    from_date: Optional[str] = Query(None, description='YYYY-MM-DD'),
+    to_date: Optional[str] = Query(None, description='YYYY-MM-DD')
 ):
     """Get sales invoices with filtering and pagination"""
     try:
@@ -44,9 +48,57 @@ async def get_sales_invoices(
                 {"customer_name": {"$regex": search, "$options": "i"}}
             ]
 
-        total_count = await sales_invoices_collection.count_documents(query)
-        cursor = sales_invoices_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
-        invoices = await cursor.to_list(length=limit)
+        # Build pipeline for robust date sorting/filtering
+        sort_field = (sort_by or '').lower()
+        sort_map = {
+            'invoice_number': 'invoice_number',
+            'invoice_date': 'invoice_date_sort',
+            'total_amount': 'total_amount'
+        }
+        sort_key = sort_map.get(sort_field, 'created_at')
+        sort_direction = -1 if (sort_dir or 'desc').lower() == 'desc' else 1
+
+        pipeline = [
+            { '$addFields': {
+                'invoice_date_sort': { '$toDate': { '$ifNull': [ '$invoice_date', '$created_at' ] } }
+            }},
+        ]
+        if query:
+            pipeline.append({ '$match': query })
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                y,m,d = map(int, from_date.split('-'))
+                date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+            if to_date:
+                y,m,d = map(int, to_date.split('-'))
+                date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+            pipeline.append({ '$match': { 'invoice_date_sort': date_match } })
+        pipeline.extend([
+            { '$sort': { sort_key: sort_direction } },
+            { '$skip': skip },
+            { '$limit': limit },
+        ])
+
+        invoices = await sales_invoices_collection.aggregate(pipeline).to_list(length=limit)
+
+        # Count
+        count_pipeline = pipeline[:1]  # $addFields
+        count_match = []
+        if query:
+            count_match.append({ '$match': query })
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                y,m,d = map(int, from_date.split('-'))
+                date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+            if to_date:
+                y,m,d = map(int, to_date.split('-'))
+                date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+            count_match.append({ '$match': { 'invoice_date_sort': date_match } })
+        count_pipeline = count_pipeline + count_match + [{ '$count': 'total' }]
+        total_docs = await sales_invoices_collection.aggregate(count_pipeline).to_list(length=1)
+        total_count = (total_docs[0]['total'] if total_docs else 0)
 
         transformed_invoices = []
         for invoice in invoices:
@@ -62,19 +114,6 @@ async def get_sales_invoices(
                 invoice.setdefault("subtotal", 0.0)
                 invoice.setdefault("tax_amount", 0.0)
                 invoice.setdefault("discount_amount", 0.0)
-
-                fixed_items = []
-                for item in invoice.get("items", []):
-                    fixed_items.append({
-                        "item_id": item.get("item_id", item.get("product_id", "unknown")),
-                        "item_name": item.get("item_name", item.get("product_name", "Unknown Item")),
-                        "description": item.get("description", ""),
-                        "quantity": item.get("quantity", 0),
-                        "rate": item.get("rate", item.get("unit_price", 0.0)),
-                        "amount": item.get("amount", item.get("line_total", 0.0))
-                    })
-                invoice["items"] = fixed_items
-
                 invoice["_meta"] = {
                     "total_count": total_count,
                     "current_page": (skip // limit) + 1,
