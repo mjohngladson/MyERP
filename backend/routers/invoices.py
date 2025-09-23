@@ -5,6 +5,13 @@ from models import SalesInvoice, SalesInvoiceCreate, SalesInvoiceItem
 import uuid
 from datetime import datetime, timedelta
 from bson import ObjectId
+import os
+
+# Email service (SendGrid)
+try:
+    from services.email_service import SendGridEmailService, BRAND_PLACEHOLDER, generate_invoice_html
+except Exception:
+    SendGridEmailService = None
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices"])
 
@@ -304,19 +311,48 @@ async def delete_sales_invoice(invoice_id: str):
 
 @router.post("/{invoice_id}/send")
 async def send_invoice_email(invoice_id: str, email_data: dict):
-    """Send invoice via email (placeholder for email integration)"""
+    """Send invoice via email (SendGrid) and optionally accept phone for SMS (placeholder)."""
     try:
         # Get invoice
         invoice = await sales_invoices_collection.find_one({"id": invoice_id})
         if not invoice:
+            # Try ObjectId
+            try:
+                invoice = await sales_invoices_collection.find_one({"_id": ObjectId(invoice_id)})
+                if invoice and "_id" in invoice:
+                    invoice["id"] = str(invoice["_id"])
+                    del invoice["_id"]
+            except Exception:
+                pass
+        if not invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
+
+        to_email = (email_data or {}).get("email") or invoice.get("customer_email")
+        phone = (email_data or {}).get("phone")
+        if not to_email and not phone:
+            raise HTTPException(status_code=400, detail="Provide at least an email or phone to send")
+
+        result = {"email": None, "sms": {"success": False, "configured": False, "message": "SMS sending not configured"}}
+
+        # Email via SendGrid if configured and email present
+        api_key_present = bool(os.environ.get("SENDGRID_API_KEY"))
+        if to_email:
+            if not api_key_present or SendGridEmailService is None:
+                raise HTTPException(status_code=503, detail="Email service not configured. Please set SENDGRID_API_KEY in environment.")
+            svc = SendGridEmailService()
+            email_resp = svc.send_invoice(to_email, invoice, BRAND_PLACEHOLDER)
+            result["email"] = email_resp
         
-        # TODO: Implement email sending logic
-        # This would typically integrate with an email service like SendGrid, SES, etc.
+        # SMS placeholder: accept phone but not implemented
+        if phone:
+            # Future: integrate Twilio or other provider
+            result["sms"] = {"success": False, "configured": False, "message": "SMS provider not configured"}
         
+        overall_success = (result.get("email", {}) or {}).get("success") is True
         return {
-            "success": True,
-            "message": f"Invoice {invoice.get('invoice_number')} sent successfully"
+            "success": overall_success,
+            "message": "Invoice processed for sending",
+            "result": result
         }
         
     except HTTPException:
@@ -376,5 +412,6 @@ async def get_invoice_stats():
         raise HTTPException(status_code=500, detail=f"Error fetching invoice stats: {str(e)}")
 
 # Export the router
+
 def get_invoices_router():
     return router

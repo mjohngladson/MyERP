@@ -25,6 +25,7 @@ import WarehousesList from './components/WarehousesList';
 import EmployeesList from './components/EmployeesList';
 import AdvancedReporting from './components/AdvancedReporting';
 import { Toaster } from './components/ui/toaster';
+import SalesInvoiceView from './components/SalesInvoiceView';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -36,307 +37,132 @@ const MainApp = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = () => { setSidebarOpen(!sidebarOpen); };
 
   const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
+    try { const response = await axios.get(`${API}/`); console.log(response.data.message); } catch (e) { console.error(e, `errored out requesting / api`); }
   };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      helloWorldApi();
-    }
-  }, [isAuthenticated]);
+  useEffect(() => { if (isAuthenticated) { helloWorldApi(); } }, [isAuthenticated]);
 
-  const handleModuleClick = (moduleId) => {
-    setActiveModule(moduleId);
-    setActiveView(moduleId);
-  };
+  const handleModuleClick = (moduleId) => { setActiveModule(moduleId); setActiveView(moduleId); };
 
   const handleSubItemClick = (moduleId, subItem) => {
-    console.log('📱 SubItem clicked:', { moduleId, subItem });
-    
     setActiveModule(moduleId);
-    
-    // Map sub-items to specific views for all modules
     if (moduleId === 'sales') {
       switch (subItem) {
-        case 'Sales Order':
-          console.log('🛒 Setting activeView to sales-orders');
-          setActiveView('sales-orders');
-          break;
-        case 'Quotation':
-          setActiveView('quotations');
-          break;
-        case 'Customer':
-          setActiveView('customers');
-          break;
-        case 'Item':
-          setActiveView('items');
-          break;
-        case 'Sales Invoice':
-          setActiveView('sales-invoices');
-          break;
-        default:
-          console.log('🛒 Setting activeView to default sales');
-          setActiveView('sales');
+        case 'Sales Order': setActiveView('sales-orders'); break;
+        case 'Quotation': setActiveView('quotations'); break;
+        case 'Customer': setActiveView('customers'); break;
+        case 'Item': setActiveView('items'); break;
+        case 'Sales Invoice': setActiveView('sales-invoices'); break;
+        default: setActiveView('sales');
       }
     } else if (moduleId === 'buying') {
       switch (subItem) {
-        case 'Purchase Order':
-          setActiveView('purchase-orders');
-          break;
-        case 'Supplier':
-          setActiveView('suppliers');
-          break;
-        case 'Purchase Invoice':
-          setActiveView('purchase-invoices');
-          break;
-        case 'Purchase Receipt':
-          setActiveView('purchase-receipts');
-          break;
-        default:
-          setActiveView('buying');
+        case 'Purchase Order': setActiveView('purchase-orders'); break;
+        case 'Supplier': setActiveView('suppliers'); break;
+        case 'Purchase Invoice': setActiveView('purchase-invoices'); break;
+        case 'Purchase Receipt': setActiveView('purchase-receipts'); break;
+        default: setActiveView('buying');
       }
     } else if (moduleId === 'stock') {
       switch (subItem) {
-        case 'Stock Entry':
-          setActiveView('stock-entry');
-          break;
-        case 'Item':
-          setActiveView('items');
-          break;
-        case 'Warehouse':
-          setActiveView('warehouses');
-          break;
-        case 'Stock Reconciliation':
-          setActiveView('stock-reconciliation');
-          break;
-        default:
-          setActiveView('stock');
+        case 'Stock Entry': setActiveView('stock-entry'); break;
+        case 'Item': setActiveView('items'); break;
+        case 'Warehouse': setActiveView('warehouses'); break;
+        case 'Stock Reconciliation': setActiveView('stock-reconciliation'); break;
+        default: setActiveView('stock');
       }
     } else if (moduleId === 'accounts') {
       switch (subItem) {
-        case 'Chart of Accounts':
-          setActiveView('chart-of-accounts');
-          break;
-        case 'Journal Entry':
-          setActiveView('journal-entry');
-          break;
-        case 'Payment Entry':
-          setActiveView('payment-entry');
-          break;
-        case 'General Ledger':
-          setActiveView('general-ledger');
-          break;
-        default:
-          setActiveView('accounts');
+        case 'Chart of Accounts': setActiveView('chart-of-accounts'); break;
+        case 'Journal Entry': setActiveView('journal-entry'); break;
+        case 'Payment Entry': setActiveView('payment-entry'); break;
+        case 'General Ledger': setActiveView('general-ledger'); break;
+        default: setActiveView('accounts');
       }
     } else if (moduleId === 'crm') {
       switch (subItem) {
-        case 'Lead':
-          setActiveView('leads');
-          break;
-        case 'Opportunity':
-          setActiveView('opportunities');
-          break;
-        case 'Customer':
-          setActiveView('customers');
-          break;
-        case 'Contact':
-          setActiveView('contacts');
-          break;
-        case 'Campaign':
-          setActiveView('campaigns');
-          break;
-        default:
-          setActiveView('crm');
+        case 'Lead': setActiveView('leads'); break;
+        case 'Opportunity': setActiveView('opportunities'); break;
+        case 'Customer': setActiveView('customers'); break;
+        case 'Contact': setActiveView('contacts'); break;
+        case 'Campaign': setActiveView('campaigns'); break;
+        default: setActiveView('crm');
       }
     } else if (moduleId === 'projects') {
       switch (subItem) {
-        case 'Project':
-          setActiveView('projects');
-          break;
-        case 'Task':
-          setActiveView('tasks');
-          break;
-        case 'Timesheet':
-          setActiveView('timesheets');
-          break;
-        case 'Project Update':
-          setActiveView('project-updates');
-          break;
-        default:
-          setActiveView('projects');
+        case 'Project': setActiveView('projects'); break;
+        case 'Task': setActiveView('tasks'); break;
+        case 'Timesheet': setActiveView('timesheets'); break;
+        case 'Project Update': setActiveView('project-updates'); break;
+        default: setActiveView('projects');
       }
     } else if (moduleId === 'manufacturing') {
       switch (subItem) {
-        case 'BOM':
-          setActiveView('bom');
-          break;
-        case 'Work Order':
-          setActiveView('work-orders');
-          break;
-        case 'Production Plan':
-          setActiveView('production-plans');
-          break;
-        case 'Job Card':
-          setActiveView('job-cards');
-          break;
-        default:
-          setActiveView('manufacturing');
+        case 'BOM': setActiveView('bom'); break;
+        case 'Work Order': setActiveView('work-orders'); break;
+        case 'Production Plan': setActiveView('production-plans'); break;
+        case 'Job Card': setActiveView('job-cards'); break;
+        default: setActiveView('manufacturing');
       }
     } else if (moduleId === 'hr') {
       switch (subItem) {
-        case 'Employee':
-          setActiveView('employees');
-          break;
-        case 'Attendance':
-          setActiveView('attendance');
-          break;
-        case 'Leave Application':
-          setActiveView('leave-applications');
-          break;
-        case 'Salary Slip':
-          setActiveView('salary-slips');
-          break;
-        default:
-          setActiveView('hr');
+        case 'Employee': setActiveView('employees'); break;
+        case 'Attendance': setActiveView('attendance'); break;
+        case 'Leave Application': setActiveView('leave-applications'); break;
+        case 'Salary Slip': setActiveView('salary-slips'); break;
+        default: setActiveView('hr');
       }
     } else {
       setActiveView(moduleId);
     }
   };
 
-  const handleViewAllTransactions = () => {
-    setActiveView('all-transactions');
-  };
-
-  const handleAdvancedReporting = () => {
-    setActiveView('advanced-reporting');
-  };
-
-  const handleProfileClick = () => {
-    setActiveView('profile');
-  };
-
-  const handleSettingsClick = () => {
-    setActiveView('settings');
-  };
-
   const renderActiveComponent = () => {
-    console.log('🎯 Rendering view:', { activeView, activeModule });
-    
     switch (activeView) {
-      case 'dashboard':
-        return <Dashboard onViewAllTransactions={handleViewAllTransactions} onAdvancedReporting={handleAdvancedReporting} />;
-      
-      case 'profile':
-        return <ProfilePage onBack={() => setActiveView('dashboard')} />;
-      
-      case 'settings':
-        return <SettingsPage onBack={() => setActiveView('dashboard')} />;
-      
-      // Sales Module
-      case 'sales-orders':
-        console.log('✅ Rendering SalesOrdersList component');
-        return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
+      case 'dashboard': return <Dashboard onViewAllTransactions={() => setActiveView('all-transactions')} onAdvancedReporting={() => setActiveView('advanced-reporting')} />;
+      case 'profile': return <ProfilePage onBack={() => setActiveView('dashboard')} />;
+      case 'settings': return <SettingsPage onBack={() => setActiveView('dashboard')} />;
+      // Sales
+      case 'sales-orders': return <SalesOrdersList onBack={() => setActiveView('dashboard')} />;
       case 'sales-invoices':
         return <SalesInvoicesList 
           onBack={() => setActiveView('dashboard')} 
           onCreateInvoice={() => setActiveView('sales-invoice-form')}
-          onEditInvoice={(invoice) => {
-            setSelectedItem(invoice);
-            setActiveView('sales-invoice-edit');
-          }}
-          onViewInvoice={(invoice) => {
-            setSelectedItem(invoice);
-            setActiveView('sales-invoice-view');
-          }}
+          onEditInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-edit'); }}
+          onViewInvoice={(invoice) => { setSelectedItem(invoice); setActiveView('sales-invoice-view'); }}
         />;
       case 'sales-invoice-form':
         return <SalesInvoiceForm onBack={() => setActiveView('sales-invoices')} onSave={() => setActiveView('sales-invoices')} />;
       case 'sales-invoice-edit':
-        return <SalesInvoiceForm 
-          invoiceId={selectedItem?.id} 
-          onBack={() => setActiveView('sales-invoices')} 
-          onSave={() => setActiveView('sales-invoices')} 
-        />;
-      case 'quotations':
-        return <QuotationsList onBack={() => setActiveView('dashboard')} />;
-      case 'customers':
-        return <CustomersList 
-          onBack={() => setActiveView('dashboard')} 
-          onCreateCustomer={() => setActiveView('customer-form')}
-          onEditCustomer={(customer) => {
-            setSelectedItem(customer);
-            setActiveView('customer-edit');
-          }}
-          onViewCustomer={(customer) => {
-            setSelectedItem(customer);
-            setActiveView('customer-view');
-          }}
-        />;
-      case 'items':
-        return <ItemsList onBack={() => setActiveView('dashboard')} />;
-      
-      // Buying Module
-      case 'purchase-orders':
-        return <PurchaseOrdersList onBack={() => setActiveView('dashboard')} />;
-      case 'suppliers':
-        return <SuppliersList onBack={() => setActiveView('dashboard')} />;
-      
-      // Stock Module
-      case 'stock-entry':
-        return <StockEntryList onBack={() => setActiveView('dashboard')} />;
-      case 'warehouses':
-        return <WarehousesList onBack={() => setActiveView('dashboard')} />;
-      
-      // CRM Module
-      case 'leads':
-        return <LeadsList onBack={() => setActiveView('dashboard')} />;
-      
-      // Projects Module
-      case 'projects':
-        return <ProjectsList onBack={() => setActiveView('dashboard')} />;
-      
-      // HR Module
-      case 'employees':
-        return <EmployeesList onBack={() => setActiveView('dashboard')} />;
-      
-      // Other views
-      case 'all-transactions':
-        return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
-      
-      case 'advanced-reporting':
-        return <AdvancedReporting onBack={() => setActiveView('dashboard')} />;
-      
+        return <SalesInvoiceForm invoiceId={selectedItem?.id} onBack={() => setActiveView('sales-invoices')} onSave={() => setActiveView('sales-invoices')} />;
+      case 'sales-invoice-view':
+        return <SalesInvoiceView invoiceId={selectedItem?.id} onBack={() => setActiveView('sales-invoices')} />;
+      // Buying
+      case 'purchase-orders': return <PurchaseOrdersList onBack={() => setActiveView('dashboard')} />;
+      case 'suppliers': return <SuppliersList onBack={() => setActiveView('dashboard')} />;
+      // Stock
+      case 'stock-entry': return <StockEntryList onBack={() => setActiveView('dashboard')} />;
+      case 'warehouses': return <WarehousesList onBack={() => setActiveView('dashboard')} />;
+      // CRM
+      case 'leads': return <LeadsList onBack={() => setActiveView('dashboard')} />;
+      // Projects
+      case 'projects': return <ProjectsList onBack={() => setActiveView('dashboard')} />;
+      // HR
+      case 'employees': return <EmployeesList onBack={() => setActiveView('dashboard')} />;
+      // Other
+      case 'all-transactions': return <TransactionsPage onBack={() => setActiveView('dashboard')} />;
+      case 'advanced-reporting': return <AdvancedReporting onBack={() => setActiveView('dashboard')} />;
       default:
         return (
           <div className="p-6 bg-gray-50 min-h-screen">
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {activeView.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-              </h2>
-              <p className="text-gray-600 mb-6">
-                This feature is currently under development. Please check back later for full functionality.
-              </p>
-              <div className="text-sm text-gray-500 mb-4">
-                Module: {activeModule} | View: {activeView}
-              </div>
-              <button 
-                onClick={() => setActiveView('dashboard')}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Back to Dashboard
-              </button>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">{activeView.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</h2>
+              <p className="text-gray-600 mb-6">This feature is currently under development. Please check back later for full functionality.</p>
+              <div className="text-sm text-gray-500 mb-4">Module: {activeModule} | View: {activeView}</div>
+              <button onClick={() => setActiveView('dashboard')} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Back to Dashboard</button>
             </div>
           </div>
         );
@@ -356,34 +182,14 @@ const MainApp = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  if (!isAuthenticated) { return <LoginPage />; }
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        activeModule={activeModule}
-        setActiveModule={handleModuleClick}
-        onSubItemClick={handleSubItemClick}
-      />
-      
-      {/* Main content area */}
+      <Sidebar isOpen={sidebarOpen} toggleSidebar={setSidebarOpen} activeModule={activeModule} setActiveModule={handleModuleClick} onSubItemClick={handleSubItemClick} />
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-        {/* Header */}
-        <Header 
-          toggleSidebar={toggleSidebar}
-          onProfileClick={handleProfileClick}
-          onSettingsClick={handleSettingsClick}
-        />
-        
-        {/* Main content */}
-        <main className="flex-1 overflow-auto">
-          {renderActiveComponent()}
-        </main>
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} onProfileClick={() => setActiveView('profile')} onSettingsClick={() => setActiveView('settings')} />
+        <main className="flex-1 overflow-auto">{renderActiveComponent()}</main>
       </div>
     </div>
   );
