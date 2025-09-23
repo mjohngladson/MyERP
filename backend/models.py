@@ -177,6 +177,11 @@ class SalesOrder(BaseModel):
     shipping_address: Optional[str] = None
     notes: Optional[str] = None
     items: List[SalesOrderItem] = []
+    # Financials
+    subtotal: float = 0.0
+    tax_rate: float = 18.0
+    tax_amount: float = 0.0
+    discount_amount: float = 0.0
     company_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -188,6 +193,11 @@ class SalesOrderCreate(BaseModel):
     shipping_address: Optional[str] = None
     notes: Optional[str] = None
     items: List[SalesOrderItem] = []
+    # Financials
+    subtotal: float = 0.0
+    tax_rate: float = 18.0
+    tax_amount: float = 0.0
+    discount_amount: float = 0.0
     company_id: str
 
 # Purchase Order Models
