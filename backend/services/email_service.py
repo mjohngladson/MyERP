@@ -114,6 +114,7 @@ def generate_invoice_html(invoice: Dict[str, Any], brand: Optional[Dict[str, Any
           </div>
         </div>
 
+        {pref_html}
         <table>
           <thead>
             <tr>
