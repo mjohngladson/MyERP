@@ -273,7 +273,9 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
                 except Exception:
                     pdf_bytes = None
             email_svc = SendGridEmailService()
-            email_resp = email_svc.send_invoice(to_email, inv, BRAND_PLACEHOLDER, pdf_bytes=pdf_bytes)
+            subject = f"Invoice {inv.get('invoice_number','')} from {BRAND_PLACEHOLDER.get('company_name','Your Company')}"
+            preface = f"Dear {inv.get('customer_name','Customer')}, Please find your invoice details below."
+            email_resp = email_svc.send_invoice(to_email, inv, BRAND_PLACEHOLDER, pdf_bytes=pdf_bytes, subject_override=subject, preface=preface)
             results["email"] = email_resp
             if email_resp.get("success"):
                 sent_via.append("email")
