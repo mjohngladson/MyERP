@@ -4691,16 +4691,16 @@ class BackendTester:
         return success_rate > 80
 
 async def main():
-    """Main function to run Invoice Sanity Tests"""
+    """Main function to run Purchase Orders Smoke Tests"""
     async with BackendTester() as tester:
-        # Run invoice sanity tests as requested in review
-        passed, total, results = await tester.run_invoice_sanity_tests()
+        # Run purchase orders smoke tests as requested in review
+        passed, total, results = await tester.run_purchase_orders_smoke_tests()
         
         if passed == total:
-            print("🎉 Invoice Sanity Tests PASSED!")
+            print("🎉 Purchase Orders Smoke Tests PASSED!")
             return 0
         else:
-            print("💥 Some Invoice Sanity Tests FAILED!")
+            print("💥 Some Purchase Orders Smoke Tests FAILED!")
             return 1
 
 if __name__ == "__main__":
