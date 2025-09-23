@@ -149,9 +149,7 @@ async def update_sales_order(order_id: str, order_data: dict):
         if not existing:
             raise HTTPException(status_code=404, detail="Sales order not found")
         order_data["updated_at"] = datetime.now(timezone.utc)
-        # normalize status mapping from fulfilled -> delivered for storage if needed
-        if order_data.get("status") == "fulfilled":
-            order_data["status"] = "delivered"
+        # keep status as provided (draft/submitted/fulfilled/cancelled)
         # items recalc if provided
         if "items" in order_data:
             items = []
