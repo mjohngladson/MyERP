@@ -89,7 +89,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       const res = await fetch(`${api.getBaseUrl()}/api/invoices/${sendTarget.id}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: sendEmail, phone: sendPhone, include_pdf: includePdf })
+        body: JSON.stringify({ email: sendEmail, phone: sendPhone, include_pdf: includePdf, subject: emailSubject || undefined, message: emailMessage || undefined })
       });
       const data = await res.json();
       if (res.ok && data.success) {
