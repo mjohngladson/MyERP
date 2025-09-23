@@ -169,9 +169,9 @@ class SendGridEmailService:
         self.client = SendGridAPIClient(api_key)
         self.default_from = os.environ.get("SENDGRID_FROM_EMAIL", "no-reply@example.com")
 
-    def send_invoice(self, to_email: str, invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None, pdf_bytes: Optional[bytes] = None) -> Dict[str, Any]:
-        html = generate_invoice_html(invoice, brand)
-        subject = f"Invoice {invoice.get('invoice_number', '')} from {BRAND_PLACEHOLDER['company_name']}"
+    def send_invoice(self, to_email: str, invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None, pdf_bytes: Optional[bytes] = None, subject_override: Optional[str] = None, preface: Optional[str] = None) -> Dict[str, Any]:
+        html = generate_invoice_html(invoice, brand, preface=preface)
+        subject = subject_override or f"Invoice {invoice.get('invoice_number', '')} from {BRAND_PLACEHOLDER['company_name']}"
         mail = Mail(
             from_email=Email(self.default_from),
             to_emails=To(to_email),
