@@ -130,6 +130,18 @@ async def create_sales_order(order_data: dict):
         now = datetime.now(timezone.utc)
         order_data["created_at"] = now
         order_data["updated_at"] = now
+        # normalize order_date
+        od = order_data.get("order_date")
+        if isinstance(od, str) and od:
+            try:
+                # Accept YYYY-MM-DD
+                dt = datetime.fromisoformat(od)
+            except Exception:
+                from datetime import datetime as dtmod
+                dt = dtmod.strptime(od, '%Y-%m-%d')
+            order_data["order_date"] = datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
+        elif not od:
+            order_data["order_date"] = now
         # generate order number
         if not order_data.get("order_number"):
             count = await sales_orders_collection.count_documents({})
