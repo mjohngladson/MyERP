@@ -31,6 +31,8 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [sendPhone, setSendPhone] = useState('');
   const [includePdf, setIncludePdf] = useState(false);
   const [sending, setSending] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
   
   // Fetch sales invoices with pagination and filters
   const { data: invoicesData, loading, error, refetch } = useApi(() => 
