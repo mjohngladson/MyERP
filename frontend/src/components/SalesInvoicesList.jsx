@@ -24,6 +24,10 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [showStats, setShowStats] = useState(true);
+  const [sortBy, setSortBy] = useState('invoice_date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const [sendOpen, setSendOpen] = useState(false);
   const [sendTarget, setSendTarget] = useState(null);
