@@ -185,7 +185,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
         <div className="flex-1">
           <div className="relative">
             <Search className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
