@@ -14,8 +14,9 @@ import PurchaseOrdersList from './components/PurchaseOrdersList';
 import PurchaseOrderForm from './components/PurchaseOrderForm';
 import PurchaseOrderView from './components/PurchaseOrderView';
 import LoginPage from './components/LoginPage';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-function App() {
+function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeModule, setActiveModule] = useState('dashboard');
   const [pageState, setPageState] = useState({
