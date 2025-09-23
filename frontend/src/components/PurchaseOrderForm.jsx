@@ -38,7 +38,7 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
     loadSuppliers();
     loadItems();
     if (orderId) loadOrder(); else genOrderNumber();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [orderId]);
 
   const loadSuppliers = async ()=>{
@@ -106,7 +106,7 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
     const taxAmt = (discounted * (parseFloat(po.tax_rate)||0)) / 100.0;
     const total = discounted + taxAmt;
     setPo(prev=>({ ...prev, subtotal, tax_amount: taxAmt, total_amount: total }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [po.items, po.discount_amount, po.tax_rate]);
 
   const selectSupplier = (s)=> setPo(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
