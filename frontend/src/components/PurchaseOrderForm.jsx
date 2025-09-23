@@ -2,6 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
 
+const genRowId = () => `${Date.now()}_${Math.floor(Math.random()*1e6)}`;
+
+const toArray = (resp, keys = ['data', 'items', 'results']) => {
+  if (Array.isArray(resp)) return resp;
+  for (const k of keys) {
+    if (resp && Array.isArray(resp[k])) return resp[k];
+  }
+  return [];
+};
+
 const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -28,44 +38,75 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
     loadSuppliers();
     loadItems();
     if (orderId) loadOrder(); else genOrderNumber();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const loadSuppliers = async ()=>{
-    try { const r = await fetch(`${api.getBaseUrl()}/api/reporting/suppliers`); setSuppliers(await r.json() || []); } catch(e){}
+    try { 
+      const r = await fetch(`${api.getBaseUrl()}/api/reporting/suppliers`);
+      const d = await r.json().catch(()=>[]);
+      setSuppliers(toArray(d));
+    } catch(e){ setSuppliers([]); }
   };
   const loadItems = async ()=>{
-    try { const r = await fetch(`${api.getBaseUrl()}/api/pos/products?limit=100`); setItems(await r.json() || []); } catch(e){}
+    try { 
+      const r = await fetch(`${api.getBaseUrl()}/api/pos/products?limit=100`);
+      const d = await r.json().catch(()=>[]);
+      setItems(toArray(d));
+    } catch(e){ setItems([]); }
   };
   const loadOrder = async ()=>{
     setLoading(true);
-    try { const r = await fetch(`${api.getBaseUrl()}/api/purchase/orders/${orderId}`); const d = await r.json(); setPo({ ...d, order_date: d.order_date ? d.order_date.split('T')[0] : '', expected_date: d.expected_date ? d.expected_date.split('T')[0] : '' }); } catch(e){} finally { setLoading(false); }
+    try { 
+      const r = await fetch(`${api.getBaseUrl()}/api/purchase/orders/${orderId}`);
+      const d = await r.json();
+      const normalizedItems = (Array.isArray(d.items) ? d.items : []).map((it, idx) => ({
+        id: it.id || it._id || it.item_row_id || genRowId(),
+        item_id: it.item_id || it.id || '',
+        item_name: it.item_name || it.description || '',
+        quantity: typeof it.quantity === 'number' ? it.quantity : parseFloat(it.quantity)||0,
+        rate: typeof it.rate === 'number' ? it.rate : parseFloat(it.rate)||0,
+        amount: typeof it.amount === 'number' ? it.amount : ((parseFloat(it.quantity)||0) * (parseFloat(it.rate)||0))
+      }));
+      setPo({ 
+        ...d, 
+        items: normalizedItems,
+        order_date: d.order_date ? d.order_date.split('T')[0] : '', 
+        expected_date: d.expected_date ? d.expected_date.split('T')[0] : '' 
+      }); 
+    } catch(e){ console.error('Failed to load PO', e);} 
+    finally { setLoading(false); }
   };
   const genOrderNumber = ()=>{
     const d = new Date();
     setPo(prev=>({ ...prev, order_number: `PO-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(Math.floor(Math.random()*1000)).padStart(3,'0')}` }));
   };
 
-  const addItem = ()=>{ const ni = { id: Date.now(), item_id: '', item_name: '', quantity: 1, rate: 0, amount: 0 }; setPo(prev=>({ ...prev, items: [...prev.items, ni] })); };
+  const addItem = ()=>{ const ni = { id: genRowId(), item_id: '', item_name: '', quantity: 1, rate: 0, amount: 0 }; setPo(prev=>({ ...prev, items: [...prev.items, ni] })); };
   const updateItem = (id, field, value)=>{
-    const updated = po.items.map(it=>{
+    const updated = (po.items||[]).map(it=>{
       if (it.id === id) {
         const u = { ...it, [field]: value };
-        if (field === 'item_id') { const sel = items.find(i => i.id === value || i.sku === value); if (sel) { u.item_name = sel.name; u.rate = sel.price || 0; } }
-        if (field === 'quantity' || field === 'rate') { u.amount = (u.quantity||0) * (u.rate||0); }
+        if (field === 'item_id') { 
+          const sel = (items||[]).find(i => i.id === value || i.sku === value);
+          if (sel) { u.item_name = sel.name || sel.item_name || ''; u.rate = sel.price || sel.rate || 0; u.amount = (u.quantity||0) * (u.rate||0); }
+        }
+        if (field === 'quantity' || field === 'rate') { u.amount = (parseFloat(u.quantity)||0) * (parseFloat(u.rate)||0); }
         return u;
       }
       return it;
     });
     setPo(prev=>({ ...prev, items: updated }));
   };
-  const removeItem = (id)=> setPo(prev=>({ ...prev, items: prev.items.filter(i=>i.id!==id) }));
+  const removeItem = (id)=> setPo(prev=>({ ...prev, items: (prev.items||[]).filter(i=>i.id!==id) }));
 
   useEffect(()=>{
-    const subtotal = po.items.reduce((s,it)=> s + (it.amount||0), 0);
-    const discounted = Math.max(0, subtotal - (po.discount_amount||0));
-    const taxAmt = (discounted * (po.tax_rate||0)) / 100.0;
+    const subtotal = (po.items||[]).reduce((s,it)=> s + (parseFloat(it.amount)||0), 0);
+    const discounted = Math.max(0, subtotal - (parseFloat(po.discount_amount)||0));
+    const taxAmt = (discounted * (parseFloat(po.tax_rate)||0)) / 100.0;
     const total = discounted + taxAmt;
     setPo(prev=>({ ...prev, subtotal, tax_amount: taxAmt, total_amount: total }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [po.items, po.discount_amount, po.tax_rate]);
 
   const selectSupplier = (s)=> setPo(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
@@ -77,13 +118,15 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
       let r;
       if (orderId) { r = await fetch(`${api.getBaseUrl()}/api/purchase/orders/${orderId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
       else { r = await fetch(`${api.getBaseUrl()}/api/purchase/orders`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); }
-      if (r.ok) { const data = await r.json(); onSave && onSave(data); onBack && onBack(); } else { alert('Failed to save PO'); }
+      if (r.ok) { const data = await r.json(); onSave && onSave(data); onBack && onBack(); } else { const data = await r.json().catch(()=>({})); alert(data.detail || 'Failed to save PO'); }
     } catch(e){ console.error(e); alert('Error saving PO'); } finally { setSaving(false); }
   };
 
   if (loading) return (<div className="p-6"><div className="animate-pulse h-40 bg-gray-100 rounded"/></div>);
 
   const formatCurrency = (a)=> new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', minimumFractionDigits: 2 }).format(a||0);
+  const supplierList = Array.isArray(suppliers) ? suppliers : [];
+  const itemList = Array.isArray(items) ? items : [];
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -119,9 +162,9 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
 
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Supplier</h3>
-            <select value={po.supplier_id} onChange={(e)=>{ const s = suppliers.find(x=>x.id===e.target.value); if(s) selectSupplier(s); }} className="w-full px-3 py-2 border rounded-md">
+            <select value={po.supplier_id} onChange={(e)=>{ const s = supplierList.find(x=>x.id===e.target.value); if(s) selectSupplier(s); else setPo(prev=>({...prev, supplier_id: e.target.value})); }} className="w-full px-3 py-2 border rounded-md">
               <option value="">Select Supplier</option>
-              {suppliers.map(s=> (<option key={s.id} value={s.id}>{s.name}</option>))}
+              {supplierList.map(s=> (<option key={s.id} value={s.id}>{s.name}</option>))}
             </select>
           </div>
         </div>
@@ -141,12 +184,12 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
                 <th className="px-4 py-3 w-12"></th>
               </tr></thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {po.items.map(it => (
+                {(po.items||[]).map(it => (
                   <tr key={it.id}>
                     <td className="px-4 py-4">
                       <select value={it.item_id} onChange={(e)=>updateItem(it.id, 'item_id', e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm">
                         <option value="">Select Item</option>
-                        {items.map(av => (<option key={av.id} value={av.id}>{av.name}</option>))}
+                        {itemList.map(av => (<option key={av.id} value={av.id}>{av.name}</option>))}
                       </select>
                     </td>
                     <td className="px-4 py-4"><input type="number" min="0" step="0.01" value={it.quantity} onChange={(e)=>updateItem(it.id, 'quantity', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border rounded-md text-sm" /></td>
