@@ -18,10 +18,15 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
   const [emailMessage, setEmailMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  const [sortBy, setSortBy] = useState('order_date');
+  const [sortDir, setSortDir] = useState('desc');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
   const { data: ordersData, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/sales/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(searchTerm)}`)
+    fetch(`${api.getBaseUrl()}/api/sales/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(searchTerm)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
       .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
-  , [pageSize, currentPage, filterStatus, searchTerm]);
+  , [pageSize, currentPage, filterStatus, searchTerm, sortBy, sortDir, fromDate, toDate]);
 
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
   const totalCount = Array.isArray(ordersData) ? (ordersData[0]?._meta?.total_count || orders.length) : (ordersData?.total_count || orders.length);
