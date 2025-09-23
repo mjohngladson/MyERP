@@ -49,8 +49,33 @@ async def get_sales_orders(
                 {"order_number": {"$regex": search, "$options": "i"}},
                 {"customer_name": {"$regex": search, "$options": "i"}},
             ]
+        # Date filtering
+        if from_date or to_date:
+            date_query = {}
+            if from_date:
+                try:
+                    start_dt = datetime.fromisoformat(from_date)
+                except Exception:
+                    start_dt = datetime.strptime(from_date, '%Y-%m-%d')
+                date_query["$gte"] = start_dt
+            if to_date:
+                try:
+                    end_dt = datetime.fromisoformat(to_date)
+                except Exception:
+                    end_dt = datetime.strptime(to_date, '%Y-%m-%d')
+                # include entire to_date day
+                end_dt = datetime.combine(end_dt.date(), time(23,59,59))
+                date_query["$lte"] = end_dt
+            query["order_date"] = date_query
         total_count = await sales_orders_collection.count_documents(query)
-        cursor = sales_orders_collection.find(query).sort("created_at", -1).skip(skip).limit(limit)
+        # Sorting
+        sort_field = {
+            'order_number': 'order_number',
+            'order_date': 'order_date',
+            'total_amount': 'total_amount'
+        }.get((sort_by or '').lower(), 'created_at')
+        sort_direction = DESCENDING if (sort_dir or 'desc').lower() == 'desc' else ASCENDING
+        cursor = sales_orders_collection.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit)
         orders = await cursor.to_list(length=limit)
 
         transformed = []
