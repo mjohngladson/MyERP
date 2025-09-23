@@ -83,8 +83,6 @@ async def get_sales_order(order_id: str):
         if "_id" in order:
             order["id"] = str(order["_id"])
             del order["_id"]
-        if order.get("status") == "delivered":
-            order["status"] = "fulfilled"
         return order
     except HTTPException:
         raise
