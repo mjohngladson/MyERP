@@ -126,10 +126,25 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="bg-gray-50 px-6 py-4 border-b">
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-600">
-              <div className="col-span-3">Order Number</div>
+              <div className="col-span-3">
+                <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('order_number'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
+                  <span>Order Number</span>
+                  <span className={`text-xs ${sortBy==='order_number'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                </button>
+              </div>
               <div className="col-span-3">Customer</div>
-              <div className="col-span-2">Amount</div>
-              <div className="col-span-2">Date</div>
+              <div className="col-span-2">
+                <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('total_amount'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
+                  <span>Amount</span>
+                  <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                </button>
+              </div>
+              <div className="col-span-2">
+                <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('order_date'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
+                  <span>Date</span>
+                  <span className={`text-xs ${sortBy==='order_date'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                </button>
+              </div>
               <div className="col-span-1">Status</div>
               <div className="col-span-1">Actions</div>
             </div>
