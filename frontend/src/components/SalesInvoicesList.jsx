@@ -39,15 +39,19 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [emailMessage, setEmailMessage] = useState('');
   
   // Fetch sales invoices with pagination and filters
+  // Debounced search for smooth typing
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
+
   const { data: invoicesData, loading, error, refetch } = useApi(() => 
-    fetch(`${api.getBaseUrl()}/api/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${encodeURIComponent(searchTerm)}`)
+    fetch(`${api.getBaseUrl()}/api/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
         return res.json();
       })
-  , [currentPage, pageSize, filterStatus, searchTerm]);
+  , [currentPage, pageSize, filterStatus, debouncedSearch, sortBy, sortDir, fromDate, toDate]);
 
   // Fetch invoice statistics
   const { data: stats } = useApi(() => 
