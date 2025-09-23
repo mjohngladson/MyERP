@@ -154,18 +154,21 @@ metadata:
   run_ui: true
 
 test_plan:
-frontend:
-
   current_focus:
-    - "Invoice Backend API Testing - COMPLETED ✅"
+    - "Purchase Orders List - Frontend API Integration"
+    - "Quotations List - Frontend API Integration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
-  completed_invoice_tests:
-    - "GET /api/invoices/?limit=20 - VERIFIED ✅"
-    - "GET /api/invoices/stats/overview - VERIFIED ✅"
-    - "POST /api/invoices/ and DELETE - VERIFIED ✅"
-    - "Server Configuration /api prefix - VERIFIED ✅"
+  completed_tests:
+    - "Invoice Backend API Testing - COMPLETED ✅"
+    - "Sales Invoices List UI - COMPLETED ✅"
+    - "Purchase Orders Backend API - COMPLETED ✅"
+    - "Authentication & Navigation - COMPLETED ✅"
+  critical_issues_found:
+    - "Purchase Orders frontend not calling /api/purchase/orders"
+    - "Quotations frontend not calling /api/quotations"
+    - "Components render but don't fetch data on mount"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
