@@ -179,7 +179,7 @@ async def update_sales_order(order_id: str, order_data: dict):
             raise HTTPException(status_code=404, detail="Sales order not found")
         order_data["updated_at"] = datetime.now(timezone.utc)
         # keep status as provided (draft/submitted/fulfilled/cancelled)
-        # items recalc if provided
+        # items recalc if provided; also recalc taxes/discounts
         if "items" in order_data:
             items = []
             for it in (order_data.get("items") or []):
@@ -192,8 +192,20 @@ async def update_sales_order(order_id: str, order_data: dict):
                     "rate": r,
                     "amount": q * r
                 })
-            order_data["items"] = items
-            order_data["total_amount"] = sum(i["amount"] for i in items)
+            subtotal = sum(i["amount"] for i in items)
+            discount_amount = float(order_data.get("discount_amount", existing.get("discount_amount", 0)))
+            tax_rate = float(order_data.get("tax_rate", existing.get("tax_rate", 18)))
+            discounted_subtotal = max(0.0, subtotal - discount_amount)
+            tax_amount = (discounted_subtotal * tax_rate) / 100.0
+            total_amount = discounted_subtotal + tax_amount
+            order_data.update({
+                "items": items,
+                "subtotal": subtotal,
+                "tax_rate": tax_rate,
+                "tax_amount": tax_amount,
+                "discount_amount": discount_amount,
+                "total_amount": total_amount
+            })
         result = await sales_orders_collection.update_one({"_id": existing["_id"]}, {"$set": order_data})
         return {"success": True, "modified": result.modified_count}
     except HTTPException:
