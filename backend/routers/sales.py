@@ -140,7 +140,7 @@ async def create_sales_order(order_data: dict):
             if customer:
                 order_data["customer_name"] = customer.get("name", order_data.get("customer_name", ""))
                 order_data.setdefault("shipping_address", customer.get("address"))
-        # items normalization
+        # items normalization + taxes/discounts
         items = []
         for it in (order_data.get("items") or []):
             q = float(it.get("quantity", 0))
@@ -152,8 +152,20 @@ async def create_sales_order(order_data: dict):
                 "rate": r,
                 "amount": q * r
             })
-        order_data["items"] = items
-        order_data["total_amount"] = sum(i["amount"] for i in items)
+        subtotal = sum(i["amount"] for i in items)
+        discount_amount = float(order_data.get("discount_amount", 0))
+        tax_rate = float(order_data.get("tax_rate", 18))
+        discounted_subtotal = max(0.0, subtotal - discount_amount)
+        tax_amount = (discounted_subtotal * tax_rate) / 100.0
+        total_amount = discounted_subtotal + tax_amount
+        order_data.update({
+            "items": items,
+            "subtotal": subtotal,
+            "tax_rate": tax_rate,
+            "tax_amount": tax_amount,
+            "discount_amount": discount_amount,
+            "total_amount": total_amount
+        })
         # save
         result = await sales_orders_collection.insert_one(order_data)
         if result.inserted_id:
