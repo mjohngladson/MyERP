@@ -196,9 +196,10 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Sidebar Navigation System - Critical Fix Required"
+  stuck_tasks:
     - "Purchase Orders List - Frontend API Integration"
     - "Quotations List - Frontend API Integration"
-  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   completed_tests:
@@ -207,9 +208,10 @@ test_plan:
     - "Purchase Orders Backend API - COMPLETED ✅"
     - "Authentication & Navigation - COMPLETED ✅"
   critical_issues_found:
-    - "Purchase Orders frontend not calling /api/purchase/orders"
-    - "Quotations frontend not calling /api/quotations"
-    - "Components render but don't fetch data on mount"
+    - "Sidebar navigation system completely broken - users cannot access Quotations or Purchase Orders pages"
+    - "onSubItemClick handler not properly wired between Sidebar.jsx and App.js"
+    - "Overlay/z-index issues preventing sidebar clicks from working"
+    - "No API calls to /api/quotations or /api/purchase/orders because navigation fails"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
