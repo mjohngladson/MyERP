@@ -49,24 +49,27 @@ async def get_sales_orders(
                 {"order_number": {"$regex": search, "$options": "i"}},
                 {"customer_name": {"$regex": search, "$options": "i"}},
             ]
-        # Date filtering
+        # Date filtering (assume stored as UTC datetimes)
         if from_date or to_date:
             date_query = {}
             if from_date:
                 try:
-                    start_dt = datetime.fromisoformat(from_date)
+                    y,m,d = map(int, from_date.split('-'))
+                    start_dt = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
                 except Exception:
-                    start_dt = datetime.strptime(from_date, '%Y-%m-%d')
-                date_query["$gte"] = start_dt
+                    start_dt = None
+                if start_dt:
+                    date_query["$gte"] = start_dt
             if to_date:
                 try:
-                    end_dt = datetime.fromisoformat(to_date)
+                    y,m,d = map(int, to_date.split('-'))
+                    end_dt = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
                 except Exception:
-                    end_dt = datetime.strptime(to_date, '%Y-%m-%d')
-                # include entire to_date day
-                end_dt = datetime.combine(end_dt.date(), time(23,59,59))
-                date_query["$lte"] = end_dt
-            query["order_date"] = date_query
+                    end_dt = None
+                if end_dt:
+                    date_query["$lte"] = end_dt
+            if date_query:
+                query["order_date"] = date_query
         total_count = await sales_orders_collection.count_documents(query)
         # Sorting
         sort_field = {
