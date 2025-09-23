@@ -307,6 +307,14 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                 <label className="block text-sm text-gray-600 mb-1">Phone (SMS)</label>
                 <input type="tel" value={sendPhone} onChange={(e) => setSendPhone(e.target.value)} className="w-full px-3 py-2 border rounded-md" placeholder="+91 98765 43210" />
               </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Email Subject (optional)</label>
+                <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className="w-full px-3 py-2 border rounded-md" placeholder="Invoice {#} from Your Company" />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Email Message (optional)</label>
+                <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} className="w-full px-3 py-2 border rounded-md" rows={3} placeholder="Dear Customer, Please find your invoice below."></textarea>
+              </div>
               <div className="flex items-center space-x-2">
                 <input id="include_pdf" type="checkbox" checked={includePdf} onChange={(e) => setIncludePdf(e.target.checked)} />
                 <label htmlFor="include_pdf" className="text-sm text-gray-700">Attach PDF to email</label>
