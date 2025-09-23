@@ -145,15 +145,18 @@ frontend:
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/purchase.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Added POST /api/purchase/orders/{id}/send using SendGrid/Twilio (optional PDF), enriched supplier contact fields on create, kept list/get/create/update/delete intact."
+        - working: true
+          agent: "testing"
+          comment: "✅ PURCHASE ORDERS SMOKE TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: Conducted comprehensive backend Purchase Orders API testing as requested in review. RESULTS: (1) ✅ GET /api/purchase/orders?limit=10 - Returns 200 with array response, first element includes _meta.total_count. Verified sorting by order_date and total_amount, search by supplier_name, and date filters from_date/to_date all working correctly. (2) ✅ POST /api/purchase/orders - Successfully creates order with correct totals calculation: subtotal 100, discounted 90, tax 16.2, total 106.2 for test payload with 2 items at rate 50, discount 10, tax 18%. (3) ✅ GET /api/purchase/orders/{id} - Successfully retrieves created order by ID. (4) ✅ PUT /api/purchase/orders/{id} - Successfully updates discount_amount to 0 and recalculates total to 118.0 (subtotal 100 + 18% tax). (5) ✅ POST /api/purchase/orders/{id}/send - Returns success:true when sending to test@example.com (handles both configured and unconfigured SendGrid gracefully). (6) ✅ DELETE /api/purchase/orders/{id} - Successfully deletes order and returns success:true. (7) ✅ Server Configuration - Purchase router properly included under /api/purchase prefix. (8) ✅ Sanity Checks - /api/quotations and /api/sales/orders still respond correctly. CRITICAL FIX APPLIED: Fixed purchase router inclusion in server.py and ID handling in create/get operations. All Purchase Orders backend APIs working perfectly with 100% success rate."
 
 
 agent_communication:
