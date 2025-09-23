@@ -123,6 +123,30 @@ frontend:
           agent: "testing"
           comment: "✅ SALES INVOICES LIST UI SMOKE TEST COMPLETED SUCCESSFULLY: Re-ran comprehensive smoke test after code fixes. RESULTS: (1) ✅ Login with demo credentials (admin@gili.com/admin123) works perfectly (2) ✅ Navigation to Sales → Sales Invoice works correctly (3) ✅ List renders successfully with 20 invoices displayed (4) ✅ No build errors detected (5) ✅ Currency formatting perfect - INR with 2 decimals (₹177.00, Tax: ₹27.00) (6) ✅ Stats cards working correctly showing real data: Total Invoices (44), Total Revenue (₹7,078.32), Pending (44), Paid (0) (7) ✅ No 404 errors on /api/invoices/stats/overview endpoint (8) ✅ Search filter test passed - search input functional (9) ✅ New Invoice navigation works (navigates to form) (10) ✅ No console errors detected (11) ✅ No network errors detected (12) ✅ Screenshot captured successfully. MINOR ISSUE: Back navigation from New Invoice form needs improvement but core functionality working. Fixed AuthContext.js to handle undefined backend URL properly."
 
+  - task: "Purchase Orders List - Frontend API Integration"
+    implemented: true
+    working: false
+    file: "frontend/src/components/PurchaseOrdersList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL FRONTEND INTEGRATION ISSUE: Purchase Orders list component renders correctly but does not fetch data from backend. SUCCESSFUL: (1) ✅ Navigation to Buying → Purchase Order works (2) ✅ Component renders without runtime errors (3) ✅ UI structure is correct. CRITICAL FAILURE: (1) ❌ List shows 0 rows despite backend having data (GET /api/purchase/orders returns PO-20250923-0001 for ₹106.2) (2) ❌ Network monitoring shows NO API calls to /api/purchase/orders endpoint when component loads (3) ❌ Component is not properly wired to fetch data on mount. ROOT CAUSE: Frontend component missing proper API integration to load Purchase Orders data. Backend API is working perfectly but frontend doesn't call it."
+
+  - task: "Quotations List - Frontend API Integration"
+    implemented: true
+    working: false
+    file: "frontend/src/components/QuotationsList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL FRONTEND INTEGRATION ISSUE: Quotations list component renders correctly but does not fetch data from backend. SUCCESSFUL: (1) ✅ Navigation to Sales → Quotation works (2) ✅ Component renders without runtime errors (3) ✅ UI structure is correct. CRITICAL FAILURE: (1) ❌ List shows 0 rows despite backend having data (GET /api/quotations returns QTN-20250924-008 for ₹236.0 with sent_at timestamp) (2) ❌ Network monitoring shows NO API calls to /api/quotations endpoint when component loads (3) ❌ Component is not properly wired to fetch data on mount. ROOT CAUSE: Frontend component missing proper API integration to load Quotations data. Backend API is working perfectly but frontend doesn't call it."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
