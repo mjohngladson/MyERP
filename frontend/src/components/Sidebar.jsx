@@ -42,6 +42,8 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
     if (onSubItemClick) {
       onSubItemClick(moduleId, subItem);
     }
+    // For accessible keyboard users, also collapse after navigation for better UX on mobile
+    setExpandedModules(prev => ({ ...prev, [moduleId]: false }));
   };
 
   const filteredModules = (mockModules || []).filter(module => 
