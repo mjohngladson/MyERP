@@ -93,12 +93,14 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Invoice sent successfully' + (sendPhone ? ' (SMS sent if configured)' : ''));
+        alert('Invoice sent successfully via email' + (sendPhone ? ' (SMS sent if configured)' : ''));
         setSendOpen(false);
-        // Optionally refetch list to get sent_at
         refetch && refetch();
       } else {
-        alert(data.detail || data.message || 'Failed to send invoice');
+        const errEmail = data?.errors?.email ? ` Email: ${data.errors.email}` : '';
+        const errSms = data?.errors?.sms ? ` SMS: ${data.errors.sms}` : '';
+        alert((data.detail || data.message || 'Failed to send invoice') + errEmail + errSms);
+        refetch && refetch();
       }
     } catch (e) {
       alert('Error sending invoice');
