@@ -129,7 +129,7 @@ const MainApp = () => {
       // Sales
       case 'sales-orders':
         return (
-          <SalesOrdersList onBack={() => setActiveView('dashboard')} onViewOrder={(order)=>{setSelectedItem(order); /* could add view */}} onEditOrder={(order)=>{setSelectedItem(order); setActiveView('sales-order-edit');}} onCreateOrder={()=>setActiveView('sales-order-form')} />
+          <SalesOrdersList onBack={() => setActiveView('dashboard')} onViewOrder={(order)=>{setSelectedItem(order); setActiveView('sales-order-view');}} onEditOrder={(order)=>{setSelectedItem(order); setActiveView('sales-order-edit');}} onCreateOrder={()=>setActiveView('sales-order-form')} />
         );
       case 'sales-order-form':
         return <SalesOrderForm onBack={() => setActiveView('sales-orders')} onSave={() => setActiveView('sales-orders')} />;
