@@ -40,8 +40,7 @@ async def get_sales_orders(
     try:
         query = {}
         if status:
-            # allow 'fulfilled' mapping
-            query["status"] = "delivered" if status == "fulfilled" else status
+            query["status"] = status
         if customer_id:
             query["customer_id"] = customer_id
         if search:
