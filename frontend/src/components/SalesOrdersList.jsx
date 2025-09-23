@@ -92,6 +92,7 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <button onClick={()=>{ setSearchTerm(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('order_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
 
             <div className="hidden lg:flex items-center space-x-2 mr-2">
               <label className="text-sm text-gray-600">From</label>
