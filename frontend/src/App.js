@@ -94,18 +94,19 @@ function AppContent() {
   };
 
   const handleSubItemClick = (moduleId, subItem) => {
-    // Map sidebar items to activeModule keys
-    const map = {
-      Sales: {
+    // Normalize to id-based mapping (moduleId comes as 'sales', 'buying', etc.)
+    const id = (moduleId || '').toString().toLowerCase();
+    const mapById = {
+      sales: {
         'Sales Order': 'sales-order-list',
         'Sales Invoice': 'sales-invoice-list',
         'Quotation': 'quotation-list',
       },
-      Buying: {
+      buying: {
         'Purchase Order': 'purchase-order-list',
       }
     };
-    const key = map[moduleId]?.[subItem];
+    const key = mapById[id]?.[subItem];
     if (key) setActiveModule(key);
   };
 
