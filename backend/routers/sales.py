@@ -230,7 +230,7 @@ async def send_sales_order(order_id: str, body: dict):
                 results["sms"] = sms_resp
                 if sms_resp.get("success"):
                     sent_via.append("sms")
-        # save attempt
+        # save attempt on the same document (prefer object id if present)
         sent_at_iso = None
         update_fields = {
             "last_send_result": results,
@@ -239,7 +239,8 @@ async def send_sales_order(order_id: str, body: dict):
         if sent_via:
             sent_at_iso = datetime.now(timezone.utc).isoformat()
             update_fields.update({"sent_at": sent_at_iso, "sent_via": sent_via})
-        await sales_orders_collection.update_one({"_id": order["_id"]}, {"$set": update_fields})
+        filter_query = ({"_id": order["_id"]} if order.get("_id") else ( {"_id": ObjectId(order["__mongo_id"]) } if order.get("__mongo_id") else {"id": order_id} ))
+        await sales_orders_collection.update_one(filter_query, {"$set": update_fields})
         return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": sent_at_iso}
     except HTTPException:
         raise
