@@ -182,7 +182,9 @@ async def create_purchase_order(payload: dict):
         })
         res = await purchase_orders_collection.insert_one(payload)
         if res.inserted_id:
-            payload['_id'] = str(res.inserted_id)
+            payload['id'] = str(res.inserted_id)
+            if '_id' in payload:
+                del payload['_id']
             return { 'success': True, 'order': payload }
         raise HTTPException(status_code=500, detail='Failed to create purchase order')
     except HTTPException:
