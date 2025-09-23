@@ -167,7 +167,7 @@ class SendGridEmailService:
         self.client = SendGridAPIClient(api_key)
         self.default_from = os.environ.get("SENDGRID_FROM_EMAIL", "no-reply@example.com")
 
-    def send_invoice(self, to_email: str, invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def send_invoice(self, to_email: str, invoice: Dict[str, Any], brand: Optional[Dict[str, Any]] = None, pdf_bytes: Optional[bytes] = None) -> Dict[str, Any]:
         html = generate_invoice_html(invoice, brand)
         subject = f"Invoice {invoice.get('invoice_number', '')} from {BRAND_PLACEHOLDER['company_name']}"
         mail = Mail(
@@ -176,6 +176,19 @@ class SendGridEmailService:
             subject=subject,
             html_content=HtmlContent(html)
         )
+        if pdf_bytes:
+            try:
+                import base64
+                encoded = base64.b64encode(pdf_bytes).decode()
+                attachment = Attachment(
+                    FileContent(encoded),
+                    FileName(f"Invoice-{invoice.get('invoice_number','') or 'invoice'}.pdf"),
+                    FileType('application/pdf'),
+                    Disposition('attachment')
+                )
+                mail.add_attachment(attachment)
+            except Exception:
+                logger.exception('Failed to attach PDF; sending without attachment')
         try:
             resp = self.client.send(mail)
             return {
