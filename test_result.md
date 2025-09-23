@@ -142,6 +142,19 @@ frontend:
     - "GET /api/invoices/stats/overview - VERIFIED ✅"
     - "POST /api/invoices/ and DELETE - VERIFIED ✅"
     - "Server Configuration /api prefix - VERIFIED ✅"
+backend:
+  - task: "Purchase Orders API - Send endpoint and totals enrichment"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/purchase.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added POST /api/purchase/orders/{id}/send using SendGrid/Twilio (optional PDF), enriched supplier contact fields on create, kept list/get/create/update/delete intact."
+
 
 agent_communication:
     - agent: "main"
