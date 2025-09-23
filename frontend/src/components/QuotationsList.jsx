@@ -50,6 +50,16 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
     } catch(e){ console.error(e); alert('Error sending'); } finally { setSending(false); }
   };
 
+  const deleteQuotation = async (q) => {
+    if (!q) return; if (!window.confirm(`Delete ${q.quotation_number}?`)) return;
+    try {
+      const res = await fetch(`${api.getBaseUrl()}/api/quotations/${q.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(()=>({}));
+      if (res.ok) { refetch && refetch(); }
+      else { alert(data.detail || 'Failed to delete'); }
+    } catch (e) { console.error(e); alert('Error deleting'); }
+  };
+
   if (loading) return (<div className="p-6 bg-gray-50 min-h-screen"><div className="animate-pulse h-40 bg-gray-100 rounded"/></div>);
 
   return (
@@ -98,20 +108,20 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
               <div className="col-span-3">
                 <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('quotation_number'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Quotation #</span>
-                  <span className={`text-xs ${sortBy==='quotation_number'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                  <span className={`text-xs ${sortBy==='quotation_number'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-3">Customer</div>
               <div className="col-span-2">
                 <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('total_amount'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Amount</span>
-                  <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                  <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-2">
-                <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('quotation_date'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
+                <button className="flex items-centered space-x-1" onClick={()=>{ setSortBy('quotation_date'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Date</span>
-                  <span className={`text-xs ${sortBy==='quotation_date'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
+                  <span className={`text-xs ${sortBy==='quotation_date'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-1">Status</div>
@@ -131,7 +141,7 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
                   <div className="col-span-2"><div className="font-semibold text-gray-800">{formatCurrency(q.total_amount)}</div></div>
                   <div className="col-span-2"><div className="flex items-center space-x-1 text-gray-600"><Calendar size={16}/><span className="text-sm">{formatDate(q.quotation_date || q.created_at)}</span></div></div>
                   <div className="col-span-1"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(q.status)}`}>{(q.status||'draft').charAt(0).toUpperCase()+ (q.status||'draft').slice(1)}</span></div>
-                  <div className="col-span-1"><div className="flex items-center space-x-2"><button onClick={()=>onViewQuotation && onViewQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button><button onClick={()=>onEditQuotation && onEditQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button><button onClick={()=>openSend(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button><button onClick={()=>{ if(confirm(`Delete ${q.quotation_number}?`)){ /* TODO hook delete */ }}} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button></div></div>
+                  <div className="col-span-1"><div className="flex items-center space-x-2"><button onClick={()=>onViewQuotation && onViewQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button><button onClick={()=>onEditQuotation && onEditQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button><button onClick={()=>openSend(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button><button onClick={()=>deleteQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button></div></div>
                 </div>
               </div>
             ))}
@@ -144,7 +154,7 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
           <div>Showing {((currentPage-1)*pageSize)+1} to {Math.min(currentPage*pageSize, totalCount)} of {totalCount}</div>
           <div className="space-x-2">
             <button onClick={()=>setCurrentPage(Math.max(1,currentPage-1))} disabled={currentPage<=1} className="px-3 py-2 border rounded disabled:opacity-50">Previous</button>
-            <button onClick={()=>setCurrentPage(currentPage+1)} disabled={quotes.length < pageSize} className="px-3 py-2 border rounded disabled:opacity-50">Next</button>
+            <button onClick={()=>setCurrentPage(currentPage+1)} disabled={quotes.length &lt; pageSize} className="px-3 py-2 border rounded disabled:opacity-50">Next</button>
           </div>
         </div>
       )}

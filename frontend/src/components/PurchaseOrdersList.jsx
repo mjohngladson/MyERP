@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, Send, X } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, Send, X, Info, RefreshCcw } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
@@ -68,6 +68,18 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
       if (res.ok) { refetch && refetch(); }
       else { alert(data.detail || 'Failed to delete'); }
     } catch (e) { console.error(e); alert('Error deleting'); }
+  };
+
+  const rel = (iso) => {
+    if (!iso) return '';
+    try {
+      const dt = new Date(iso);
+      const s = Math.floor((Date.now() - dt.getTime()) / 1000);
+      if (s < 60) return `${s}s ago`;
+      const m = Math.floor(s/60); if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m/60); if (h < 24) return `${h}h ago`;
+      const d = Math.floor(h/24); return `${d}d ago`;
+    } catch { return ''; }
   };
 
   if (loading) {
@@ -157,11 +169,22 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
               <div key={order.id} className="px-6 py-4 hover:bg-gray-50">
                 <div className="grid grid-cols-12 gap-4 items-center">
                   <div className="col-span-3">
-                    <div className="font-medium text-gray-800">{order.order_number}</div>
+                    <div className="font-medium text-gray-800 flex items-center space-x-2">
+                      <span>{order.order_number}</span>
+                      {(order.sent_at || order.last_send_attempt_at) && (
+                        <span className="inline-flex items-center text-[11px] text-gray-500" title={`Last sent: ${order.sent_at ? new Date(order.sent_at).toLocaleString() : '—'}${order.last_send_attempt_at ? ` • Last attempt: ${new Date(order.last_send_attempt_at).toLocaleString()}`:''}`}>
+                          <Info size={12} className="mr-1"/> {rel(order.sent_at || order.last_send_attempt_at)}
+                        </span>
+                      )}
+                    </div>
                     {order.sent_at && (
-                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title={`Sent at ${new Date(order.sent_at).toLocaleString()}`}
+                      >
                         Sent {order.sent_via ? `via ${Array.isArray(order.sent_via) ? order.sent_via.join(', ') : order.sent_via}` : ''}
                       </div>
+                    )}
+                    {order.last_send_errors && (order.last_send_errors.email || order.last_send_errors.sms) && (
+                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title={(order.last_send_errors.email||'') + ' ' + (order.last_send_errors.sms||'')}>Send failed</div>
                     )}
                   </div>
                   <div className="col-span-3">
@@ -170,7 +193,19 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
                   <div className="col-span-2"><div className="font-semibold text-gray-800">{formatCurrency(order.total_amount)}</div></div>
                   <div className="col-span-2"><div className="flex items-center space-x-1 text-gray-600"><Calendar size={16}/><span className="text-sm">{formatDate(order.order_date || order.created_at)}</span></div></div>
                   <div className="col-span-1"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>{order.status ? order.status.charAt(0).toUpperCase()+order.status.slice(1) : 'Draft'}</span></div>
-                  <div className="col-span-1"><div className="flex items-center space-x-2"><button onClick={()=>onViewOrder && onViewOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button><button onClick={()=>onEditOrder && onEditOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button><button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button><button onClick={()=>deleteOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button></div></div>
+                  <div className="col-span-1">
+                    <div className="flex items-center space-x-2">
+                      <button onClick={()=>onViewOrder && onViewOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button>
+                      <button onClick={()=>onEditOrder && onEditOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button>
+                      <button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button>
+                      {(order.sent_at || order.last_send_attempt_at) && (
+                        <button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title={`Resend${order.sent_at ? ` • last sent ${new Date(order.sent_at).toLocaleString()}`:''}${order.last_send_attempt_at ? ` • last attempt ${new Date(order.last_send_attempt_at).toLocaleString()}`:''}`}>
+                          <RefreshCcw size={16} className="text-gray-600"/>
+                        </button>
+                      )}
+                      <button onClick={()=>deleteOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
