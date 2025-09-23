@@ -31,7 +31,15 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
   const totalCount = Array.isArray(ordersData) ? (ordersData[0]?._meta?.total_count || orders.length) : (ordersData?.total_count || orders.length);
 
-  const filteredOrders = orders;
+  const filteredOrders = orders.filter(o => {
+    const matchesSearch = searchTerm === '' || `${o.order_number||''}`.toLowerCase().includes(searchTerm.toLowerCase()) || `${o.customer_name||''}`.toLowerCase().includes(searchTerm.toLowerCase());
+    // date filter also applied server-side; we additionally guard client-side for immediate feedback
+    const d = o.order_date || o.created_at;
+    const dStr = d ? (new Date(d)).toISOString().slice(0,10) : '';
+    const inRange = (!fromDate || dStr >= fromDate) && (!toDate || dStr <= toDate);
+    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+    return matchesSearch && inRange && matchesStatus;
+  });
 
   const formatCurrency = (a) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(a || 0);
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
