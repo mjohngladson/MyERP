@@ -23,10 +23,14 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
+  // Debounce search input to avoid choppy typing & excessive requests
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
+
   const { data: ordersData, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/sales/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(searchTerm)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
+    fetch(`${api.getBaseUrl()}/api/sales/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
       .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
-  , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate]);
+  , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
 
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
   const totalCount = Array.isArray(ordersData) ? (ordersData[0]?._meta?.total_count || orders.length) : (ordersData?.total_count || orders.length);
