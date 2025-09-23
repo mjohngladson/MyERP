@@ -191,10 +191,12 @@ async def update_sales_order(order_id: str, order_data: dict):
             raise HTTPException(status_code=404, detail="Sales order not found")
         order_data["updated_at"] = datetime.now(timezone.utc)
         # keep status as provided (draft/submitted/fulfilled/cancelled)
-        # items recalc if provided; also recalc taxes/discounts
-        if "items" in order_data:
+        # recalc totals when items provided or tax/discount fields present
+        need_recalc = ("items" in order_data) or ("tax_rate" in order_data) or ("discount_amount" in order_data)
+        if need_recalc:
+            src_items = order_data.get("items", existing.get("items", []))
             items = []
-            for it in (order_data.get("items") or []):
+            for it in (src_items or []):
                 q = float(it.get("quantity", 0))
                 r = float(it.get("rate", 0))
                 items.append({
@@ -211,7 +213,7 @@ async def update_sales_order(order_id: str, order_data: dict):
             tax_amount = (discounted_subtotal * tax_rate) / 100.0
             total_amount = discounted_subtotal + tax_amount
             order_data.update({
-                "items": items,
+                "items": items if "items" in order_data else existing.get("items", []),
                 "subtotal": subtotal,
                 "tax_rate": tax_rate,
                 "tax_amount": tax_amount,
