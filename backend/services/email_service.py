@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, HtmlContent
+from sendgrid.helpers.mail import Mail, Email, To, HtmlContent, Attachment, FileContent, FileName, FileType, Disposition
 
 logger = logging.getLogger(__name__)
 
