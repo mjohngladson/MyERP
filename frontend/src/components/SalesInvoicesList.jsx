@@ -192,6 +192,12 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
             <input type="text" placeholder="Search invoices..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">From</label>
+          <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+          <label className="text-sm text-gray-600">To</label>
+          <input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+        </div>
         <select className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
