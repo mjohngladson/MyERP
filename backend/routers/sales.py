@@ -51,6 +51,7 @@ async def get_sales_orders(
         transformed = []
         for order in orders:
             if "_id" in order:
+                order["__mongo_id"] = str(order["_id"])  # keep mongo id for precise updates
                 order["id"] = str(order["_id"])
                 del order["_id"]
             order.setdefault("order_number", f"SO-{str(uuid.uuid4())[:8]}")
