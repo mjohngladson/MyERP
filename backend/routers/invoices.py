@@ -294,6 +294,22 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
 
         overall_success = len(sent_via) > 0
 
+        # Build human-friendly messages for failures
+        errors = {}
+        if results.get("email") and not results["email"].get("success"):
+            err = (results["email"].get("error") or "Email failed")
+            if "401" in err or "Unauthorized" in err:
+                err += " - SendGrid unauthorized. Check API key and verify your sender email/domain."
+            errors["email"] = err
+        if results.get("sms") and not results["sms"].get("success"):
+            sms_code = str(results["sms"].get("code")) if isinstance(results["sms"], dict) else None
+            err = (results["sms"].get("error") or results["sms"].get("message") or "SMS failed") if isinstance(results["sms"], dict) else "SMS failed"
+            if sms_code == "21211":
+                err += " - Invalid phone format. Use E.164 e.g. +919876543210."
+            if sms_code == "21608":
+                err += " - Twilio trial can only send to verified numbers or upgrade your account."
+            errors["sms"] = err
+
         if overall_success:
             # Save sent_at and sent_via
             sent_at_iso = datetime.now(timezone.utc).isoformat()
@@ -303,11 +319,15 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
                 "last_send_result": results
             }
             await sales_invoices_collection.update_one({"_id": inv["_id"]}, {"$set": update_fields})
+            message = f"Invoice sent via {', '.join(sent_via)}"
+        else:
+            message = "Sending failed"
 
         return {
             "success": overall_success,
-            "message": "Invoice processed for sending",
+            "message": message,
             "result": results,
+            "errors": errors,
             "sent_via": sent_via
         }
 
