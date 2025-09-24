@@ -32,11 +32,42 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
   const [searchTerm, setSearchTerm] = useState('');
   const [collapsed, setCollapsed] = useState(false);
 
+  // Initialize from localStorage
+  useEffect(() => {
+    try {
+      const c = localStorage.getItem('gili_sidebar_collapsed');
+      if (c === '1') setCollapsed(true);
+      const lastExpanded = localStorage.getItem('gili_sidebar_expanded');
+      if (lastExpanded) setExpandedModules({ [lastExpanded]: true });
+    } catch (e) { /* no-op */ }
+  }, []);
+
+  // Persist collapsed state
+  useEffect(() => {
+    try { localStorage.setItem('gili_sidebar_collapsed', collapsed ? '1' : '0'); } catch (e) { /* no-op */ }
+  }, [collapsed]);
+
+  // Auto-expand module based on active route
+  useEffect(() => {
+    if (!activeModule) return;
+    let groupId = null;
+    const am = (activeModule || '').toString();
+    if (am.startsWith('sales-') || ['quotation-list'].includes(am)) groupId = 'sales';
+    else if (am.startsWith('purchase-')) groupId = 'buying';
+    if (groupId) {
+      setExpandedModules({ [groupId]: true });
+      try { localStorage.setItem('gili_sidebar_expanded', groupId); } catch (e) { /* no-op */ }
+    }
+  }, [activeModule]);
+
+  // Accordion behavior: open one, close others
   const toggleModule = (moduleId) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleId]: !prev[moduleId]
-    }));
+    setExpandedModules(prev => {
+      const willExpand = !prev[moduleId];
+      const next = willExpand ? { [moduleId]: true } : {};
+      try { localStorage.setItem('gili_sidebar_expanded', willExpand ? moduleId : ''); } catch (e) { /* no-op */ }
+      return next;
+    });
     // Do not change activeModule here; only expand/collapse the module
   };
 
