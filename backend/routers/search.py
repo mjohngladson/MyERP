@@ -39,6 +39,8 @@ async def global_search(
         "transactions": 0
     }
     
+    per = limit  # fetch up to 'limit' per category, trim overall later
+
     # Search customers if not filtered by category or if category is customers
     if not category or category == "customers":
         customer_cursor = db.customers.find({
@@ -47,17 +49,17 @@ async def global_search(
                 {"email": {"$regex": pattern}},
                 {"phone": {"$regex": pattern}}
             ]
-        }).limit(limit // 6 if not category else limit)
+        }).limit(per)
         
         async for customer in customer_cursor:
             results.append({
-                "id": customer["id"],
+                "id": customer.get("id") or str(customer.get("_id")),
                 "type": "customer",
-                "title": customer["name"],
+                "title": customer.get("name", "Customer"),
                 "subtitle": customer.get("email", ""),
                 "description": customer.get("phone", ""),
-                "url": f"/sales/customers/{customer['id']}",
-                "relevance": calculate_relevance(search_term, customer["name"])
+                "url": f"/sales/customers/{customer.get('id')}",
+                "relevance": calculate_relevance(search_term, customer.get("name", ""))
             })
             categories["customers"] += 1
     
