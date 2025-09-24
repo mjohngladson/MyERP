@@ -192,9 +192,9 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
 
 
   const handleSuggestionClick = (suggestion) => {
-    setSearchTerm(suggestion.text);
+    setSearchTerm(suggestion.title || suggestion.text || suggestion);
     setShowFullResults(true);
-    fetchSearchResults(suggestion.text);
+    fetchSearchResults(suggestion.title || suggestion.text || suggestion);
   };
 
   const handleResultClick = (result) => {
