@@ -167,6 +167,29 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     }
   };
 
+  const inferPathFromType = (result) => {
+    switch (result.type) {
+      case 'sales_order':
+        return '/sales/orders';
+      case 'invoice':
+      case 'sales_invoice':
+        return '/sales/invoices';
+      case 'purchase_order':
+        return '/buying/purchase-orders';
+      case 'purchase_invoice':
+        return '/buying/purchase-invoices';
+      case 'item':
+        return '/stock/items';
+      case 'customer':
+        return '/sales/customers';
+      case 'supplier':
+        return '/buying/suppliers';
+      default:
+        return '/';
+    }
+  };
+
+
   const handleSuggestionClick = (suggestion) => {
     setSearchTerm(suggestion.text);
     setShowFullResults(true);
