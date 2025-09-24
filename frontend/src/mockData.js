@@ -2,6 +2,13 @@
 
 export const mockModules = [
   {
+    id: 'reports',
+    name: 'Reports',
+    icon: 'TrendingUp',
+    color: '#0ea5e9',
+    items: ['Reports']
+  },
+  {
     id: 'sales',
     name: 'Sales',
     icon: 'DollarSign',
