@@ -4186,14 +4186,14 @@ class BackendTester:
                 return False
             
             # 6. Verify fulfilled combines both fulfilled and delivered statuses
-            # Get stats for fulfilled status
-            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?status=fulfilled") as response:
+            # Get baseline stats to check fulfilled field
+            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview") as response:
                 if response.status != 200:
-                    self.log_test("Sales Orders Stats - Fulfilled Status", False, f"HTTP {response.status}")
+                    self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", False, f"HTTP {response.status}")
                     return False
                 
-                fulfilled_stats = await response.json()
-                fulfilled_count = fulfilled_stats.get("fulfilled", 0)
+                baseline_stats = await response.json()
+                stats_fulfilled_count = baseline_stats.get("fulfilled", 0)
             
             # Get list count for fulfilled status
             async with self.session.get(f"{self.base_url}/api/sales/orders?status=fulfilled&limit=1") as response:
@@ -4221,10 +4221,10 @@ class BackendTester:
             
             # Check if fulfilled stats count equals sum of fulfilled + delivered list counts
             expected_fulfilled = fulfilled_list_count + delivered_list_count
-            if fulfilled_count == expected_fulfilled:
-                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", True, f"Fulfilled stats ({fulfilled_count}) correctly combines fulfilled ({fulfilled_list_count}) + delivered ({delivered_list_count})")
+            if stats_fulfilled_count == expected_fulfilled:
+                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", True, f"Fulfilled stats ({stats_fulfilled_count}) correctly combines fulfilled ({fulfilled_list_count}) + delivered ({delivered_list_count})")
             else:
-                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", False, f"MISMATCH: Fulfilled stats ({fulfilled_count}) != fulfilled list ({fulfilled_list_count}) + delivered list ({delivered_list_count}) = {expected_fulfilled}")
+                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", False, f"MISMATCH: Fulfilled stats ({stats_fulfilled_count}) != fulfilled list ({fulfilled_list_count}) + delivered list ({delivered_list_count}) = {expected_fulfilled}")
                 return False
             
             print("✅ ALL SALES ORDERS STATS FILTER TESTS PASSED")
