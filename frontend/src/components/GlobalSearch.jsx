@@ -81,20 +81,22 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     try {
       setLoading(true);
       const response = await api.search.global(searchQuery);
-      const apiResults = response.data.results || [];
+      const apiResults = (response?.data?.results || response?.data || response || []) as any;
       
-      // Transform API results to match expected format
-      const transformedResults = apiResults.map(result => ({
-        id: result.id,
-        type: result.type,
-        title: result.title,
-        subtitle: result.subtitle,
-        description: result.description,
-        icon: getTypeIcon(result.type),
-        color: getTypeColor(result.type),
-        category: result.type.charAt(0).toUpperCase() + result.type.slice(1).replace('_', ' '),
+      // Normalize results that may return as array directly
+      const arr = Array.isArray(apiResults) ? apiResults : (Array.isArray(apiResults.results) ? apiResults.results : []);
+
+      const transformedResults = arr.map(result => ({
+        id: result.id || result._id || result.url || result.title,
+        type: result.type || 'transaction',
+        title: result.title || result.text || 'Result',
+        subtitle: result.subtitle || result.category || '',
+        description: result.description || '',
+        icon: getTypeIcon(result.type || 'transaction'),
+        color: getTypeColor(result.type || 'transaction'),
+        category: ((result.type || 'Result').charAt(0).toUpperCase() + (result.type || 'Result').slice(1).replace('_', ' ')),
         path: result.url,
-        relevance: result.relevance
+        relevance: result.relevance || 0
       }));
       
       setResults(transformedResults);
