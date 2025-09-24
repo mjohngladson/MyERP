@@ -264,6 +264,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                       <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'▲':'▼'}</span>
                     </button>
                   </th>
+                  {/* Removed Actions header to save space; actions remain as icons */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
