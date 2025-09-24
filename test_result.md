@@ -319,7 +319,7 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ SERVER CONFIGURATION VERIFIED: All routes properly prefixed with /api and server accessible at https://retail-flow-12.preview.emergentagent.com. Backend running on correct configuration with proper CORS and routing setup."
+          comment: "✅ SERVER CONFIGURATION VERIFIED: All routes properly prefixed with /api and server accessible at https://gili-erp.preview.emergentagent.com. Backend running on correct configuration with proper CORS and routing setup."
 
   - task: "Invoice API ObjectId Serialization Fix"
     implemented: true

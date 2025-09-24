@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # Get backend URL from environment - Use the same URL as frontend
-BACKEND_URL = "https://retail-flow-12.preview.emergentagent.com"
+BACKEND_URL = "https://gili-erp.preview.emergentagent.com"
 
 class BackendTester:
     def __init__(self):

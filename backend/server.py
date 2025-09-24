@@ -134,7 +134,7 @@ app.add_middleware(
     allow_origins=[
         "*",  # Allow all origins for development
         "https://ui-production-ccf6.up.railway.app",  # Railway frontend
-        "https://retail-flow-12.preview.emergentagent.com",  # Development frontend
+        "https://gili-erp.preview.emergentagent.com",  # Development frontend
     ],
     allow_methods=["*"],
     allow_headers=["*"],
