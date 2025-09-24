@@ -389,19 +389,19 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
                   <h3 className="text-sm font-medium text-gray-700">Quick Actions</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-2 p-4">
-                  <button className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                  <button onClick={() => { onNavigate('/sales/orders'); onClose(); }} className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                     <FileText className="text-blue-600" size={16} />
                     <span className="text-sm font-medium text-blue-800">New Sales Order</span>
                   </button>
-                  <button className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                  <button onClick={() => { onNavigate('/sales/customers'); onClose(); }} className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                     <Users className="text-green-600" size={16} />
                     <span className="text-sm font-medium text-green-800">Add Customer</span>
                   </button>
-                  <button className="flex items-center space-x-2 p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                  <button onClick={() => { onNavigate('/stock/entry'); onClose(); }} className="flex items-center space-x-2 p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
                     <Package className="text-purple-600" size={16} />
                     <span className="text-sm font-medium text-purple-800">Stock Entry</span>
                   </button>
-                  <button className="flex items-center space-x-2 p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                  <button onClick={() => { onNavigate('/sales/invoices'); onClose(); }} className="flex items-center space-x-2 p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
                     <DollarSign className="text-orange-600" size={16} />
                     <span className="text-sm font-medium text-orange-800">Create Invoice</span>
                   </button>
