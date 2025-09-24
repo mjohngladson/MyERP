@@ -1,201 +1,114 @@
-import React, { useState } from 'react';
-import { 
-  Plus, Search, Filter, MoreVertical, Eye, Edit, Mail, 
-  Phone, MapPin, ChevronLeft, Building, Truck
-} from 'lucide-react';
+import React from 'react';
+import { ChevronLeft, Users, Search, Mail, Phone, Plus, Edit, Trash2 } from 'lucide-react';
+import { api } from '../services/api';
 
 const SuppliersList = ({ onBack }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = React.useState('');
+  const [debounced, setDebounced] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [rows, setRows] = React.useState([]);
+  const [showForm, setShowForm] = React.useState(false);
+  const [form, setForm] = React.useState({ id:null, name:'', email:'', phone:'', address:'', active:true });
 
-  // Mock suppliers data
-  const suppliers = [
-    {
-      id: '1',
-      name: 'XYZ Suppliers',
-      email: 'contact@xyzsuppliers.com',
-      phone: '+91 9876543210',
-      address: '123 Industrial Area, Mumbai, Maharashtra',
-      category: 'Raw Materials',
-      created_at: '2024-01-10',
-      total_orders: 5,
-      total_amount: 125000,
-      last_order_date: '2024-01-22'
-    },
-    {
-      id: '2',
-      name: 'ABC Materials',
-      email: 'sales@abcmaterials.com', 
-      phone: '+91 9876543211',
-      address: '456 Supply Street, Delhi, Delhi',
-      category: 'Equipment',
-      created_at: '2024-01-15',
-      total_orders: 3,
-      total_amount: 85000,
-      last_order_date: '2024-01-20'
-    },
-    {
-      id: '3',
-      name: 'Global Supplies',
-      email: 'info@globalsupplies.com',
-      phone: '+91 9876543212',
-      address: '789 Trade Center, Bangalore, Karnataka', 
-      category: 'Services',
-      created_at: '2024-01-05',
-      total_orders: 8,
-      total_amount: 210000,
-      last_order_date: '2024-01-25'
-    }
-  ];
+  React.useEffect(()=>{ const t = setTimeout(()=>setDebounced(search), 500); return ()=>clearTimeout(t); }, [search]);
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    return supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           supplier.category.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/master/suppliers', { params: { search: debounced || undefined, limit: 200 } });
+      setRows(Array.isArray(data) ? data : []);
+    } catch(e){ console.error(e); }
+    finally { setLoading(false); }
+  };
+  React.useEffect(()=>{ load(); }, [debounced]);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const openNew = () => { setForm({ id:null, name:'', email:'', phone:'', address:'', active:true }); setShowForm(true); };
+  const openEdit = (row) => { setForm({ id: row.id, name: row.name||'', email: row.email||'', phone: row.phone||'', address: row.address||'', active: !!row.active }); setShowForm(true); };
+
+  const save = async () => {
+    if (!form.name.trim()) { alert('Name is required'); return; }
+    try {
+      if (form.id) await api.put(`/master/suppliers/${form.id}`, form);
+      else await api.post('/master/suppliers', form);
+      setShowForm(false); load();
+    } catch(e){ alert(e?.response?.data?.detail || 'Failed to save'); }
+  };
+  const remove = async (row) => {
+    if (!row?.id) return; if (!confirm(`Delete supplier ${row.name}?`)) return;
+    try { await api.delete(`/master/suppliers/${row.id}`); load(); } catch(e){ alert(e?.response?.data?.detail || 'Failed to delete'); }
   };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <div className="flex items-center mb-4">
-          <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <ChevronLeft size={20} />
-          </button>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft size={20}/></button>
           <h1 className="text-3xl font-bold text-gray-800">Suppliers</h1>
         </div>
-        
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search suppliers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus size={20} />
-            <span>New Supplier</span>
-          </button>
-        </div>
+        <button onClick={openNew} className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><Plus size={16}/><span>New Supplier</span></button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-100">
-          <div className="text-sm text-gray-600">Total Suppliers</div>
-          <div className="text-2xl font-bold text-gray-800">{filteredSuppliers.length}</div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-100">
-          <div className="text-sm text-gray-600">Total Purchase Value</div>
-          <div className="text-2xl font-bold text-gray-800">
-            {formatCurrency(filteredSuppliers.reduce((sum, supplier) => sum + supplier.total_amount, 0))}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-100">
-          <div className="text-sm text-gray-600">Total Orders</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {filteredSuppliers.reduce((sum, supplier) => sum + supplier.total_orders, 0)}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-100">
-          <div className="text-sm text-gray-600">Active Suppliers</div>
-          <div className="text-2xl font-bold text-green-600">{filteredSuppliers.length}</div>
-        </div>
+      <div className="mb-4 max-w-md relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search suppliers..." className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"/>
       </div>
 
-      {/* Suppliers Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredSuppliers.map((supplier) => (
-          <div key={supplier.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            {/* Supplier header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Building className="text-purple-600" size={24} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 text-lg">{supplier.name}</h3>
-                  <p className="text-sm text-gray-500">{supplier.category}</p>
+      {loading ? (
+        <div className="animate-pulse h-40 bg-gray-100 rounded" />
+      ) : rows.length === 0 ? (
+        <div className="bg-white rounded-xl p-12 text-center shadow-sm border">No suppliers found</div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="bg-gray-50 px-6 py-3 border-b text-sm font-medium text-gray-600 grid grid-cols-12 gap-4">
+            <div className="col-span-4">Name</div>
+            <div className="col-span-4">Email</div>
+            <div className="col-span-2">Phone</div>
+            <div className="col-span-2">Actions</div>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {rows.map((r)=> (
+              <div key={r.id} className="px-6 py-3 grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-4 font-medium text-gray-800">{r.name}</div>
+                <div className="col-span-4 text-gray-700 flex items-center space-x-2"><Mail size={14} className="text-gray-400"/><span>{r.email || '-'}</span></div>
+                <div className="col-span-2 text-gray-700 flex items-center space-x-2"><Phone size={14} className="text-gray-400"/><span>{r.phone || '-'}</span></div>
+                <div className="col-span-2 flex items-center space-x-2">
+                  <button onClick={()=>openEdit(r)} className="p-2 hover:bg-gray-100 rounded" title="Edit"><Edit size={16} className="text-gray-600"/></button>
+                  <button onClick={()=>remove(r)} className="p-2 hover:bg-gray-100 rounded" title="Delete"><Trash2 size={16} className="text-red-600"/></button>
                 </div>
               </div>
-              
-              <div className="relative">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <MoreVertical size={16} className="text-gray-400" />
-                </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Name</label>
+                <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full px-3 py-2 border rounded"/>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Email</label>
+                <input value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} className="w-full px-3 py-2 border rounded"/>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Phone</label>
+                <input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} className="w-full px-3 py-2 border rounded"/>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Address</label>
+                <input value={form.address} onChange={e=>setForm(f=>({...f,address:e.target.value}))} className="w-full px-3 py-2 border rounded"/>
               </div>
             </div>
-            
-            {/* Contact details */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center space-x-3 text-gray-600">
-                <Mail size={16} />
-                <span className="text-sm">{supplier.email}</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 text-gray-600">
-                <Phone size={16} />
-                <span className="text-sm">{supplier.phone}</span>
-              </div>
-              
-              <div className="flex items-start space-x-3 text-gray-600">
-                <MapPin size={16} className="mt-0.5" />
-                <span className="text-sm">{supplier.address}</span>
-              </div>
-            </div>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">{supplier.total_orders}</div>
-                <div className="text-xs text-gray-600">Orders</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">{formatCurrency(supplier.total_amount)}</div>
-                <div className="text-xs text-gray-600">Total Value</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">
-                  {new Date(supplier.last_order_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                </div>
-                <div className="text-xs text-gray-600">Last Order</div>
-              </div>
-            </div>
-            
-            {/* Actions */}
-            <div className="pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">
-                  Added {new Date(supplier.created_at).toLocaleDateString()}
-                </span>
-                <div className="flex items-center space-x-2">
-                  <button className="p-1 hover:bg-gray-100 rounded-md transition-colors" title="View Details">
-                    <Eye size={16} className="text-gray-600" />
-                  </button>
-                  <button className="p-1 hover:bg-gray-100 rounded-md transition-colors" title="Edit Supplier">
-                    <Edit size={16} className="text-gray-600" />
-                  </button>
-                  <button className="flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm">
-                    <Truck size={14} />
-                    <span>New PO</span>
-                  </button>
-                </div>
-              </div>
+            <div className="mt-6 flex justify-end space-x-2">
+              <button onClick={()=>setShowForm(false)} className="px-4 py-2 border rounded-md">Cancel</button>
+              <button onClick={save} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
