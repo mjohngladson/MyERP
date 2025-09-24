@@ -114,9 +114,13 @@ function AppContent() {
         return <PurchaseInvoiceView invoiceId={pageState.purchaseInvoiceView?.id} initialInvoice={pageState.purchaseInvoiceView} onBack={() => setActiveModule('purchase-invoice-list')} />;
 
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage onBack={() => setActiveModule('dashboard')} />;
       case 'settings':
-        return <SettingsPage />;
+        return <SettingsPage onBack={() => setActiveModule('dashboard')} />;
+      case 'items-list':
+        return <ItemsList onBack={() => setActiveModule('dashboard')} />;
+      case 'customers-list':
+        return <CustomersList onBack={() => setActiveModule('dashboard')} />;
 
       default:
         return <Dashboard />;
