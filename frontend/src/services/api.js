@@ -183,10 +183,10 @@ export const api = {
   },
 
   // Generic API call helper
-  get: (endpoint) => makeRequest(() => apiClient.get(endpoint)),
-  post: (endpoint, data) => makeRequest(() => apiClient.post(endpoint, data)),
-  put: (endpoint, data) => makeRequest(() => apiClient.put(endpoint, data)),
-  delete: (endpoint) => makeRequest(() => apiClient.delete(endpoint)),
+  get: (endpoint, config = {}) => makeRequest(() => apiClient.get(endpoint, config)),
+  post: (endpoint, data, config = {}) => makeRequest(() => apiClient.post(endpoint, data, config)),
+  put: (endpoint, data, config = {}) => makeRequest(() => apiClient.put(endpoint, data, config)),
+  delete: (endpoint, config = {}) => makeRequest(() => apiClient.delete(endpoint, config)),
 };
 
 export default api;
