@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
 const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoice }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -14,7 +14,7 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   const [toDate, setToDate] = useState('');
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 400); return ()=>clearTimeout(t); }, [searchInput]);
 
   const { data: invData, loading, error, refetch } = useApi(() =>
     fetch(`${api.getBaseUrl()}/api/purchase/invoices?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
@@ -24,14 +24,17 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   const invoices = Array.isArray(invData) ? invData : (invData?.items || []);
   const totalCount = Array.isArray(invData) ? (invData[0]?._meta?.total_count || invoices.length) : (invData?.total_count || invoices.length);
 
-  const filtered = invoices.filter(inv => {
-    const matchesSearch = searchTerm === '' || `${inv.invoice_number||''}`.toLowerCase().includes(searchTerm.toLowerCase()) || `${inv.supplier_name||''}`.toLowerCase().includes(searchTerm.toLowerCase());
-    const d = inv.invoice_date || inv.created_at;
-    const dStr = d ? (new Date(d)).toISOString().slice(0,10) : '';
-    const inRange = (!fromDate || dStr >= fromDate) && (!toDate || dStr <= toDate);
-    const matchesStatus = filterStatus === 'all' || inv.status === filterStatus;
-    return matchesSearch && inRange && matchesStatus;
-  });
+  const filtered = React.useMemo(()=> {
+    const term = (debouncedSearch || '').toLowerCase();
+    return invoices.filter(inv => {
+      const matchesSearch = term === '' || `${inv.invoice_number||''}`.toLowerCase().includes(term) || `${inv.supplier_name||''}`.toLowerCase().includes(term);
+      const d = inv.invoice_date || inv.created_at;
+      const dStr = d ? (new Date(d)).toISOString().slice(0,10) : '';
+      const inRange = (!fromDate || dStr >= fromDate) && (!toDate || dStr <= toDate);
+      const matchesStatus = filterStatus === 'all' || inv.status === filterStatus;
+      return matchesSearch && inRange && matchesStatus;
+    });
+  }, [invoices, debouncedSearch, fromDate, toDate, filterStatus]);
 
   const formatCurrency = (a) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(a || 0);
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
