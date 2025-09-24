@@ -1198,6 +1198,42 @@ frontend:
           agent: "testing"
           comment: "✅ Header notifications dropdown working correctly. Bell icon is visible with notification count badge (3). Clicking the bell opens a dropdown with notifications including 'New sales order received' with timestamps. Dropdown is properly positioned and styled."
 
+
+backend:
+  - task: "Sales Orders Stats - Filter Aware"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/sales.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Sales Orders list insights not honoring filters."
+      - working: "NA"
+        agent: "main"
+        comment: "Endpoint updated to accept filters and use aggregation with normalized date handling."
+
+frontend:
+  - task: "Sales Invoices List - Align layout with other modules"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/SalesInvoicesList.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Sales Invoices LIST page stretched beyond screen; should match other modules."
+      - working: "NA"
+        agent: "main"
+        comment: "Wrapped content in max-w-7xl container, adjusted header/filter layout and table min-width to prevent overflow; matches Purchase Orders style."
+
+agent_communication:
+  - agent: "main"
+    message: "Please run backend tests focused on /api/sales/orders/stats/overview filters (status, search, from_date, to_date) and verify counts/amounts align with filtered list results. Skip frontend automated UI tests for now; user will verify Sales Invoices layout manually."
   - task: "Header User Profile Dropdown"
     implemented: true
     working: true
