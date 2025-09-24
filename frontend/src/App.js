@@ -177,7 +177,9 @@ function AppContent() {
               '/buying/purchase-invoices': 'purchase-invoice-list',
             };
             const key = routes[path];
-            if (key) setActiveModule(key);
+            if (key) {
+              setActiveModule(key);
+            }
           }}
         />
         <main className="flex-1">
