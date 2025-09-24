@@ -5,6 +5,19 @@ import uuid
 
 # Existing models left intact above ... (this file is truncated in context)
 
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    role: Optional[str] = None
+    avatar: Optional[str] = None
+    company_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+
 class QuickStats(BaseModel):
     sales_orders: float = 0
     purchase_orders: float = 0
