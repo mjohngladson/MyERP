@@ -34,6 +34,9 @@ async def get_settings() -> Dict[str, Any]:
         }
         await stock_settings.insert_one(default)
         s = default
+    # sanitize ObjectId
+    if isinstance(s, dict) and s.get("_id") is not None:
+        s = {k: v for k, v in s.items() if k != "_id"}
     return s
 
 
