@@ -22,6 +22,11 @@ import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
 import ItemsList from './components/ItemsList';
 import CustomersList from './components/CustomersList';
+import Warehouses from './components/Warehouses';
+import StockEntryForm from './components/StockEntryForm';
+import StockLedger from './components/StockLedger';
+import StockReports from './components/StockReports';
+import StockSettings from './components/StockSettings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
