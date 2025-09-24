@@ -4039,6 +4039,201 @@ class BackendTester:
             self.log_test("Purchase Orders $toDate Aggregation", False, f"Error: {str(e)}")
             return False
 
+    async def test_sales_orders_stats_filters(self):
+        """Test Sales Orders stats filters as requested in review"""
+        try:
+            print("\n🧪 TESTING SALES ORDERS STATS FILTERS - COMPREHENSIVE REVIEW")
+            
+            # 1. Baseline: GET /api/sales/orders/stats/overview returns required fields
+            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders Stats - Baseline", False, f"HTTP {response.status}")
+                    return False
+                
+                baseline_stats = await response.json()
+                required_fields = ["total_orders", "total_amount", "draft", "submitted", "fulfilled", "cancelled"]
+                
+                if not all(field in baseline_stats for field in required_fields):
+                    missing = [f for f in required_fields if f not in baseline_stats]
+                    self.log_test("Sales Orders Stats - Baseline", False, f"Missing fields: {missing}", baseline_stats)
+                    return False
+                
+                self.log_test("Sales Orders Stats - Baseline", True, f"All required fields present. Total orders: {baseline_stats['total_orders']}, Amount: {baseline_stats['total_amount']}", baseline_stats)
+            
+            # 2. Status filter: Compare stats with list endpoint counts
+            test_statuses = ["submitted", "draft", "fulfilled", "cancelled"]
+            for status in test_statuses:
+                # Get stats with status filter
+                async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?status={status}") as response:
+                    if response.status != 200:
+                        self.log_test(f"Sales Orders Stats - Status Filter ({status})", False, f"HTTP {response.status}")
+                        continue
+                    
+                    stats_data = await response.json()
+                    stats_total = stats_data.get("total_orders", 0)
+                
+                # Get list with same status filter
+                async with self.session.get(f"{self.base_url}/api/sales/orders?status={status}&limit=1") as response:
+                    if response.status != 200:
+                        self.log_test(f"Sales Orders List - Status Filter ({status})", False, f"HTTP {response.status}")
+                        continue
+                    
+                    list_data = await response.json()
+                    if list_data and len(list_data) > 0 and "_meta" in list_data[0]:
+                        list_total = list_data[0]["_meta"]["total_count"]
+                    else:
+                        list_total = len(list_data)
+                
+                # Compare counts
+                if stats_total == list_total:
+                    self.log_test(f"Sales Orders Stats - Status Filter ({status})", True, f"Stats count ({stats_total}) matches list count ({list_total})")
+                else:
+                    self.log_test(f"Sales Orders Stats - Status Filter ({status})", False, f"MISMATCH: Stats count ({stats_total}) != list count ({list_total})")
+                    return False
+            
+            # 3. Search filter: Test with search terms present in order_number or customer_name
+            search_terms = ["POS", "SO-"]
+            for search_term in search_terms:
+                # Get stats with search filter
+                async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?search={search_term}") as response:
+                    if response.status != 200:
+                        self.log_test(f"Sales Orders Stats - Search Filter ({search_term})", False, f"HTTP {response.status}")
+                        continue
+                    
+                    stats_data = await response.json()
+                    stats_total = stats_data.get("total_orders", 0)
+                
+                # Get list with same search filter
+                async with self.session.get(f"{self.base_url}/api/sales/orders?search={search_term}&limit=1") as response:
+                    if response.status != 200:
+                        self.log_test(f"Sales Orders List - Search Filter ({search_term})", False, f"HTTP {response.status}")
+                        continue
+                    
+                    list_data = await response.json()
+                    if list_data and len(list_data) > 0 and "_meta" in list_data[0]:
+                        list_total = list_data[0]["_meta"]["total_count"]
+                    else:
+                        list_total = len(list_data)
+                
+                # Compare counts
+                if stats_total == list_total:
+                    self.log_test(f"Sales Orders Stats - Search Filter ({search_term})", True, f"Stats count ({stats_total}) matches list count ({list_total})")
+                else:
+                    self.log_test(f"Sales Orders Stats - Search Filter ({search_term})", False, f"MISMATCH: Stats count ({stats_total}) != list count ({list_total})")
+                    return False
+            
+            # 4. Date range: Test with from_date/to_date covering a small window
+            from_date = "2024-01-01"
+            to_date = "2024-12-31"
+            
+            # Get stats with date range
+            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?from_date={from_date}&to_date={to_date}") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders Stats - Date Range", False, f"HTTP {response.status}")
+                    return False
+                
+                stats_data = await response.json()
+                stats_total = stats_data.get("total_orders", 0)
+            
+            # Get list with same date range
+            async with self.session.get(f"{self.base_url}/api/sales/orders?from_date={from_date}&to_date={to_date}&limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders List - Date Range", False, f"HTTP {response.status}")
+                    return False
+                
+                list_data = await response.json()
+                if list_data and len(list_data) > 0 and "_meta" in list_data[0]:
+                    list_total = list_data[0]["_meta"]["total_count"]
+                else:
+                    list_total = len(list_data)
+            
+            # Compare counts
+            if stats_total == list_total:
+                self.log_test("Sales Orders Stats - Date Range", True, f"Stats count ({stats_total}) matches list count ({list_total}) for date range {from_date} to {to_date}")
+            else:
+                self.log_test("Sales Orders Stats - Date Range", False, f"MISMATCH: Stats count ({stats_total}) != list count ({list_total}) for date range")
+                return False
+            
+            # 5. Combined filters: status + search + date range
+            combined_params = f"status=fulfilled&search=POS&from_date={from_date}&to_date={to_date}"
+            
+            # Get stats with combined filters
+            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?{combined_params}") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders Stats - Combined Filters", False, f"HTTP {response.status}")
+                    return False
+                
+                stats_data = await response.json()
+                stats_total = stats_data.get("total_orders", 0)
+            
+            # Get list with same combined filters
+            async with self.session.get(f"{self.base_url}/api/sales/orders?{combined_params}&limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders List - Combined Filters", False, f"HTTP {response.status}")
+                    return False
+                
+                list_data = await response.json()
+                if list_data and len(list_data) > 0 and "_meta" in list_data[0]:
+                    list_total = list_data[0]["_meta"]["total_count"]
+                else:
+                    list_total = len(list_data)
+            
+            # Compare counts
+            if stats_total == list_total:
+                self.log_test("Sales Orders Stats - Combined Filters", True, f"Stats count ({stats_total}) matches list count ({list_total}) for combined filters")
+            else:
+                self.log_test("Sales Orders Stats - Combined Filters", False, f"MISMATCH: Stats count ({stats_total}) != list count ({list_total}) for combined filters")
+                return False
+            
+            # 6. Verify fulfilled combines both fulfilled and delivered statuses
+            # Get stats for fulfilled status
+            async with self.session.get(f"{self.base_url}/api/sales/orders/stats/overview?status=fulfilled") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders Stats - Fulfilled Status", False, f"HTTP {response.status}")
+                    return False
+                
+                fulfilled_stats = await response.json()
+                fulfilled_count = fulfilled_stats.get("fulfilled", 0)
+            
+            # Get list count for fulfilled status
+            async with self.session.get(f"{self.base_url}/api/sales/orders?status=fulfilled&limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders List - Fulfilled Status", False, f"HTTP {response.status}")
+                    return False
+                
+                fulfilled_list = await response.json()
+                if fulfilled_list and len(fulfilled_list) > 0 and "_meta" in fulfilled_list[0]:
+                    fulfilled_list_count = fulfilled_list[0]["_meta"]["total_count"]
+                else:
+                    fulfilled_list_count = len(fulfilled_list)
+            
+            # Get list count for delivered status
+            async with self.session.get(f"{self.base_url}/api/sales/orders?status=delivered&limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Sales Orders List - Delivered Status", False, f"HTTP {response.status}")
+                    return False
+                
+                delivered_list = await response.json()
+                if delivered_list and len(delivered_list) > 0 and "_meta" in delivered_list[0]:
+                    delivered_list_count = delivered_list[0]["_meta"]["total_count"]
+                else:
+                    delivered_list_count = len(delivered_list)
+            
+            # Check if fulfilled stats count equals sum of fulfilled + delivered list counts
+            expected_fulfilled = fulfilled_list_count + delivered_list_count
+            if fulfilled_count == expected_fulfilled:
+                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", True, f"Fulfilled stats ({fulfilled_count}) correctly combines fulfilled ({fulfilled_list_count}) + delivered ({delivered_list_count})")
+            else:
+                self.log_test("Sales Orders Stats - Fulfilled Combines Delivered", False, f"MISMATCH: Fulfilled stats ({fulfilled_count}) != fulfilled list ({fulfilled_list_count}) + delivered list ({delivered_list_count}) = {expected_fulfilled}")
+                return False
+            
+            print("✅ ALL SALES ORDERS STATS FILTER TESTS PASSED")
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Orders Stats Filters", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Purchase Orders with mixed date types"""
         print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS MIXED DATE TYPES TEST")
