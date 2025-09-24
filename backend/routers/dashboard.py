@@ -32,8 +32,17 @@ async def get_dashboard_stats():
         purchase_result = await purchase_orders_collection.aggregate(purchase_pipeline).to_list(1)
         purchase_total = purchase_result[0]["total"] if purchase_result else 0
         
-        # Calculate outstanding amount (mock calculation)
-        outstanding = sales_total * 0.15  # 15% of sales as outstanding
+        # Calculate outstanding amount from invoices where not paid
+        try:
+            from database import sales_invoices_collection as inv_coll
+            inv_pipeline = [
+                {"$match": {"status": {"$ne": "paid"}}},
+                {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$total_amount", 0]}}}}
+            ]
+            inv_result = await inv_coll.aggregate(inv_pipeline).to_list(1)
+            outstanding = inv_result[0]["total"] if inv_result else 0
+        except Exception:
+            outstanding = sales_total * 0.15
         
         # Calculate stock value
         stock_pipeline = [
