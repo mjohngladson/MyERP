@@ -60,7 +60,7 @@ async def get_sales_invoices(
 
         pipeline = [
             { '$addFields': {
-                'invoice_date_sort': { '$toDate': { '$ifNull': [ '$invoice_date', '$created_at' ] } }
+                'invoice_date_sort': { '$toDate': { '$cond': [ { '$or': [ { '$eq': [ '$invoice_date', None ] }, { '$eq': [ '$invoice_date', '' ] } ] }, '$created_at', '$invoice_date' ] } }
             }},
         ]
         if query:
@@ -383,34 +383,60 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
         raise HTTPException(status_code=500, detail=f"Error sending invoice: {str(e)}")
 
 @router.get("/stats/overview")
-async def get_invoice_stats():
+async def get_invoice_stats(
+    status: Optional[str] = Query(None),
+    customer_id: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None)
+):
     try:
-        total_invoices = await sales_invoices_collection.count_documents({})
-        draft_count = await sales_invoices_collection.count_documents({"status": "draft"})
-        submitted_count = await sales_invoices_collection.count_documents({"status": "submitted"})
-        paid_count = await sales_invoices_collection.count_documents({"status": "paid"})
-
-        pipeline = [{"$group": {"_id": None, "total_amount": {"$sum": "$total_amount"}, "total_tax": {"$sum": "$tax_amount"}}}]
-        total_result = await sales_invoices_collection.aggregate(pipeline).to_list(1)
-        total_amount = total_result[0]["total_amount"] if total_result else 0
-        total_tax = total_result[0]["total_tax"] if total_result else 0
-
-        recent_cursor = sales_invoices_collection.find({}, {"invoice_number": 1, "customer_name": 1, "total_amount": 1, "status": 1, "created_at": 1}).sort("created_at", -1).limit(5)
-        recent_invoices = []
-        async for invoice in recent_cursor:
-            if "_id" in invoice:
-                invoice["id"] = str(invoice["_id"])
-                del invoice["_id"]
-            recent_invoices.append(invoice)
-
+        match_stage = {}
+        if status:
+            match_stage["status"] = status
+        if customer_id:
+            match_stage["customer_id"] = customer_id
+        if search:
+            match_stage["$or"] = [
+                {"invoice_number": {"$regex": search, "$options": "i"}},
+                {"customer_name": {"$regex": search, "$options": "i"}},
+            ]
+        pipeline = [
+            { '$addFields': {
+                'invoice_date_sort': { '$toDate': { '$cond': [ { '$or': [ { '$eq': [ '$invoice_date', None ] }, { '$eq': [ '$invoice_date', '' ] } ] }, '$created_at', '$invoice_date' ] } }
+            }},
+        ]
+        if match_stage:
+            pipeline.append({ '$match': match_stage })
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                y,m,d = map(int, from_date.split('-'))
+                date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+            if to_date:
+                y,m,d = map(int, to_date.split('-'))
+                date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+            pipeline.append({ '$match': { 'invoice_date_sort': date_match } })
+        pipeline.append({ '$group': {
+            '_id': None,
+            'total_count': { '$sum': 1 },
+            'total_amount': { '$sum': { '$ifNull': [ '$total_amount', 0 ] } },
+            'draft': { '$sum': { '$cond': [ { '$eq': [ '$status', 'draft' ] }, 1, 0 ] } },
+            'submitted': { '$sum': { '$cond': [ { '$eq': [ '$status', 'submitted' ] }, 1, 0 ] } },
+            'paid': { '$sum': { '$cond': [ { '$eq': [ '$status', 'paid' ] }, 1, 0 ] } },
+            'cancelled': { '$sum': { '$cond': [ { '$eq': [ '$status', 'cancelled' ] }, 1, 0 ] } },
+        }})
+        res = await sales_invoices_collection.aggregate(pipeline).to_list(1)
+        if not res:
+            return { 'total_invoices': 0, 'draft_count': 0, 'submitted_count': 0, 'paid_count': 0, 'cancelled_count': 0, 'total_amount': 0 }
+        grp = res[0]
         return {
-            "total_invoices": total_invoices,
-            "draft_count": draft_count,
-            "submitted_count": submitted_count,
-            "paid_count": paid_count,
-            "total_amount": total_amount,
-            "total_tax": total_tax,
-            "recent_invoices": recent_invoices
+            'total_invoices': grp.get('total_count', 0),
+            'draft_count': grp.get('draft', 0),
+            'submitted_count': grp.get('submitted', 0),
+            'paid_count': grp.get('paid', 0),
+            'cancelled_count': grp.get('cancelled', 0),
+            'total_amount': grp.get('total_amount', 0)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching invoice stats: {str(e)}")
