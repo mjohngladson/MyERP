@@ -4,7 +4,7 @@ export const mockModules = [
   {
     id: 'sales',
     name: 'Sales',
-    icon: 'TrendingUp',
+    icon: 'DollarSign',
     color: '#2563eb',
     items: ['Sales Order', 'Quotation', 'Customer', 'Item', 'Sales Invoice']
   },
