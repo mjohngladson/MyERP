@@ -177,9 +177,11 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     // Add to recent searches
     const newRecent = [result.title, ...recentSearches.filter(s => s !== result.title)].slice(0, 5);
     setRecentSearches(newRecent);
+    try { localStorage.setItem('gili_recent_searches', JSON.stringify(newRecent)); } catch (e) { /* no-op */ }
     
     if (onNavigate) {
-      onNavigate(result.path);
+      const path = result.path || inferPathFromType(result);
+      onNavigate(path);
     }
     onClose();
   };
