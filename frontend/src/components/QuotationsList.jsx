@@ -27,8 +27,16 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
   React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
 
   const { data: quotesData, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/quotations/?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
-      .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
+    api.get('/quotations/', { params: {
+      limit: pageSize,
+      skip: (currentPage-1)*pageSize,
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      sort_by: sortBy,
+      sort_dir: sortDir,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data)
   , [pageSize, currentPage, filterStatus, debouncedSearch, sortBy, sortDir, fromDate, toDate]);
 
   const quotes = Array.isArray(quotesData) ? quotesData : (quotesData?.items || []);
