@@ -150,7 +150,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                         >
                           <IconComponent size={20} />
                         </div>
-                        <span className="font-medium text-gray-700">{module.name}</span>
+                        <span className={`font-medium text-gray-700 transition-opacity ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'}`}>{module.name}</span>
                       </div>
                       {isExpanded ? (
                         <ChevronDown size={16} className="text-gray-400" />
