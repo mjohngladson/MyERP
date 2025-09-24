@@ -138,7 +138,7 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
           <div>Showing {((currentPage-1)*pageSize)+1} to {Math.min(currentPage*pageSize, totalCount)} of {totalCount}</div>
           <div className="space-x-2">
             <button onClick={()=>setCurrentPage(Math.max(1,currentPage-1))} disabled={currentPage<=1} className="px-3 py-2 border rounded disabled:opacity-50">Previous</button>
-            <button onClick={()=>setCurrentPage(currentPage+1)} disabled={invoices.length &lt; pageSize} className="px-3 py-2 border rounded disabled:opacity-50">Next</button>
+            <button onClick={()=>setCurrentPage(currentPage+1)} disabled={invoices.length < pageSize} className="px-3 py-2 border rounded disabled:opacity-50">Next</button>
           </div>
         </div>
       )}
