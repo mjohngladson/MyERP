@@ -61,7 +61,8 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     try {
       setLoading(true);
       const response = await api.search.suggestions(searchQuery);
-      setSuggestions(response.data.suggestions || []);
+      const list = response?.data?.suggestions || response?.data || response?.suggestions || [];
+      setSuggestions(list);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       setSuggestions([]);
