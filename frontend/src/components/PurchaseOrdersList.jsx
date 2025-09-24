@@ -91,10 +91,13 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
   const deleteOrder = async (order) => {
     if (!order) return; if (!window.confirm(`Delete ${order.order_number}?`)) return;
     try {
-      const res = await fetch(`${api.getBaseUrl()}/api/purchase/orders/${order.id}`, { method: 'DELETE' });
-      const data = await res.json().catch(()=>({}));
-      if (res.ok) { refetch && refetch(); }
-      else { alert(data.detail || 'Failed to delete'); }
+      try {
+        await api.delete(`/purchase/orders/${order.id}`);
+        refetch && refetch();
+      } catch (err) {
+        const msg = err?.response?.data?.detail || err?.message || 'Failed to delete';
+        alert(msg);
+      }
     } catch (e) { console.error(e); alert('Error deleting'); }
   };
 
