@@ -126,6 +126,26 @@ async def global_search(
             })
             categories["sales_orders"] += 1
     
+    # Search invoices
+    if not category or category == "invoices":
+        invoice_cursor = db.sales_invoices.find({
+            "$or": [
+                {"invoice_number": {"$regex": pattern}},
+                {"customer_name": {"$regex": pattern}}
+            ]
+        }).limit(limit // 6 if not category else limit)
+        async for inv in invoice_cursor:
+            results.append({
+                "id": inv["id"],
+                "type": "invoice",
+                "title": f"Invoice {inv['invoice_number']}",
+                "subtitle": inv.get("customer_name", ""),
+                "description": f"₹{inv.get('total_amount', 0)} - {inv.get('status', 'draft')}",
+                "url": f"/sales/invoices/{inv['id']}",
+                "relevance": calculate_relevance(search_term, inv["invoice_number"])
+            })
+            categories["invoices"] += 1
+
     # Search purchase orders
     if not category or category == "purchase_orders":
         purchase_order_cursor = db.purchase_orders.find({
