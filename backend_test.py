@@ -3886,6 +3886,159 @@ class BackendTester:
             self.log_test("Purchase Orders - Minimal Smoke Test", False, f"Error during testing: {str(e)}")
             return False
 
+    async def test_purchase_orders_mixed_date_types(self):
+        """Test purchase orders list endpoint with mixed order_date data types"""
+        try:
+            # First, create sample POs with different order_date types
+            test_pos = []
+            
+            # 1. PO with empty string order_date
+            po1_payload = {
+                "supplier_name": "Test Supplier Empty Date",
+                "order_date": "",
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}],
+                "status": "draft"
+            }
+            
+            # 2. PO with null order_date
+            po2_payload = {
+                "supplier_name": "Test Supplier Null Date", 
+                "order_date": None,
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}],
+                "status": "draft"
+            }
+            
+            # 3. PO with valid ISO string order_date
+            po3_payload = {
+                "supplier_name": "Test Supplier Valid Date",
+                "order_date": "2024-01-15T10:30:00Z",
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}],
+                "status": "draft"
+            }
+            
+            created_pos = []
+            
+            # Create the test POs
+            for i, payload in enumerate([po1_payload, po2_payload, po3_payload], 1):
+                async with self.session.post(f"{self.base_url}/api/purchase/orders", json=payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success") and data.get("order"):
+                            created_pos.append(data["order"]["id"])
+                            self.log_test(f"Create Test PO {i}", True, f"Created PO with order_date: {payload['order_date']}")
+                        else:
+                            self.log_test(f"Create Test PO {i}", False, f"Failed to create PO: {data}")
+                            return False
+                    else:
+                        self.log_test(f"Create Test PO {i}", False, f"HTTP {response.status}")
+                        return False
+            
+            # Now test the list endpoint
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if isinstance(data, list):
+                        self.log_test("Purchase Orders List - Mixed Date Types", True, f"Retrieved {len(data)} purchase orders without server errors", {"count": len(data)})
+                        
+                        # Check if we have data and verify structure
+                        if len(data) > 0:
+                            first_order = data[0]
+                            
+                            # Verify total_count exists (via _meta on first item)
+                            if "_meta" in first_order and "total_count" in first_order["_meta"]:
+                                self.log_test("Purchase Orders - Total Count Meta", True, f"Total count found: {first_order['_meta']['total_count']}")
+                            else:
+                                self.log_test("Purchase Orders - Total Count Meta", False, "No _meta.total_count found on first item")
+                                return False
+                            
+                            # Verify required fields exist
+                            required_fields = ["id", "order_number", "supplier_name", "total_amount", "status"]
+                            if all(field in first_order for field in required_fields):
+                                self.log_test("Purchase Orders - Structure", True, "All required fields present", first_order)
+                            else:
+                                missing = [f for f in required_fields if f not in first_order]
+                                self.log_test("Purchase Orders - Structure", False, f"Missing fields: {missing}")
+                                return False
+                        
+                        # Test sorting by order_date (should not crash)
+                        async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=10&sort_by=order_date&sort_dir=desc") as sort_response:
+                            if sort_response.status == 200:
+                                sort_data = await sort_response.json()
+                                if isinstance(sort_data, list):
+                                    self.log_test("Purchase Orders - Date Sorting DESC", True, f"Sorting by order_date DESC works, got {len(sort_data)} orders")
+                                else:
+                                    self.log_test("Purchase Orders - Date Sorting DESC", False, "Invalid response format")
+                                    return False
+                            else:
+                                self.log_test("Purchase Orders - Date Sorting DESC", False, f"HTTP {sort_response.status} - Sorting failed")
+                                return False
+                        
+                        # Test sorting ascending
+                        async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=10&sort_by=order_date&sort_dir=asc") as sort_response:
+                            if sort_response.status == 200:
+                                sort_data = await sort_response.json()
+                                if isinstance(sort_data, list):
+                                    self.log_test("Purchase Orders - Date Sorting ASC", True, f"Sorting by order_date ASC works, got {len(sort_data)} orders")
+                                else:
+                                    self.log_test("Purchase Orders - Date Sorting ASC", False, "Invalid response format")
+                                    return False
+                            else:
+                                self.log_test("Purchase Orders - Date Sorting ASC", False, f"HTTP {sort_response.status} - Sorting failed")
+                                return False
+                        
+                    else:
+                        self.log_test("Purchase Orders List - Mixed Date Types", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Purchase Orders List - Mixed Date Types", False, f"HTTP {response.status} - Server error occurred")
+                    return False
+            
+            # Clean up - delete test POs
+            for po_id in created_pos:
+                try:
+                    async with self.session.delete(f"{self.base_url}/api/purchase/orders/{po_id}") as response:
+                        if response.status == 200:
+                            self.log_test(f"Cleanup Test PO {po_id}", True, "Test PO deleted successfully")
+                        else:
+                            self.log_test(f"Cleanup Test PO {po_id}", False, f"Failed to delete test PO: HTTP {response.status}")
+                except Exception as e:
+                    self.log_test(f"Cleanup Test PO {po_id}", False, f"Error during cleanup: {str(e)}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Purchase Orders Mixed Date Types", False, f"Error: {str(e)}")
+            return False
+
+    async def test_purchase_orders_aggregation_todate_conversion(self):
+        """Test for $toDate conversion issues in purchase orders aggregation"""
+        try:
+            # Test the endpoint that uses aggregation with $toDate
+            async with self.session.get(f"{self.base_url}/api/purchase/orders?limit=5&sort_by=order_date") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Purchase Orders - $toDate Aggregation", True, f"No aggregation $toDate conversion errors, retrieved {len(data)} orders")
+                    return True
+                elif response.status == 500:
+                    # Check if it's a $toDate conversion error
+                    try:
+                        error_data = await response.json()
+                        error_detail = error_data.get("detail", "")
+                        if "$toDate" in error_detail or "conversion" in error_detail.lower():
+                            self.log_test("Purchase Orders - $toDate Aggregation", False, f"$toDate conversion error found: {error_detail}")
+                        else:
+                            self.log_test("Purchase Orders - $toDate Aggregation", False, f"Server error (not $toDate related): {error_detail}")
+                    except:
+                        self.log_test("Purchase Orders - $toDate Aggregation", False, "HTTP 500 error occurred")
+                    return False
+                else:
+                    self.log_test("Purchase Orders - $toDate Aggregation", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Purchase Orders $toDate Aggregation", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run minimal backend tests focusing on Purchase Orders smoke tests"""
         print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS SMOKE TEST")
