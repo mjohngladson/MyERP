@@ -4234,6 +4234,252 @@ class BackendTester:
             self.log_test("Sales Orders Stats Filters", False, f"Error: {str(e)}")
             return False
 
+    async def test_items_crud_operations(self):
+        """Test Items CRUD API endpoints comprehensively"""
+        try:
+            # Test GET /api/stock/items - List items
+            async with self.session.get(f"{self.base_url}/api/stock/items") as response:
+                if response.status == 200:
+                    items_list = await response.json()
+                    if isinstance(items_list, list):
+                        self.log_test("Items CRUD - List Items", True, f"Retrieved {len(items_list)} items", {"count": len(items_list)})
+                    else:
+                        self.log_test("Items CRUD - List Items", False, "Response is not a list", items_list)
+                        return False
+                else:
+                    self.log_test("Items CRUD - List Items", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test GET /api/stock/items with search
+            async with self.session.get(f"{self.base_url}/api/stock/items?search=Product") as response:
+                if response.status == 200:
+                    search_results = await response.json()
+                    if isinstance(search_results, list):
+                        self.log_test("Items CRUD - Search Items", True, f"Search returned {len(search_results)} items", {"count": len(search_results)})
+                    else:
+                        self.log_test("Items CRUD - Search Items", False, "Search response is not a list", search_results)
+                        return False
+                else:
+                    self.log_test("Items CRUD - Search Items", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test POST /api/stock/items - Create new item
+            test_item = {
+                "name": "Test Item for CRUD Testing",
+                "item_code": "TEST-ITEM-001",
+                "category": "Test Category",
+                "unit_price": 99.99,
+                "active": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/stock/items", json=test_item) as response:
+                if response.status == 200:
+                    created_item = await response.json()
+                    if "id" in created_item and created_item["name"] == test_item["name"]:
+                        item_id = created_item["id"]
+                        self.log_test("Items CRUD - Create Item", True, f"Created item with ID: {item_id}", created_item)
+                    else:
+                        self.log_test("Items CRUD - Create Item", False, "Invalid response structure", created_item)
+                        return False
+                else:
+                    self.log_test("Items CRUD - Create Item", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test GET /api/stock/items/{id} - Get single item by ID
+            async with self.session.get(f"{self.base_url}/api/stock/items/{item_id}") as response:
+                if response.status == 200:
+                    retrieved_item = await response.json()
+                    if retrieved_item["id"] == item_id and retrieved_item["name"] == test_item["name"]:
+                        self.log_test("Items CRUD - Get Item by ID", True, f"Retrieved item: {retrieved_item['name']}", retrieved_item)
+                    else:
+                        self.log_test("Items CRUD - Get Item by ID", False, "Retrieved item doesn't match", retrieved_item)
+                        return False
+                else:
+                    self.log_test("Items CRUD - Get Item by ID", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test PUT /api/stock/items/{id} - Update item
+            update_data = {
+                "name": "Updated Test Item",
+                "unit_price": 149.99,
+                "category": "Updated Category"
+            }
+            
+            async with self.session.put(f"{self.base_url}/api/stock/items/{item_id}", json=update_data) as response:
+                if response.status == 200:
+                    updated_item = await response.json()
+                    if (updated_item["name"] == update_data["name"] and 
+                        updated_item["unit_price"] == update_data["unit_price"]):
+                        self.log_test("Items CRUD - Update Item", True, f"Updated item successfully", updated_item)
+                    else:
+                        self.log_test("Items CRUD - Update Item", False, "Update not reflected properly", updated_item)
+                        return False
+                else:
+                    self.log_test("Items CRUD - Update Item", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test DELETE /api/stock/items/{id} - Delete item
+            async with self.session.delete(f"{self.base_url}/api/stock/items/{item_id}") as response:
+                if response.status == 200:
+                    delete_result = await response.json()
+                    if delete_result.get("success"):
+                        self.log_test("Items CRUD - Delete Item", True, f"Deleted item successfully", delete_result)
+                    else:
+                        self.log_test("Items CRUD - Delete Item", False, "Delete operation failed", delete_result)
+                        return False
+                else:
+                    self.log_test("Items CRUD - Delete Item", False, f"HTTP {response.status}")
+                    return False
+            
+            # Verify item is deleted by trying to get it
+            async with self.session.get(f"{self.base_url}/api/stock/items/{item_id}") as response:
+                if response.status == 404:
+                    self.log_test("Items CRUD - Verify Deletion", True, "Item properly deleted (404 returned)")
+                else:
+                    self.log_test("Items CRUD - Verify Deletion", False, f"Expected 404, got {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Items CRUD Operations", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_sales_order_detail_api(self):
+        """Test Sales Order Detail API - GET /api/sales/orders/{id}"""
+        try:
+            # First, get list of sales orders to find an existing ID
+            async with self.session.get(f"{self.base_url}/api/sales/orders?limit=1") as response:
+                if response.status == 200:
+                    orders_list = await response.json()
+                    if isinstance(orders_list, list) and len(orders_list) > 0:
+                        order_id = orders_list[0]["id"]
+                        self.log_test("Sales Order Detail - Get Order ID", True, f"Found order ID: {order_id}")
+                    else:
+                        # Create a test order if none exist
+                        test_order = {
+                            "customer_name": "Test Customer for Detail API",
+                            "items": [
+                                {
+                                    "item_name": "Test Item",
+                                    "quantity": 2,
+                                    "rate": 50.0
+                                }
+                            ],
+                            "tax_rate": 18,
+                            "discount_amount": 10
+                        }
+                        
+                        async with self.session.post(f"{self.base_url}/api/sales/orders", json=test_order) as create_response:
+                            if create_response.status == 200:
+                                create_result = await create_response.json()
+                                order_id = create_result["order"]["id"]
+                                self.log_test("Sales Order Detail - Create Test Order", True, f"Created test order: {order_id}")
+                            else:
+                                self.log_test("Sales Order Detail - Create Test Order", False, f"HTTP {create_response.status}")
+                                return False
+                else:
+                    self.log_test("Sales Order Detail - Get Order List", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test GET /api/sales/orders/{id} - Get single sales order by ID
+            async with self.session.get(f"{self.base_url}/api/sales/orders/{order_id}") as response:
+                if response.status == 200:
+                    order_detail = await response.json()
+                    
+                    # Verify required fields for sales order detail
+                    required_fields = ["id", "order_number", "customer_name", "total_amount", "status", "items"]
+                    missing_fields = [field for field in required_fields if field not in order_detail]
+                    
+                    if not missing_fields:
+                        # Verify items array structure
+                        items = order_detail.get("items", [])
+                        if isinstance(items, list):
+                            # Check if items have proper structure
+                            items_valid = True
+                            if len(items) > 0:
+                                item = items[0]
+                                item_fields = ["item_name", "quantity", "rate", "amount"]
+                                if not all(field in item for field in item_fields):
+                                    items_valid = False
+                            
+                            if items_valid:
+                                # Verify totals calculation
+                                has_totals = all(field in order_detail for field in ["subtotal", "tax_amount", "discount_amount"])
+                                
+                                self.log_test("Sales Order Detail - Get Order by ID", True, 
+                                            f"Retrieved complete order details. Items: {len(items)}, Total: ₹{order_detail['total_amount']}, Has totals: {has_totals}", 
+                                            {
+                                                "id": order_detail["id"],
+                                                "order_number": order_detail["order_number"],
+                                                "customer_name": order_detail["customer_name"],
+                                                "total_amount": order_detail["total_amount"],
+                                                "items_count": len(items),
+                                                "has_customer_details": "customer_id" in order_detail,
+                                                "has_totals_breakdown": has_totals
+                                            })
+                            else:
+                                self.log_test("Sales Order Detail - Get Order by ID", False, "Items array has invalid structure", order_detail)
+                                return False
+                        else:
+                            self.log_test("Sales Order Detail - Get Order by ID", False, "Items field is not an array", order_detail)
+                            return False
+                    else:
+                        self.log_test("Sales Order Detail - Get Order by ID", False, f"Missing required fields: {missing_fields}", order_detail)
+                        return False
+                else:
+                    self.log_test("Sales Order Detail - Get Order by ID", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with invalid order ID
+            async with self.session.get(f"{self.base_url}/api/sales/orders/invalid-id-123") as response:
+                if response.status == 404:
+                    self.log_test("Sales Order Detail - Invalid ID", True, "Properly returns 404 for invalid order ID")
+                else:
+                    self.log_test("Sales Order Detail - Invalid ID", False, f"Expected 404, got {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Order Detail API", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_basic_api_health_checks(self):
+        """Test basic API health checks as requested"""
+        try:
+            # Test GET /api/ - Confirm API is running
+            async with self.session.get(f"{self.base_url}/api/") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "message" in data and "GiLi API" in data["message"]:
+                        self.log_test("Basic Health Check - API Root", True, f"API is running: {data['message']}", data)
+                    else:
+                        self.log_test("Basic Health Check - API Root", False, f"Unexpected response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Basic Health Check - API Root", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test GET /api/search/suggestions?query=test - Verify search API for Global Search functionality
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=test") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        self.log_test("Basic Health Check - Search Suggestions", True, f"Search API working, returned {len(data['suggestions'])} suggestions", data)
+                    else:
+                        self.log_test("Basic Health Check - Search Suggestions", False, "Invalid search response structure", data)
+                        return False
+                else:
+                    self.log_test("Basic Health Check - Search Suggestions", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Basic API Health Checks", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Sales Orders Stats Filters"""
         print("🚀 Starting GiLi Backend API Testing Suite - SALES ORDERS STATS FILTERS TEST")
