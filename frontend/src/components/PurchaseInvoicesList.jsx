@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, FileText, TrendingUp } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
@@ -12,21 +12,37 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   const [sortDir, setSortDir] = useState('desc');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [showStats, setShowStats] = useState(false);
 
+  // Debounce search for smoother typing (500ms)
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 400); return ()=>clearTimeout(t); }, [searchInput]);
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 500); return ()=>clearTimeout(t); }, [searchInput]);
 
   const { data: invData, loading, error, refetch } = useApi(() =>
     fetch(`${api.getBaseUrl()}/api/purchase/invoices?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
       .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
   , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
 
+  // Filter-aware stats (only when visible)
+  const { data: stats } = useApi(() => {
+    if (!showStats) return Promise.resolve({});
+    const qs = new URLSearchParams({
+      status: filterStatus !== 'all' ? filterStatus : '',
+      search: debouncedSearch || '',
+      from_date: fromDate || '',
+      to_date: toDate || ''
+    });
+    return fetch(`${api.getBaseUrl()}/api/purchase/invoices/stats/overview?${qs.toString()}`)
+      .then(res => res.ok ? res.json() : {})
+      .catch(()=> ({}));
+  }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
+
   const invoices = Array.isArray(invData) ? invData : (invData?.items || []);
   const totalCount = Array.isArray(invData) ? (invData[0]?._meta?.total_count || invoices.length) : (invData?.total_count || invoices.length);
 
   const filtered = React.useMemo(()=> {
     const term = (debouncedSearch || '').toLowerCase();
-    return invoices.filter(inv => {
+    return (invoices || []).filter(inv => {
       const matchesSearch = term === '' || `${inv.invoice_number||''}`.toLowerCase().includes(term) || `${inv.supplier_name||''}`.toLowerCase().includes(term);
       const d = inv.invoice_date || inv.created_at;
       const dStr = d ? (new Date(d)).toISOString().slice(0,10) : '';
@@ -48,11 +64,28 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <div className="flex items-center mb-4">
+      <div className="mb-4">
+        <div className="flex items-center mb-2">
           <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"><ChevronLeft size={20} /></button>
           <h1 className="text-3xl font-bold text-gray-800">Purchase Invoices</h1>
         </div>
+
+        {/* Stats Toggle */}
+        <div className="mb-3 flex justify-end">
+          <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
+            <span>{showStats ? 'Hide insights' : 'Show insights'}</span>
+          </button>
+        </div>
+
+        {showStats && stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Invoices</p><p className="text-2xl font-bold text-gray-900">{stats.total_invoices || 0}</p></div><FileText className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Amount</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Submitted</p><p className="text-2xl font-bold text-blue-600">{stats.submitted || 0}</p></div><Calendar className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Paid</p><p className="text-2xl font-bold text-green-600">{stats.paid || 0}</p></div><DollarSign className="h-8 w-8 text-green-600" /></div></div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
@@ -71,13 +104,13 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <button onClick={()=>{ setSearchInput(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('invoice_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
             <div className="hidden lg:flex items-center space-x-2 mr-2">
               <label className="text-sm text-gray-600">From</label>
               <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
               <label className="text-sm text-gray-600">To</label>
               <input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
             </div>
-            <button onClick={()=>{ setSearchInput(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('invoice_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
             <select value={pageSize} onChange={(e)=>setPageSize(parseInt(e.target.value))} className="px-3 py-2 border rounded">
               <option value="10">10</option>
               <option value="20">20</option>
@@ -93,7 +126,7 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
           <p className="text-red-600">Error loading purchase invoices</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm border"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><DollarSign className="text-gray-400" size={32}/></div><h3 className="text-xl font-semibold text-gray-800 mb-2">No Purchase Invoices Found</h3><p className="text-gray-600 mb-6">{searchInput || filterStatus !== 'all' ? 'No purchase invoices match your search.' : 'Create your first purchase invoice.'}</p><button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto"><Plus size={20} /><span>Create Purchase Invoice</span></button></div>
+        <div className="bg-white rounded-xl p-12 text-center shadow-sm border"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><DollarSign className="text-gray-400" size={32}/></div><h3 className="text-xl font-semibold text-gray-800 mb-2">No Purchase Invoices Found</h3><p className="text-gray-600 mb-6">{(searchInput || '').length > 0 || filterStatus !== 'all' ? 'No purchase invoices match your search.' : 'Create your first purchase invoice.'}</p><button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto"><Plus size={20} /><span>Create Purchase Invoice</span></button></div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="bg-gray-50 px-6 py-4 border-b">

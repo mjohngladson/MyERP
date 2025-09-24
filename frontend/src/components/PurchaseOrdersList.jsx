@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, Send, X, Info, RefreshCcw } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, Send, X, Info, RefreshCcw, FileText, TrendingUp } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
@@ -22,15 +22,30 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
   const [sortDir, setSortDir] = useState('desc');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [showStats, setShowStats] = useState(false);
 
-  // Debounce search input for smoother typing
+  // Debounce search input for smoother typing (500ms)
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 350); return ()=>clearTimeout(t); }, [searchInput]);
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 500); return ()=>clearTimeout(t); }, [searchInput]);
 
   const { data: ordersData, loading, error, refetch } = useApi(() =>
     fetch(`${api.getBaseUrl()}/api/purchase/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
       .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
   , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
+
+  // Filter-aware stats (only when visible)
+  const { data: stats } = useApi(() => {
+    if (!showStats) return Promise.resolve({});
+    const qs = new URLSearchParams({
+      status: filterStatus !== 'all' ? filterStatus : '',
+      search: debouncedSearch || '',
+      from_date: fromDate || '',
+      to_date: toDate || ''
+    });
+    return fetch(`${api.getBaseUrl()}/api/purchase/orders/stats/overview?${qs.toString()}`)
+      .then(res => res.ok ? res.json() : {})
+      .catch(()=> ({}));
+  }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
   const totalCount = Array.isArray(ordersData) ? (ordersData[0]?._meta?.total_count || orders.length) : (ordersData?.total_count || orders.length);
@@ -93,11 +108,28 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <div className="flex items-center mb-4">
+      <div className="mb-4">
+        <div className="flex items-center mb-2">
           <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"><ChevronLeft size={20} /></button>
           <h1 className="text-3xl font-bold text-gray-800">Purchase Orders</h1>
         </div>
+
+        {/* Stats Toggle */}
+        <div className="mb-3 flex justify-end">
+          <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
+            <span>{showStats ? 'Hide insights' : 'Show insights'}</span>
+          </button>
+        </div>
+
+        {showStats && stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Orders</p><p className="text-2xl font-bold text-gray-900">{stats.total_orders || 0}</p></div><FileText className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Amount</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Submitted</p><p className="text-2xl font-bold text-blue-600">{stats.submitted || 0}</p></div><Calendar className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Fulfilled</p><p className="text-2xl font-bold text-green-600">{stats.fulfilled || 0}</p></div><DollarSign className="h-8 w-8 text-green-600" /></div></div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
@@ -147,20 +179,20 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
               <div className="col-span-3">
                 <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('order_number'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Order Number</span>
-                  <span className={`text-xs ${sortBy==='order_number'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
+                  <span className={`text-xs ${sortBy==='order_number'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'? '\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-3">Supplier</div>
               <div className="col-span-2">
                 <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('total_amount'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Amount</span>
-                  <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
+                  <span className={`text-xs ${sortBy==='total_amount'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'? '\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-2">
                 <button className="flex items-center space-x-1" onClick={()=>{ setSortBy('order_date'); setSortDir(sortDir==='asc'?'desc':'asc'); }}>
                   <span>Date</span>
-                  <span className={`text-xs ${sortBy==='order_date'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'?'\u25B2':'\u25BC'}</span>
+                  <span className={`text-xs ${sortBy==='order_date'?'text-blue-600':'text-gray-400'}`}>{sortDir==='asc'? '\u25B2':'\u25BC'}</span>
                 </button>
               </div>
               <div className="col-span-1">Status</div>

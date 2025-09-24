@@ -38,10 +38,9 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   
-  // Fetch sales invoices with pagination and filters
-  // Debounced search for smooth typing
+  // Debounced search for smooth typing (500ms)
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 500); return ()=>clearTimeout(t); }, [searchTerm]);
 
   const { data: invoicesData, loading, error, refetch } = useApi(() => 
     fetch(`${api.getBaseUrl()}/api/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
@@ -53,12 +52,19 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       })
   , [currentPage, pageSize, filterStatus, debouncedSearch, sortBy, sortDir, fromDate, toDate]);
 
-  // Fetch invoice statistics
-  const { data: stats } = useApi(() => 
-    fetch(`${api.getBaseUrl()}/api/invoices/stats/overview`)
+  // Filter-aware stats, fetched only when showStats is true
+  const { data: stats } = useApi(() => {
+    if (!showStats) return Promise.resolve({});
+    const qs = new URLSearchParams({
+      status: filterStatus !== 'all' ? filterStatus : '',
+      search: debouncedSearch || '',
+      from_date: fromDate || '',
+      to_date: toDate || ''
+    });
+    return fetch(`${api.getBaseUrl()}/api/invoices/stats/overview?${qs.toString()}`)
       .then(res => res.ok ? res.json() : {})
-      .catch(() => ({}))
-  );
+      .catch(() => ({}));
+  }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const invoicesList = Array.isArray(invoicesData) ? invoicesData : (invoicesData?.items || invoicesData?.data || []);
   const totalCount = (Array.isArray(invoicesData) ? (invoicesData[0]?._meta?.total_count || invoicesData?.total_count) : (invoicesData?.total_count || invoicesData?.meta?.total_count)) || (invoicesList?.length || 0);
@@ -66,9 +72,10 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
 
   const filteredInvoices = invoicesList.filter(invoice => {
     if (!invoice) return false;
-    const matchesSearch = searchTerm === '' || 
-      (invoice.invoice_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const term = (debouncedSearch || '').toLowerCase();
+    const matchesSearch = term === '' || 
+      (invoice.invoice_number || '').toLowerCase().includes(term) ||
+      (invoice.customer_name || '').toLowerCase().includes(term);
     const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -153,7 +160,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-4">
           <button onClick={onBack} className="p-2 text-gray-600 hover:text-gray-900"><ChevronLeft className="h-5 w-5" /></button>
           <h1 className="text-2xl font-semibold text-gray-900">Sales Invoices</h1>
@@ -166,6 +173,7 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
           </button>
         </div>
       </div>
+
       {/* Stats Toggle */}
       <div className="mb-3 flex justify-end">
         <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
@@ -173,13 +181,12 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
         </button>
       </div>
 
-
       {/* Stats Cards */}
       {showStats && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Invoices</p><p className="text-2xl font-bold text-gray-900">{stats.total_invoices || 0}</p></div><FileText className="h-8 w-8 text-blue-600" /></div></div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Revenue</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Pending</p><p className="text-2xl font-bold text-orange-600">{stats.submitted_count || 0}</p></div><Calendar className="h-8 w-8 text-orange-600" /></div></div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Amount</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
+          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Submitted</p><p className="text-2xl font-bold text-blue-600">{stats.submitted_count || 0}</p></div><Calendar className="h-8 w-8 text-blue-600" /></div></div>
           <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Paid</p><p className="text-2xl font-bold text-green-600">{stats.paid_count || 0}</p></div><DollarSign className="h-8 w-8 text-green-600" /></div></div>
         </div>
       )}
@@ -310,8 +317,8 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                       <div className="flex items-center space-x-2">
                         <button onClick={() => onViewInvoice && onViewInvoice(invoice)} className="text-blue-600 hover:text-blue-900 p-1" title="View Invoice"><Eye className="h-4 w-4" /></button>
                         <button onClick={() => onEditInvoice && onEditInvoice(invoice)} className="text-green-600 hover:text-green-900 p-1" title="Edit Invoice"><Edit className="h-4 w-4" /></button>
-                        <button onClick={() => openSend(invoice)} className="text-purple-600 hover:text-purple-900 p-1" title="Send Invoice"><Send className="h-4 w-4" /></button>
-                        <button onClick={() => { if (confirm(`Delete invoice ${invoice.invoice_number}?`)) {/* todo */} }} className="text-red-600 hover:text-red-900 p-1" title="Delete Invoice"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => onEditInvoice && onEditInvoice(invoice)} className="text-purple-600 hover:text-purple-900 p-1" title="Send Invoice"><Send className="h-4 w-4" /></button>
+                        <button onClick={() => { if (confirm(`Delete invoice ${invoice.invoice_number}?`)) {/* TODO: hook delete */} }} className="text-red-600 hover:text-red-900 p-1" title="Delete Invoice"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
                   </tr>
