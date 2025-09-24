@@ -71,6 +71,12 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <div className="hidden lg:flex items-center space-x-2 mr-2">
+              <label className="text-sm text-gray-600">From</label>
+              <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+              <label className="text-sm text-gray-600">To</label>
+              <input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+            </div>
             <button onClick={()=>{ setSearchInput(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('invoice_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
             <select value={pageSize} onChange={(e)=>setPageSize(parseInt(e.target.value))} className="px-3 py-2 border rounded">
               <option value="10">10</option>
