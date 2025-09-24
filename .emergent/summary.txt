@@ -1,89 +1,60 @@
 <analysis>
-The trajectory details the evolution of the GiLi business management system, particularly focusing on the development and deployment challenges of its Point of Sale (PoS) module. Initially, the AI engineer built an MVP, then tackled complex Railway deployment issues for the main application. A significant portion of the work involved creating an offline-capable Electron-based PoS, integrating it with the main FastAPI backend, and ensuring various deployment options (desktop and web).
-
-The conversation then shifted to continuous bug fixing and feature enhancement for the PoS. Key challenges included:
-1.  **Deployment Confusion**: User attempting to deploy desktop Electron app to cloud Railway, leading to environment mismatch errors.
-2.  **Connectivity Issues**: Frontend failing due to reliance on local agent's backend URL, and later backend failing to connect to Railway MongoDB.
-3.  **Data Mismatch**: PoS transaction data not conforming to backend  model.
-4.  **Desktop PoS Stability**: Persistent UI not showing, backup failures, missing functions, and native dependency compilation issues.
-5.  **Data Loading**: Products/customers not appearing, and subsequent API URL configuration problems.
-6.  **Executable Build**: Difficulties creating a Windows executable due to build tool issues and antivirus false positives.
-7.  **Core Functionality**: Ensuring all buttons work, products/customers sync, sales data sync, and receipts are generated.
-
-The AI engineer systematically addressed these issues, often providing multiple solutions (e.g., web PoS as alternative to desktop). The approach involved deep debugging, code modifications, script creations, and clear communication of the problem and fix. The trajectory culminates in the implementation of a full-featured PoS with API integration, currency localization, and comprehensive sales/customer management, awaiting final testing.
+The AI engineer successfully built core ERP modules (Sales, Quotation, Purchase) from an MVP, and then focused on fixing critical bugs and expanding functionality. Initial tasks involved UI alignment, filter-aware statistics, and responsive search. Significant effort went into resolving frontend JSX errors, backend 502/500 errors, and ensuring data loading and API robustness through  retries. Key features developed include a collapsible sidebar with persistence, an accordion style, and comprehensive Create and Global Search features with quick actions and improved navigation. Later, a full Stock module was added, along with CRUD for Master Data (Items, Customers, Suppliers). All new features are driven by a new, consolidated General Settings system. The trajectory shows an iterative process of bug fixing, feature implementation, and extensive communication with the user for clarifications and verification, with a strong emphasis on robust API interaction and UI consistency. The persistent 502 errors, initially thought to be backend, were eventually correlated with ingress issues and frontend retry logic.
 </analysis>
 
 <product_requirements>
-The overarching product requirement was to transform an ERPNext MVP clone into a comprehensive business management system called GiLi. Initially, this involved creating a responsive UI with a dashboard, KPIs, and mock data, then evolving it into a full-stack application using React, FastAPI, and MongoDB. This full-stack system needed CRUD APIs for 34 sub-modules, secure authentication, form creation (Sales Order, Customer), global search, and advanced reporting.
-
-A critical phase introduced a comprehensive, offline-capable Point of Sale (PoS) system. This PoS, built with Electron for Windows desktop, required core functionalities, offline capabilities with local SQLite storage, hardware integration (printer, scanner, cash drawer), and robust data synchronization with the existing GiLi backend. It also needed public accessibility and varied deployment options for both desktop and web versions. Subsequent enhancements requested for the PoS included ensuring products and customers sync from the API, sales data syncs back to the API, currency displays in Indian Rupees, receipts are generated for transactions, and customers can be searched by mobile number.
+The GiLi project aims to be a comprehensive React/FastAPI/MongoDB ERPNext MVP clone, including an offline Electron PoS. Initial requirements covered CRUD APIs, authentication, global search, and advanced reporting. The project expanded to a full-fledged app for retail, starting with a complete Sales Invoice System (pre-Sales Orders, tax calculations). This grew to full CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, and Quotations, with advanced list features (sorting, filtering, debounced search) and manual status changes. Subsequently, Purchase Order and Purchase Invoice modules were implemented similarly, followed by filter-aware statistics for all modules, consistent UI alignment, and 500ms debounced search. Recent user-driven requirements include a collapsible/persistent sidebar, robust Create and Global Search functionality, a complete Stock module (Items, Warehouses, Stock Entries, Ledger, Reports, Batches/Serials), and full CRUD for Items, Customers, and Suppliers with rich, configurable fields based on ERP for retail standards, all managed via a consolidated General Settings system.
 </product_requirements>
 
 <key_technical_concepts>
 -   **Full-stack Architecture**: React (Frontend), FastAPI (Backend), MongoDB (Database).
--   **Desktop Application**: Electron, Node.js, SQLite (initially),  (alternative).
--   **Deployment**: Railway, Docker, npm/Yarn, Uvicorn, PM2, .
--   **Data Management**: Pydantic (data validation), Axios (API calls), IPC (Electron).
--   **UI/UX**: Tailwind CSS, Shadcn/ui, Lucide React icons.
--   **Authentication**: JWT.
--   **System Utilities**: ,  module,  module.
+-   **Deployment**: Railway, Docker, Supervisor, Kubernetes (Ingress).
+-   **Data Management**: Pydantic (UUIDs), Axios (frontend API client with retries/backoff),  (for UI state persistence).
+-   **UI/UX**: Tailwind CSS, Shadcn/ui.
+-   **Authentication**: JWT, React Context ().
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a monorepo structure with  as the root, containing  (FastAPI),  (React), and  (Electron).
 
-
-
-**Key Files and Changes:**
-
--   : Expanded to include  and modified to accept PoS transaction data mapping to the  model. Important for backend-PoS data flow.
--   : Modified to handle  from MongoDB during sales order retrieval, ensuring correct data deserialization.
--   : Updated to include default customer and company data for PoS transactions, crucial for initial setup.
--   : Defines the data models for the backend, especially  and related Pydantic models. Errors were fixed by ensuring PoS data matched this model.
--   : Enhanced with network status detection and improved error handling for API calls, providing graceful degradation when offline.
--   : Updated to integrate network status indicator and display more informative error messages.
--   : New React hook to monitor online/offline status, improving UI responsiveness to network changes.
--   : New React context for global network status, enabling consistent behavior across the frontend.
--   : Crucially updated to point  to the *actual Railway backend URL* (e.g., ), eliminating dependency on the local agent.
--   : Electron main process file. Heavily modified to fix UI not showing (added fallback window display), incorporate  function, and add missing IPC handlers for menu dialogs (, , etc.).
--   : Handles core PoS data synchronization. Updated to correctly interact with new backend endpoints and fix  call, and handle  endpoint.
--   : A newly created alternative sync manager for safe builds, using file-based storage instead of SQLite, and fixing constructor order issues.
--   , , , , , : These renderer-side JavaScript files for the PoS UI were extensively modified to handle product/customer display, cart operations, payment processing, data synchronization, and receipt generation. This included fixing IPC handler mismatches, adding missing  logic, and implementing API calls for products and sales.
--   : A new, self-contained HTML file embedding all JavaScript logic directly. Created to resolve persistent UI and button functionality issues by removing complex Electron context dependencies. It now also integrates API calls for products and sales.
--   : A simplified Electron main file that just loads , providing a robust fallback for the desktop PoS.
--   : Updated multiple times to include  for executable creation, adjust  entry point for different debug/simple/safe versions, move  to , and add .
--   : New environment file for the desktop PoS to manage  and .
--    & : Modified to use environment variables for backend URLs and include a  guide, making the web PoS robust for Railway deployment.
--   New  files for various build/run options (e.g., , , , ) were created in  to streamline testing and deployment workflows.
+-   : Defines Pydantic models.  and  were recently restored.
+-   : Updated to fetch real-time aggregated data for KPI cards.
+-   : **NEW**. Implements CRUD for Warehouses, Stock Entries, Ledger, and reports.
+-   : **NEW**. Handles global search suggestions/results with robust matching.
+-   : **NEW**. Provides CRUD endpoints for Customers, Suppliers, and Items.
+-   : **NEW**. Centralized API endpoint for all application settings;  now proxies to this.
+-   : Central routing, updated to include new components and sidebar state handling.
+-   : Heavily modified for collapse/expand, persistence (), accordion behavior, and icon updates.
+-   : **NEW**. Implements global search modal with debounced suggestions, quick actions, and navigation.
+-   : UI fixed for stretching (removed Due Date, adjusted ), converted to use centralized  client.
+-   : Updated to use centralized  client; stats fixed to honor filters.
+-   : **NEW**. Full CRUD UI for managing warehouses.
+-   : **NEW**. Form for stock entries with conditional fields based on .
+-   : **NEW**. Consolidated UI for stock valuation and reorder reports.
+-   , , : **NEW**. List views for master data. CRUD for Customers/Suppliers implemented; ItemsList CRUD is in progress.
+-   : **NEW**. Replaces . Unified settings page with tabs.
+-   : Centralized API calls using , refactored with global timeout, retries (exponential backoff), and module-specific methods.
 </code_architecture>
 
 <pending_tasks>
--   Implementing file management capabilities for the main GiLi application.
--   Further enhancing user experiences beyond existing features in the main GiLi application.
--   Adding additional features to the PoS system like loyalty programs or advanced reporting.
--   Building the Windows installer for the PoS system () to create a single  (though multiple attempts failed due to native dependency issues and antivirus flags,  and  are the current solutions).
--   Configuring specific hardware setups for the PoS (printer, scanner, cash drawer).
--   Importing product catalogs and setting up categories for the PoS (beyond basic API sync).
--   Training staff on the PoS operation procedures.
--   **Validation of newly implemented PoS features**: Sales data syncing to UI, customer syncing, receipt generation, and customer search by mobile number.
+-   Finish Items CRUD UI (list + create/edit/delete).
+-   Improve Sales Order View to show full details.
+-   Enable Sales Invoice view/edit with centralized API client.
+-   Wire up Reports navigation fully.
+-   Fix Global Search quick action for Stock Entry.
+-   Run automated UI tests to verify functionality post-current changes.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was focused on implementing and verifying core functionalities for the GiLi Point of Sale (PoS) system. The main issues were:
+Immediately prior to this summary, the AI engineer was focused on implementing detailed ERP retail-ready fields for Items, Customers, and Suppliers, with their visibility and defaults driven by a new, consolidated General Settings system.
 
-1.  **UI Not Showing / Buttons Not Working**: Despite previous attempts, the desktop PoS UI was failing to render or interact. The AI engineer diagnosed this as a deeper problem with JavaScript files not loading correctly or missing Electron context.
-    *   **Action**: Created a **completely self-contained PoS** (). This HTML file embeds all JavaScript directly (, , , , , ) to eliminate external file dependencies and complex IPC communication issues that were breaking the UI.
-    *   **Action**: Created a simplified Electron main process () to merely load this , aiming for a foolproof UI display. A new build script () was created to package this version.
-
-2.  **Product/Customer Data Not Syncing / Sales Data Not Showing**: The user explicitly requested that products and customers should sync from the API, sales data should sync back to the API, currency should be in Indian Rupees, receipts should be generated, and customers searchable by mobile number.
-    *   **Action**: Integrated full API connectivity into the . This version now fetches products from the Railway backend () and sends sales transactions back to the backend ().
-    *   **Action**: Implemented currency formatting for Indian Rupees (₹) and calculated 18% GST.
-    *   **Action**: Ensured offline capability with fallback mock products and auto-sync for pending transactions when online.
-    *   **Action**: Started implementing the user's latest requests: , , and  were added to the  embed, incorporating customer management (syncing, billing, mobile search) and receipt generation functionality. The AI engineer's last action in the trajectory was rebuilding this complete PoS system.
-
-The application is currently in a state where a fully featured desktop PoS (as a self-contained HTML/Electron app) has been built with API integration for products and sales, proper currency and tax, offline capabilities, and the latest additions of customer management, sales data display, and receipt generation. The next step would be to verify these newly added features.
+This involves:
+1.  **General Settings**: Backend () is fully implemented with defaults for tax, variants, UoMs, payment terms, and consolidated stock sub-settings. The frontend () provides a new consolidated UI with tabs (Tax, Items, Stock, Payments) replacing the standalone Stock Settings.
+2.  **Master Data CRUD**: Backend endpoints are set up for Customers, Suppliers, and Items. Frontend  and  with full CRUD are implemented.  is in place, and its CRUD UI is being finalized with conditional fields based on  (e.g., GST fields, item variants).
+3.  **Sales Module Enhancements**: The task is to fix  to load by ID and render full details, and to enable  view/edit flows from the list, utilizing the centralized API client.
+4.  **Reports and Search**: Ensuring the top-level Reports link correctly opens the consolidated Valuation/Reorder page, and fixing the Stock Entry quick action in Global Search to navigate to .
+5.  **Overall Stability**: Continued conversion of  calls to the centralized  client with retries and exponential backoff, and ensuring all new forms and UI elements respect the new General Settings for conditional field visibility.
 </current_work>
 
 <optional_next_step>
-Rebuild and test the  to confirm all newly implemented features (customer sync, receipts, sales data display, customer search) are working as expected.
+Run automated frontend UI tests to verify navigation, CRUD flows, settings-driven visibility, Sales Order/Invoice views, Reports link, and quick actions.
 </optional_next_step>
