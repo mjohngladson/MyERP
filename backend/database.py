@@ -33,6 +33,15 @@ purchase_invoices_collection = db.purchase_invoices
 transactions_collection = db.transactions
 notifications_collection = db.notifications
 
+# Stock module collections
+warehouses_collection = db.warehouses
+stock_entries_collection = db.stock_entries
+stock_ledger_collection = db.stock_ledger
+stock_layers_collection = db.stock_layers
+batches_collection = db.batches
+serials_collection = db.serials
+stock_settings_collection = db.stock_settings
+
 async def init_sample_data():
     """Initialize sample data for demonstration"""
     
@@ -70,30 +79,10 @@ async def force_init_sample_data():
             "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
             "company_id": company_id,
             "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "John Doe",
-            "email": "john.doe@company.com",
-            "password": "admin123",  # In production, this should be hashed
-            "role": "Sales Manager",
-            "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-            "company_id": company_id,
-            "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Jane Smith",
-            "email": "jane.smith@company.com",
-            "password": "admin123",  # In production, this should be hashed
-            "role": "Purchase Manager",
-            "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-            "company_id": company_id,
-            "created_at": datetime.utcnow()
         }
     ]
     await users_collection.insert_many(demo_users_data)
-    print("✅ Demo users created: admin@gili.com, john.doe@company.com, jane.smith@company.com")
+    print("✅ Demo users created: admin@gili.com")
     
     # Create sample user
     user_id = str(uuid.uuid4())
@@ -118,32 +107,6 @@ async def force_init_sample_data():
             "address": "Point of Sale",
             "loyalty_points": 0,
             "last_purchase": None,
-            "active": True,
-            "company_id": company_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "ABC Corp",
-            "email": "contact@abccorp.com",
-            "phone": "+1234567891",
-            "address": "456 Customer Ave, City, Country",
-            "loyalty_points": 150,
-            "last_purchase": datetime.utcnow() - timedelta(days=5),
-            "active": True,
-            "company_id": company_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "DEF Ltd",
-            "email": "info@defltd.com",
-            "phone": "+1234567892",
-            "address": "789 Client Road, City, Country",
-            "loyalty_points": 75,
-            "last_purchase": datetime.utcnow() - timedelta(days=15),
             "active": True,
             "company_id": company_id,
             "created_at": datetime.utcnow(),
@@ -176,38 +139,61 @@ async def force_init_sample_data():
             "barcode": "123456789001",
             "unit_price": 100.0,
             "stock_qty": 50,
-            "stock_quantity": 50,  # For PoS compatibility
-            "price": 100.0,  # For PoS compatibility
+            "stock_quantity": 50,
+            "price": 100.0,
             "category": "Electronics",
-            "image": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300",
-            "image_url": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300",
+            "reorder_level": 20,
+            "reorder_qty": 50,
             "active": True,
             "company_id": company_id,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Product B",
-            "description": "Premium product B",
-            "item_code": "PROD-B-001",
-            "barcode": "123456789002",
-            "unit_price": 200.0,
-            "stock_qty": 30,
-            "stock_quantity": 30,  # For PoS compatibility
-            "price": 200.0,  # For PoS compatibility
-            "category": "Home & Garden",
-            "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-            "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-            "active": True,
-            "company_id": company_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
     ]
     await items_collection.insert_many(items_data)
-    
-    # Create sample transactions
+
+    # Warehouses (sample)
+    wh_main = {
+        "id": "MAIN-WH",
+        "name": "Main Warehouse",
+        "is_active": True,
+        "created_at": datetime.utcnow()
+    }
+    await warehouses_collection.insert_one(wh_main)
+
+    # Stock settings default
+    await stock_settings_collection.insert_one({
+        "id": "stock_settings_default",
+        "valuation_method": "FIFO",
+        "allow_negative_stock": False,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+
+    # Seed initial layers for Product A in Main Warehouse (50 qty @ 100)
+    await stock_layers_collection.insert_one({
+        "id": str(uuid.uuid4()),
+        "item_id": items_data[0]["id"],
+        "warehouse_id": wh_main["id"],
+        "qty_remaining": 50.0,
+        "rate": 100.0,
+        "created_at": datetime.utcnow()
+    })
+
+    # Corresponding ledger
+    await stock_ledger_collection.insert_one({
+        "item_id": items_data[0]["id"],
+        "warehouse_id": wh_main["id"],
+        "qty": 50.0,
+        "rate": 100.0,
+        "value": 5000.0,
+        "voucher_type": "Opening",
+        "voucher_id": "OPENING",
+        "timestamp": datetime.utcnow(),
+        "direction": "+"
+    })
+
+    # Transactions (sample)
     base_date = datetime.utcnow()
     transactions_data = [
         {
@@ -215,41 +201,17 @@ async def force_init_sample_data():
             "type": "sales_invoice",
             "reference_number": "SINV-2024-00001",
             "party_id": customers_data[0]["id"],
-            "party_name": "ABC Corp",
+            "party_name": customers_data[0]["name"],
             "amount": 25000.0,
             "date": base_date - timedelta(days=1),
-            "status": "completed",
-            "company_id": company_id,
-            "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "type": "purchase_order",
-            "reference_number": "PO-2024-00001",
-            "party_id": suppliers_data[0]["id"],
-            "party_name": "XYZ Suppliers",
-            "amount": 15000.0,
-            "date": base_date - timedelta(days=2),
-            "status": "completed",
-            "company_id": company_id,
-            "created_at": datetime.utcnow()
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "type": "payment_entry",
-            "reference_number": "PAY-2024-00001",
-            "party_id": customers_data[1]["id"],
-            "party_name": "DEF Ltd",
-            "amount": 10000.0,
-            "date": base_date - timedelta(days=3),
             "status": "completed",
             "company_id": company_id,
             "created_at": datetime.utcnow()
         }
     ]
     await transactions_collection.insert_many(transactions_data)
-    
-    # Create sample notifications
+
+    # Notifications (sample)
     notifications_data = [
         {
             "id": str(uuid.uuid4()),
@@ -259,33 +221,6 @@ async def force_init_sample_data():
             "user_id": user_id,
             "is_read": False,
             "created_at": base_date - timedelta(hours=2)
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Payment overdue - Invoice SINV-2024-00001",
-            "message": "Payment for invoice SINV-2024-00001 is overdue",
-            "type": "warning",
-            "user_id": user_id,
-            "is_read": False,
-            "created_at": base_date - timedelta(hours=4)
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Stock level low for Item PROD-A-001",
-            "message": "Product A stock is running low",
-            "type": "error",
-            "user_id": user_id,
-            "is_read": False,
-            "created_at": base_date - timedelta(hours=6)
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "title": "Monthly report generated successfully",
-            "message": "Your monthly sales report is ready",
-            "type": "info",
-            "user_id": user_id,
-            "is_read": False,
-            "created_at": base_date - timedelta(days=1)
         }
     ]
     await notifications_collection.insert_many(notifications_data)

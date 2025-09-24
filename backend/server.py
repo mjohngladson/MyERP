@@ -14,6 +14,7 @@ from datetime import datetime
 from routers import dashboard, auth, sales, search, reporting, invoices, quotations, purchase
 from routers.purchase_invoices import router as purchase_invoices_router
 from routers.pos_integration import get_pos_router
+from routers.stock import router as stock_router
 from database import init_sample_data
 
 ROOT_DIR = Path(__file__).parent
@@ -65,33 +66,13 @@ async def create_demo_users():
                 "company_id": "default_company",
                 "created_at": datetime.utcnow()
             },
-            {
-                "id": str(uuid.uuid4()),
-                "name": "John Doe",
-                "email": "john.doe@company.com",
-                "password": "admin123", 
-                "role": "Sales Manager",
-                "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-                "company_id": "default_company",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "name": "Jane Smith",
-                "email": "jane.smith@company.com",
-                "password": "admin123",
-                "role": "Purchase Manager", 
-                "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-                "company_id": "default_company",
-                "created_at": datetime.utcnow()
-            }
         ]
         
         # Insert users
         result = await users_collection.insert_many(demo_users)
         return {
             "message": f"Created {len(result.inserted_ids)} demo users",
-            "users": ["admin@gili.com", "john.doe@company.com", "jane.smith@company.com"],
+            "users": ["admin@gili.com"],
             "password": "admin123"
         }
         
@@ -103,12 +84,12 @@ async def create_demo_users():
 async def root():
     return {"message": "GiLi API is running"}
 
-@api_router.post("/status", response_model=StatusCheck)
+@api_router.post("/status", response_model=List[StatusCheck])
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.dict()
     status_obj = StatusCheck(**status_dict)
     _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
+    return [status_obj]
 
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
@@ -126,6 +107,7 @@ app.include_router(invoices.router)
 app.include_router(quotations.router)
 app.include_router(purchase.router)
 app.include_router(purchase_invoices_router)
+app.include_router(stock_router)
 app.include_router(get_pos_router())
 
 app.add_middleware(
