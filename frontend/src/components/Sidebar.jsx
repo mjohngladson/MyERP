@@ -62,6 +62,8 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
 
   // Accordion behavior: open one, close others
   const toggleModule = (moduleId) => {
+    // If sidebar is collapsed, expand it first for interaction
+    if (collapsed) setCollapsed(false);
     setExpandedModules(prev => {
       const willExpand = !prev[moduleId];
       const next = willExpand ? { [moduleId]: true } : {};
