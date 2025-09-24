@@ -12,6 +12,7 @@ from datetime import datetime
 
 # Import routers
 from routers import dashboard, auth, sales, search, reporting, invoices, quotations, purchase
+from routers.purchase_invoices import router as purchase_invoices_router
 from routers.pos_integration import get_pos_router
 from database import init_sample_data
 
@@ -98,17 +99,6 @@ async def create_demo_users():
         from fastapi import HTTPException
         raise HTTPException(status_code=500, detail=f"Error creating demo users: {str(e)}")
 
-@api_router.get("/init-demo-data")
-async def init_demo_data_endpoint():
-    """Force initialize demo data"""
-    try:
-        from database import force_init_sample_data
-        await force_init_sample_data()
-        return {"message": "Demo data initialized successfully"}
-    except Exception as e:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=500, detail=f"Error initializing demo data: {str(e)}")
-
 @api_router.get("/")
 async def root():
     return {"message": "GiLi API is running"}
@@ -135,6 +125,7 @@ app.include_router(reporting.router)
 app.include_router(invoices.router)
 app.include_router(quotations.router)
 app.include_router(purchase.router)
+app.include_router(purchase_invoices_router)
 app.include_router(get_pos_router())
 
 app.add_middleware(

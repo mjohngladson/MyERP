@@ -14,6 +14,9 @@ import QuotationView from './components/QuotationView';
 import PurchaseOrdersList from './components/PurchaseOrdersList';
 import PurchaseOrderForm from './components/PurchaseOrderForm';
 import PurchaseOrderView from './components/PurchaseOrderView';
+import PurchaseInvoicesList from './components/PurchaseInvoicesList';
+import PurchaseInvoiceForm from './components/PurchaseInvoiceForm';
+import PurchaseInvoiceView from './components/PurchaseInvoiceView';
 import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
@@ -31,6 +34,8 @@ function AppContent() {
     quotationEdit: null,
     purchaseOrderView: null,
     purchaseOrderEdit: null,
+    purchaseInvoiceView: null,
+    purchaseInvoiceEdit: null,
   });
 
   const renderContent = () => {
@@ -91,6 +96,21 @@ function AppContent() {
       case 'purchase-order-view':
         return <PurchaseOrderView orderId={pageState.purchaseOrderView?.id} initialOrder={pageState.purchaseOrderView} onBack={() => setActiveModule('purchase-order-list')} />;
 
+      // Purchase Invoices
+      case 'purchase-invoice-list':
+        return (
+          <PurchaseInvoicesList
+            onBack={() => setActiveModule('dashboard')}
+            onViewInvoice={(inv) => { setPageState(ps => ({...ps, purchaseInvoiceView: inv})); setActiveModule('purchase-invoice-view'); }}
+            onEditInvoice={(inv) => { setPageState(ps => ({...ps, purchaseInvoiceEdit: inv})); setActiveModule('purchase-invoice-form'); }}
+            onCreateInvoice={() => { setPageState(ps => ({...ps, purchaseInvoiceEdit: null})); setActiveModule('purchase-invoice-form'); }}
+          />
+        );
+      case 'purchase-invoice-form':
+        return <PurchaseInvoiceForm invoiceId={pageState.purchaseInvoiceEdit?.id} onBack={() => setActiveModule('purchase-invoice-list')} onSave={() => setActiveModule('purchase-invoice-list')} />;
+      case 'purchase-invoice-view':
+        return <PurchaseInvoiceView invoiceId={pageState.purchaseInvoiceView?.id} initialInvoice={pageState.purchaseInvoiceView} onBack={() => setActiveModule('purchase-invoice-list')} />;
+
       case 'profile':
         return <ProfilePage />;
       case 'settings':
@@ -102,7 +122,6 @@ function AppContent() {
   };
 
   const handleSubItemClick = (moduleId, subItem) => {
-    // Normalize to id-based mapping (moduleId comes as 'sales', 'buying', etc.)
     const id = (moduleId || '').toString().toLowerCase();
     const mapById = {
       sales: {
@@ -112,6 +131,7 @@ function AppContent() {
       },
       buying: {
         'Purchase Order': 'purchase-order-list',
+        'Purchase Invoice': 'purchase-invoice-list',
       }
     };
     const key = mapById[id]?.[subItem];
@@ -147,12 +167,12 @@ function AppContent() {
           onProfileClick={() => setActiveModule('profile')} 
           onSettingsClick={() => setActiveModule('settings')} 
           onNavigate={(path) => {
-            // Map a few common paths if GlobalSearch is used
             const routes = {
               '/sales/orders': 'sales-order-list',
               '/sales/quotations': 'quotation-list',
               '/sales/invoices': 'sales-invoice-list',
               '/buying/purchase-orders': 'purchase-order-list',
+              '/buying/purchase-invoices': 'purchase-invoice-list',
             };
             const key = routes[path];
             if (key) setActiveModule(key);
