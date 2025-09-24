@@ -27,6 +27,8 @@ async def get_settings() -> Dict[str, Any]:
             "id": "stock_settings_default",
             "valuation_method": "FIFO",
             "allow_negative_stock": False,
+            "enable_batches": True,
+            "enable_serials": True,
             "created_at": now_utc(),
             "updated_at": now_utc(),
         }
