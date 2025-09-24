@@ -30,6 +30,7 @@ const iconComponents = {
 const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubItemClick }) => {
   const [expandedModules, setExpandedModules] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [collapsed, setCollapsed] = useState(false);
 
   const toggleModule = (moduleId) => {
     setExpandedModules(prev => ({
