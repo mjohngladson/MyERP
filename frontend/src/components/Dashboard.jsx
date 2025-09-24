@@ -179,7 +179,7 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
               </div>
             </button>
 
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('gili:navigate',{detail:'/sales/invoices'}))} className="text-left bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow w-full">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-600">Outstanding Amount</h3>
                 <div className="p-2 rounded-lg bg-green-100">
@@ -197,7 +197,7 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
 
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
