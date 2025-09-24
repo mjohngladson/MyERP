@@ -126,6 +126,16 @@ function AppContent() {
         return <ItemsList onBack={() => setActiveModule('dashboard')} />;
       case 'customers-list':
         return <CustomersList onBack={() => setActiveModule('dashboard')} />;
+      case 'warehouses':
+        return <Warehouses onBack={() => setActiveModule('dashboard')} />;
+      case 'stock-entry':
+        return <StockEntryForm onBack={() => setActiveModule('dashboard')} />;
+      case 'stock-ledger':
+        return <StockLedger onBack={() => setActiveModule('dashboard')} />;
+      case 'reports':
+        return <StockReports onBack={() => setActiveModule('dashboard')} />;
+      case 'stock-settings':
+        return <StockSettings onBack={() => setActiveModule('dashboard')} />;
 
       default:
         return <Dashboard />;
