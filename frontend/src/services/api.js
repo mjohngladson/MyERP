@@ -182,6 +182,33 @@ export const api = {
     products: (search = '', limit = 50) => makeRequest(() => apiClient.get('/pos/products', { params: { search, limit } })),
   },
 
+  // Master Data - Items
+  items: {
+    list: (search = '', limit = 100) => makeRequest(() => apiClient.get('/stock/items', { params: { search, limit } })),
+    create: (itemData) => makeRequest(() => apiClient.post('/stock/items', itemData)),
+    get: (itemId) => makeRequest(() => apiClient.get(`/stock/items/${itemId}`)),
+    update: (itemId, itemData) => makeRequest(() => apiClient.put(`/stock/items/${itemId}`, itemData)),
+    delete: (itemId) => makeRequest(() => apiClient.delete(`/stock/items/${itemId}`)),
+  },
+
+  // Master Data - General
+  master: {
+    customers: {
+      list: (search = '', limit = 100) => makeRequest(() => apiClient.get('/master/customers', { params: { search, limit } })),
+      create: (data) => makeRequest(() => apiClient.post('/master/customers', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/master/customers/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/master/customers/${id}`, data)),
+      delete: (id) => makeRequest(() => apiClient.delete(`/master/customers/${id}`)),
+    },
+    suppliers: {
+      list: (search = '', limit = 100) => makeRequest(() => apiClient.get('/master/suppliers', { params: { search, limit } })),
+      create: (data) => makeRequest(() => apiClient.post('/master/suppliers', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/master/suppliers/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/master/suppliers/${id}`, data)),
+      delete: (id) => makeRequest(() => apiClient.delete(`/master/suppliers/${id}`)),
+    },
+  },
+
   // Generic API call helper
   get: (endpoint, config = {}) => makeRequest(() => apiClient.get(endpoint, config)),
   post: (endpoint, data, config = {}) => makeRequest(() => apiClient.post(endpoint, data, config)),
