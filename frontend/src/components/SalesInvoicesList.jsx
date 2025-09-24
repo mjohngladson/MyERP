@@ -166,6 +166,13 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
           </button>
         </div>
       </div>
+      {/* Stats Toggle */}
+      <div className="mb-3 flex justify-end">
+        <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
+          <span>{showStats ? 'Hide insights' : 'Show insights'}</span>
+        </button>
+      </div>
+
 
       {/* Stats Cards */}
       {showStats && stats && (
