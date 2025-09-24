@@ -40,9 +40,12 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
       from_date: fromDate || '',
       to_date: toDate || ''
     });
-    return fetch(`${api.getBaseUrl()}/api/purchase/invoices/stats/overview?${qs.toString()}`)
-      .then(res => res.ok ? res.json() : {})
-      .catch(()=> ({}));
+    return api.get('/purchase/invoices/stats/overview', { params: {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data).catch(()=> ({}));
   }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const invoices = Array.isArray(invData) ? invData : (invData?.items || []);
