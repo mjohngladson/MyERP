@@ -181,6 +181,8 @@ function AppContent() {
               '/sales/invoices': 'sales-invoice-list',
               '/buying/purchase-orders': 'purchase-order-list',
               '/buying/purchase-invoices': 'purchase-invoice-list',
+              '/stock/items': 'items-list',
+              '/sales/customers': 'customers-list',
             };
             const key = routes[path];
             if (key) {
@@ -188,6 +190,17 @@ function AppContent() {
             }
           }}
         />
+        { /* Listen to dashboard KPI navigation events */ }
+        <DashboardNavigationBridge onNavigate={(path)=>{
+          const routes = {
+            '/sales/orders': 'sales-order-list',
+            '/sales/invoices': 'sales-invoice-list',
+            '/buying/purchase-orders': 'purchase-order-list',
+            '/stock/items': 'items-list'
+          };
+          const key = routes[path];
+          if (key) setActiveModule(key);
+        }} />
         <main className="flex-1">
           {renderContent()}
         </main>
