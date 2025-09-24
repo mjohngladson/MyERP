@@ -32,10 +32,12 @@ const StockReports = ({ onBack, embed = false }) => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex items-center mb-6">
-        <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft size={20}/></button>
-        <h1 className="text-3xl font-bold text-gray-800">Stock Reports</h1>
-      </div>
+      {!embed && (
+        <div className="flex items-center mb-6">
+          <button onClick={onBack} className="mr-4 p-2 hover:bg-gray-100 rounded-lg"><ChevronLeft size={20}/></button>
+          <h1 className="text-3xl font-bold text-gray-800">Reports</h1>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl p-4 shadow-sm border mb-4">
         <div className="flex space-x-2">
