@@ -209,6 +209,19 @@ function AppContent() {
   );
 }
 
+function DashboardNavigationBridge({ onNavigate }) {
+  React.useEffect(() => {
+    const handler = (e) => {
+      const path = e && e.detail;
+      if (path && onNavigate) onNavigate(path);
+    };
+    window.addEventListener('gili:navigate', handler);
+    return () => window.removeEventListener('gili:navigate', handler);
+  }, [onNavigate]);
+  return null;
+}
+
+
 function App() {
   return (
     <AuthProvider>
