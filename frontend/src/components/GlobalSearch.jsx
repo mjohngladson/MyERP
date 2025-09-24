@@ -81,10 +81,8 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     try {
       setLoading(true);
       const response = await api.search.global(searchQuery);
-      const apiResults = (response?.data?.results || response?.data || response || []) as any;
-      
-      // Normalize results that may return as array directly
-      const arr = Array.isArray(apiResults) ? apiResults : (Array.isArray(apiResults.results) ? apiResults.results : []);
+      const apiResults = (response && response.data && (response.data.results || response.data)) || [];
+      const arr = Array.isArray(apiResults) ? apiResults : [];
 
       const transformedResults = arr.map(result => ({
         id: result.id || result._id || result.url || result.title,
