@@ -224,11 +224,18 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
             </div>
           </div>
           
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-xs text-gray-500 text-center">
-              GiLi v1.0
-            </div>
+          {/* Footer with Settings at bottom */}
+          <div className="mt-auto p-4 border-t border-gray-200">
+            <button
+              onClick={() => setActiveModule('stock-settings')}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 ${activeModule === 'stock-settings' ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+            >
+              <div className="p-2 rounded-md" style={{ backgroundColor: `#64748b25`, color: '#334155' }}>
+                <Cog size={20} />
+              </div>
+              <span className={`font-medium text-gray-700 transition-opacity ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'}`}>Settings</span>
+            </button>
+            <div className="text-xs text-gray-500 text-center mt-2">GiLi v1.0</div>
           </div>
         </div>
       </div>
