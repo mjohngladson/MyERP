@@ -7,7 +7,11 @@ import {
   User,
   ChevronDown,
   Search,
-  Plus
+  Plus,
+  FileText,
+  Receipt,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import GlobalSearch from './GlobalSearch';
