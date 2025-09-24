@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   ShoppingCart, 
@@ -10,6 +10,7 @@ import {
   UserCheck,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Search,
   Menu
 } from 'lucide-react';
