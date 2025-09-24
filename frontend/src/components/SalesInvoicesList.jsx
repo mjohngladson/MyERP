@@ -42,15 +42,18 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   const [debouncedSearch, setDebouncedSearch] = useState('');
   React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 500); return ()=>clearTimeout(t); }, [searchTerm]);
 
-  const { data: invoicesData, loading, error, refetch } = useApi(() => 
-    fetch(`${api.getBaseUrl()}/api/invoices/?limit=${pageSize}&skip=${(currentPage - 1) * pageSize}&status=${filterStatus !== 'all' ? filterStatus : ''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        return res.json();
-      })
-  , [currentPage, pageSize, filterStatus, debouncedSearch, sortBy, sortDir, fromDate, toDate]);
+  const { data: invoicesData, loading, error, refetch } = useApi(() =>
+    api.get('/invoices/', { params: {
+      limit: pageSize,
+      skip: (currentPage - 1) * pageSize,
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      sort_by: sortBy,
+      sort_dir: sortDir,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data)
+  , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
 
   // Filter-aware stats, fetched only when showStats is true
   const { data: stats } = useApi(() => {
