@@ -50,9 +50,12 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
       from_date: fromDate || '',
       to_date: toDate || ''
     });
-    return fetch(`${api.getBaseUrl()}/api/purchase/orders/stats/overview?${qs.toString()}`)
-      .then(res => res.ok ? res.json() : {})
-      .catch(()=> ({}));
+    return api.get('/purchase/orders/stats/overview', { params: {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data).catch(()=> ({}));
   }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
