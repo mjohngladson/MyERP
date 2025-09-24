@@ -125,7 +125,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                 >
                   <TrendingUp size={20} />
                 </div>
-                <span className="font-medium text-gray-700">Dashboard</span>
+                <span className={`font-medium text-gray-700 transition-opacity ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'}`}>Dashboard</span>
               </button>
 
               {filteredModules.map((module) => {
