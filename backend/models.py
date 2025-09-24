@@ -144,3 +144,35 @@ class PurchaseOrder(BaseModel):
     company_id: str = "default_company"
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+# Sales Invoice Models
+class SalesInvoiceItem(BaseModel):
+    item_id: str
+    item_name: str
+    quantity: int
+    rate: float
+    amount: float
+
+class SalesInvoiceCreate(BaseModel):
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[SalesInvoiceItem]
+    discount_amount: Optional[float] = 0
+    tax_rate: Optional[float] = 0
+    company_id: Optional[str] = "default_company"
+
+class SalesInvoice(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    invoice_number: str
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[SalesInvoiceItem]
+    subtotal: float = 0
+    discount_amount: float = 0
+    tax_amount: float = 0
+    total_amount: float = 0
+    status: str = "draft"  # draft, submitted, paid, cancelled
+    invoice_date: Optional[datetime] = None
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
