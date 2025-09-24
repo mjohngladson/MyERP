@@ -160,9 +160,9 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
               >
                 <div 
                   className="p-2 rounded-md"
-                  style={{ backgroundColor: `#2563eb15`, color: '#2563eb' }}
+                  style={{ backgroundColor: `#2563eb25`, color: '#2563eb' }}
                 >
-                  <TrendingUp size={20} />
+                  <LayoutDashboard size={24} />
                 </div>
                 <span className={`font-medium text-gray-700 transition-opacity ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'}`}>Dashboard</span>
               </button>
