@@ -74,15 +74,10 @@ const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = ()
         </button>
         
         {/* Global search */}
-        <div 
-          onClick={handleSearchClick}
-          className="hidden md:flex items-center bg-gray-50 rounded-lg px-3 py-2 w-96 cursor-pointer hover:bg-gray-100 transition-colors"
-        >
+        <div className="hidden md:flex items-center bg-gray-50 rounded-lg px-3 py-2 w-96 cursor-text hover:bg-gray-100 transition-colors" onClick={handleSearchClick}>
           <Search size={18} className="text-gray-400 mr-2" />
           <span className="text-sm text-gray-500 flex-1">Search anything...</span>
-          <kbd className="hidden sm:inline-block bg-white px-2 py-1 text-xs text-gray-500 rounded border">
-            Ctrl K
-          </kbd>
+          <kbd className="hidden sm:inline-block bg-white px-2 py-1 text-xs text-gray-500 rounded border">Ctrl K</kbd>
         </div>
       </div>
       
