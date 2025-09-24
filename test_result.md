@@ -540,6 +540,18 @@ backend:
           agent: "testing"
           comment: "✅ PoS DATA MISMATCH INVESTIGATION COMPLETED - USER REPORT INCORRECT: Comprehensive investigation reveals NO backend data mismatch issue. (1) ✅ ACTUAL STORED AMOUNTS: Backend correctly stores POS-20250824-0006: ₹104.0 and POS-20250824-0005: ₹70.85 (user's claimed amounts of ₹236.00 and ₹118.00 are incorrect) (2) ✅ DATA INTEGRITY VERIFIED: Raw and formatted endpoints return identical amounts - no corruption during storage or retrieval (3) ✅ CALCULATIONS CORRECT: All amounts match expected calculations from PoS metadata (subtotal + tax - discount) (4) ✅ PROCESSING VERIFIED: Test transaction with ₹236.00 total processed correctly and stored as POS-20250824-0007: ₹236.0. CONCLUSION: Backend is working correctly. User's reported amounts appear to be from incorrect source or misunderstanding."
 
+  - task: "Backend Stability and Intermittency Testing - Deep Analysis"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🔍 BACKEND STABILITY AND INTERMITTENCY TESTING COMPLETED - CRITICAL FINDINGS: Conducted comprehensive stability testing with 5 repetitions per endpoint as requested. RESULTS: (1) ✅ Health Check (/api/): 100% success rate (5/5), avg latency 49.6ms (2) ✅ Dashboard Stats (/api/dashboard/stats): 100% success rate (5/5), avg latency 224.9ms - NO INTERMITTENCY DETECTED (3) ✅ Dashboard Transactions (/api/dashboard/transactions?limit=4): 100% success rate (5/5), avg latency 25.5ms (4) ✅ Sales Orders (/api/sales/orders?limit=5): 100% success rate (5/5), avg latency 10.8ms (5) ✅ Invoices Stats Overview (/api/invoices/stats/overview): 100% success rate (5/5), avg latency 9.8ms (6) ✅ Purchase Orders Stats Overview (/api/purchase/orders/stats/overview): 100% success rate (5/5), avg latency 12.0ms (7) ✅ Search Suggestions (/api/search/suggestions?query=SO&limit=5): 100% success rate (5/5), avg latency 134.6ms. CRITICAL FAILURE: (8) ❌ Stock Settings (/api/stock/settings): 0% success rate (0/5) - CONSISTENT HTTP 500 errors detected across all attempts. OVERALL: 87.5% success rate (35/40 tests passed). NO INTERMITTENT ISSUES found - all endpoints either consistently work or consistently fail. Dashboard Stats average latency: 224.9ms as requested. RECOMMENDATION: Fix Stock Settings endpoint HTTP 500 error."
+
 frontend:
   - task: "PoS Desktop - Data Sync to UI/API"
     implemented: true
