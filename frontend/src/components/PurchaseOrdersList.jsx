@@ -83,9 +83,8 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
     if (!sendTarget) return; if (!sendEmail && !sendPhone) { alert('Provide email or phone'); return; }
     setSending(true);
     try {
-      const res = await fetch(`${api.getBaseUrl()}/api/purchase/orders/${sendTarget.id}/send`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: sendEmail, phone: sendPhone, include_pdf: includePdf, subject: emailSubject || undefined, message: emailMessage || undefined })});
-      const data = await res.json();
-      if (res.ok && data.success) { alert('Purchase order sent successfully'); setSendOpen(false); refetch && refetch(); } else { alert(data.detail || data.message || 'Failed to send'); }
+      const { data } = await api.post(`/purchase/orders/${sendTarget.id}/send`, { email: sendEmail, phone: sendPhone, include_pdf: includePdf, subject: emailSubject || undefined, message: emailMessage || undefined });
+      if (data && (data.success || data.message)) { alert('Purchase order sent successfully'); setSendOpen(false); refetch && refetch(); } else { alert(data?.detail || data?.message || 'Failed to send'); }
     } catch (e) { console.error(e); alert('Error sending'); } finally { setSending(false); }
   };
 
