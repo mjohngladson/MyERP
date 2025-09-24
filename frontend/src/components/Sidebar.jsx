@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  LayoutDashboard,
+  DollarSign,
   Search,
   Menu
 } from 'lucide-react';
