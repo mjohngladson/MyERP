@@ -5095,6 +5095,257 @@ class BackendTester:
         
         return success_rate > 80
 
+    async def test_stability_and_intermittency(self):
+        """Test backend deep stability and intermittency (repeat each call 5 times) for specific endpoints"""
+        print("🔄 Starting Backend Stability and Intermittency Testing")
+        print("📊 Testing each endpoint 5 times to detect intermittent issues")
+        print("=" * 80)
+        
+        # Define endpoints to test with expected behavior
+        endpoints_to_test = [
+            {
+                "name": "Health Check",
+                "url": "/api/",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": ["message"],
+                "description": "Expect JSON with message"
+            },
+            {
+                "name": "Dashboard Stats",
+                "url": "/api/dashboard/stats",
+                "method": "GET", 
+                "expected_status": 200,
+                "expected_fields": ["sales_orders", "purchase_orders", "outstanding_amount", "stock_value"],
+                "description": "Expect 200 and QuickStats fields"
+            },
+            {
+                "name": "Dashboard Transactions",
+                "url": "/api/dashboard/transactions?limit=4",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": [],
+                "description": "Expect array response"
+            },
+            {
+                "name": "Sales Orders",
+                "url": "/api/sales/orders?limit=5",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": [],
+                "description": "Expect array response"
+            },
+            {
+                "name": "Invoices Stats Overview",
+                "url": "/api/invoices/stats/overview",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": ["total_invoices", "total_amount", "submitted_count", "paid_count"],
+                "description": "Expect stats fields"
+            },
+            {
+                "name": "Purchase Orders Stats Overview",
+                "url": "/api/purchase/orders/stats/overview",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": ["total_orders", "total_amount"],
+                "description": "Expect stats fields"
+            },
+            {
+                "name": "Stock Settings",
+                "url": "/api/stock/settings",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": [],
+                "description": "Expect settings response"
+            },
+            {
+                "name": "Search Suggestions",
+                "url": "/api/search/suggestions?query=SO&limit=5",
+                "method": "GET",
+                "expected_status": 200,
+                "expected_fields": ["suggestions"],
+                "description": "Expect suggestions array"
+            }
+        ]
+        
+        # Track results for each endpoint
+        endpoint_results = {}
+        dashboard_stats_latencies = []
+        
+        for endpoint in endpoints_to_test:
+            endpoint_name = endpoint["name"]
+            endpoint_results[endpoint_name] = {
+                "successes": 0,
+                "failures": 0,
+                "errors": [],
+                "latencies": [],
+                "status_codes": [],
+                "timestamps": []
+            }
+            
+            print(f"\n🔍 Testing {endpoint_name} - {endpoint['description']}")
+            print(f"   URL: {endpoint['url']}")
+            
+            # Test endpoint 5 times
+            for attempt in range(1, 6):
+                start_time = datetime.now()
+                try:
+                    async with self.session.get(f"{self.base_url}{endpoint['url']}") as response:
+                        end_time = datetime.now()
+                        latency = (end_time - start_time).total_seconds() * 1000  # Convert to milliseconds
+                        
+                        endpoint_results[endpoint_name]["latencies"].append(latency)
+                        endpoint_results[endpoint_name]["status_codes"].append(response.status)
+                        endpoint_results[endpoint_name]["timestamps"].append(start_time.isoformat())
+                        
+                        # Special tracking for dashboard stats latency
+                        if endpoint_name == "Dashboard Stats":
+                            dashboard_stats_latencies.append(latency)
+                        
+                        if response.status == endpoint["expected_status"]:
+                            try:
+                                data = await response.json()
+                                
+                                # Check expected fields if specified
+                                if endpoint["expected_fields"]:
+                                    missing_fields = [f for f in endpoint["expected_fields"] if f not in data]
+                                    if missing_fields:
+                                        endpoint_results[endpoint_name]["failures"] += 1
+                                        error_msg = f"Missing fields: {missing_fields}"
+                                        endpoint_results[endpoint_name]["errors"].append(f"Attempt {attempt}: {error_msg}")
+                                        print(f"   ❌ Attempt {attempt}: {error_msg} (Latency: {latency:.1f}ms)")
+                                    else:
+                                        endpoint_results[endpoint_name]["successes"] += 1
+                                        print(f"   ✅ Attempt {attempt}: Success (Latency: {latency:.1f}ms)")
+                                else:
+                                    # For endpoints without specific field requirements, just check if it's valid JSON
+                                    endpoint_results[endpoint_name]["successes"] += 1
+                                    print(f"   ✅ Attempt {attempt}: Success (Latency: {latency:.1f}ms)")
+                                    
+                            except json.JSONDecodeError:
+                                endpoint_results[endpoint_name]["failures"] += 1
+                                error_msg = "Invalid JSON response"
+                                endpoint_results[endpoint_name]["errors"].append(f"Attempt {attempt}: {error_msg}")
+                                print(f"   ❌ Attempt {attempt}: {error_msg} (Latency: {latency:.1f}ms)")
+                        else:
+                            endpoint_results[endpoint_name]["failures"] += 1
+                            error_msg = f"HTTP {response.status} (expected {endpoint['expected_status']})"
+                            endpoint_results[endpoint_name]["errors"].append(f"Attempt {attempt}: {error_msg}")
+                            
+                            # Special attention to 5xx errors, especially 502
+                            if response.status >= 500:
+                                if response.status == 502:
+                                    print(f"   🚨 Attempt {attempt}: CRITICAL 502 Bad Gateway detected! (Latency: {latency:.1f}ms, Time: {start_time.isoformat()})")
+                                else:
+                                    print(f"   🚨 Attempt {attempt}: 5xx Server Error {response.status} detected! (Latency: {latency:.1f}ms, Time: {start_time.isoformat()})")
+                            else:
+                                print(f"   ❌ Attempt {attempt}: {error_msg} (Latency: {latency:.1f}ms)")
+                                
+                except Exception as e:
+                    end_time = datetime.now()
+                    latency = (end_time - start_time).total_seconds() * 1000
+                    endpoint_results[endpoint_name]["failures"] += 1
+                    endpoint_results[endpoint_name]["latencies"].append(latency)
+                    endpoint_results[endpoint_name]["status_codes"].append(0)  # Connection error
+                    endpoint_results[endpoint_name]["timestamps"].append(start_time.isoformat())
+                    
+                    error_msg = f"Connection/Network error: {str(e)}"
+                    endpoint_results[endpoint_name]["errors"].append(f"Attempt {attempt}: {error_msg}")
+                    print(f"   🔌 Attempt {attempt}: {error_msg} (Latency: {latency:.1f}ms)")
+                
+                # Small delay between attempts to avoid overwhelming the server
+                await asyncio.sleep(0.5)
+        
+        # Generate comprehensive report
+        print("\n" + "=" * 80)
+        print("📊 STABILITY AND INTERMITTENCY TEST RESULTS")
+        print("=" * 80)
+        
+        total_tests = 0
+        total_failures = 0
+        intermittent_endpoints = []
+        
+        for endpoint_name, results in endpoint_results.items():
+            total_tests += 5
+            total_failures += results["failures"]
+            
+            success_rate = (results["successes"] / 5) * 100
+            avg_latency = sum(results["latencies"]) / len(results["latencies"]) if results["latencies"] else 0
+            min_latency = min(results["latencies"]) if results["latencies"] else 0
+            max_latency = max(results["latencies"]) if results["latencies"] else 0
+            
+            print(f"\n🔍 {endpoint_name}:")
+            print(f"   Success Rate: {success_rate:.1f}% ({results['successes']}/5)")
+            print(f"   Average Latency: {avg_latency:.1f}ms")
+            print(f"   Latency Range: {min_latency:.1f}ms - {max_latency:.1f}ms")
+            print(f"   Status Codes: {results['status_codes']}")
+            
+            if results["failures"] > 0:
+                if 0 < results["failures"] < 5:
+                    intermittent_endpoints.append(endpoint_name)
+                    print(f"   ⚠️  INTERMITTENT ISSUES DETECTED!")
+                else:
+                    print(f"   ❌ CONSISTENT FAILURES!")
+                
+                print(f"   Errors:")
+                for error in results["errors"]:
+                    print(f"      - {error}")
+        
+        # Special report for Dashboard Stats average latency
+        if dashboard_stats_latencies:
+            avg_dashboard_latency = sum(dashboard_stats_latencies) / len(dashboard_stats_latencies)
+            print(f"\n📈 Dashboard Stats Average Latency: {avg_dashboard_latency:.1f}ms")
+        
+        # Summary of critical findings
+        print(f"\n🎯 CRITICAL FINDINGS:")
+        print(f"   Total Tests: {total_tests}")
+        print(f"   Total Failures: {total_failures}")
+        print(f"   Overall Success Rate: {((total_tests - total_failures) / total_tests * 100):.1f}%")
+        
+        if intermittent_endpoints:
+            print(f"   🚨 Intermittent Endpoints: {', '.join(intermittent_endpoints)}")
+            print(f"      These endpoints failed some but not all attempts - potential stability issues!")
+        
+        # Check for 5xx errors specifically
+        server_errors = []
+        for endpoint_name, results in endpoint_results.items():
+            fxx_errors = [code for code in results["status_codes"] if code >= 500]
+            if fxx_errors:
+                server_errors.append(f"{endpoint_name}: {fxx_errors}")
+        
+        if server_errors:
+            print(f"   🚨 5xx Server Errors Detected:")
+            for error in server_errors:
+                print(f"      - {error}")
+        
+        # Log overall test result
+        if total_failures == 0:
+            self.log_test("Stability and Intermittency Test", True, f"All {total_tests} tests passed. No intermittent issues detected.", endpoint_results)
+            return True
+        else:
+            self.log_test("Stability and Intermittency Test", False, f"{total_failures}/{total_tests} tests failed. Intermittent endpoints: {intermittent_endpoints}", endpoint_results)
+            return False
+
+    async def run_stability_tests_only(self):
+        """Run only the stability and intermittency tests as requested"""
+        print("🚀 Starting Backend Stability and Intermittency Testing")
+        print(f"📡 Testing backend at: {self.base_url}")
+        print("=" * 80)
+        
+        try:
+            result = await self.test_stability_and_intermittency()
+            if result:
+                print("\n🎉 Stability tests completed successfully!")
+                return 1, 0
+            else:
+                print("\n⚠️ Stability tests detected issues!")
+                return 0, 1
+        except Exception as e:
+            self.log_test("Stability Test Suite", False, f"Test suite failed with exception: {str(e)}")
+            print(f"\n❌ Stability test suite failed: {str(e)}")
+            return 0, 1
+
 async def main():
     """Main function to run Purchase Orders Smoke Tests"""
     async with BackendTester() as tester:
