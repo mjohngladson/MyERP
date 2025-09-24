@@ -109,22 +109,26 @@ async def global_search(
     
     # Search sales orders
     if not category or category == "sales_orders":
+        # Allow space-insensitive search like "SO 2025 0924" matching "SO-20250924..."
+        normalized = re.sub(r"[^A-Za-z0-9]", "", search_term)
+        pattern_order = re.compile(normalized, re.IGNORECASE)
         sales_order_cursor = db.sales_orders.find({
             "$or": [
                 {"order_number": {"$regex": pattern}},
+                {"order_number": {"$regex": pattern_order}},
                 {"customer_name": {"$regex": pattern}}
             ]
-        }).limit(limit // 6 if not category else limit)
+        }).limit(per)
         
         async for order in sales_order_cursor:
             results.append({
-                "id": order["id"],
+                "id": order.get("id") or str(order.get("_id")),
                 "type": "sales_order",
-                "title": f"Sales Order {order['order_number']}",
+                "title": f"Sales Order {order.get('order_number','')}",
                 "subtitle": order.get("customer_name", ""),
                 "description": f"₹{order.get('total_amount', 0)} - {order.get('status', 'draft')}",
-                "url": f"/sales/orders/{order['id']}",
-                "relevance": calculate_relevance(search_term, order["order_number"])
+                "url": f"/sales/orders/{order.get('id')}",
+                "relevance": calculate_relevance(search_term, order.get("order_number", ""))
             })
             categories["sales_orders"] += 1
     
