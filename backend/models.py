@@ -48,3 +48,35 @@ class MonthlyReport(BaseModel):
     sales: float
     purchases: float
     profit: float
+
+# Sales Order Models
+class SalesOrderItem(BaseModel):
+    item_id: str
+    item_name: str
+    quantity: int
+    rate: float
+    amount: float
+
+class SalesOrderCreate(BaseModel):
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[SalesOrderItem]
+    discount_amount: Optional[float] = 0
+    tax_rate: Optional[float] = 0
+    company_id: Optional[str] = "default_company"
+
+class SalesOrder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_number: str
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[SalesOrderItem]
+    subtotal: float = 0
+    discount_amount: float = 0
+    tax_amount: float = 0
+    total_amount: float = 0
+    status: str = "draft"  # draft, submitted, delivered, cancelled
+    order_date: Optional[datetime] = None
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
