@@ -44,15 +44,13 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
   // Filter-aware stats (only when visible)
   const { data: stats } = useApi(() => {
     if (!showStats) return Promise.resolve({});
-    const qs = new URLSearchParams({
-      status: filterStatus !== 'all' ? filterStatus : '',
-      search: debouncedSearch || '',
-      from_date: fromDate || '',
-      to_date: toDate || ''
-    });
-    return fetch(`${api.getBaseUrl()}/api/sales/orders/stats/overview?${qs.toString()}`)
-      .then(res => res.ok ? res.json() : {})
-      .catch(()=> ({}));
+    const params = {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    };
+    return api.get('/sales/orders/stats/overview', { params }).then(r => r.data).catch(() => ({}));
   }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.items || []);
