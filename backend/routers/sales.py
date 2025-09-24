@@ -374,17 +374,63 @@ async def send_sales_order(order_id: str, body: dict):
 
 # ============ STATS ============
 @router.get("/orders/stats/overview")
-async def sales_order_stats():
+async def sales_order_stats(
+    status: Optional[str] = Query(None),
+    customer_id: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    from_date: Optional[str] = Query(None),
+    to_date: Optional[str] = Query(None)
+):
     try:
-        total = await sales_orders_collection.count_documents({})
-        draft = await sales_orders_collection.count_documents({"status": "draft"})
-        submitted = await sales_orders_collection.count_documents({"status": "submitted"})
-        delivered = await sales_orders_collection.count_documents({"status": "delivered"})
-        fulfilled = await sales_orders_collection.count_documents({"status": "fulfilled"})
-        pipeline = [{"$group": {"_id": None, "total_amount": {"$sum": "$total_amount"}}}]
-        total_result = await sales_orders_collection.aggregate(pipeline).to_list(1)
-        total_amount = total_result[0]["total_amount"] if total_result else 0
-        return {"total_orders": total, "draft": draft, "submitted": submitted, "fulfilled": fulfilled + delivered, "total_amount": total_amount}
+        match_stage = {}
+        if status:
+            match_stage["status"] = status
+        if customer_id:
+            match_stage["customer_id"] = customer_id
+        if search:
+            match_stage["$or"] = [
+                {"order_number": {"$regex": search, "$options": "i"}},
+                {"customer_name": {"$regex": search, "$options": "i"}},
+            ]
+        pipeline = [
+            { '$addFields': {
+                'order_date_sort': { '$toDate': { '$cond': [ { '$or': [ { '$eq': [ '$order_date', None ] }, { '$eq': [ '$order_date', '' ] } ] }, '$created_at', '$order_date' ] } }
+            }},
+        ]
+        if match_stage:
+            pipeline.append({ '$match': match_stage })
+        if from_date or to_date:
+            date_match = {}
+            if from_date:
+                y,m,d = map(int, from_date.split('-'))
+                date_match['$gte'] = datetime(y,m,d,0,0,0,tzinfo=timezone.utc)
+            if to_date:
+                y,m,d = map(int, to_date.split('-'))
+                date_match['$lte'] = datetime(y,m,d,23,59,59,tzinfo=timezone.utc)
+            pipeline.append({ '$match': { 'order_date_sort': date_match } })
+        pipeline.append({ '$group': {
+            '_id': None,
+            'total_count': { '$sum': 1 },
+            'total_amount': { '$sum': { '$ifNull': [ '$total_amount', 0 ] } },
+            'draft': { '$sum': { '$cond': [ { '$eq': [ '$status', 'draft' ] }, 1, 0 ] } },
+            'submitted': { '$sum': { '$cond': [ { '$eq': [ '$status', 'submitted' ] }, 1, 0 ] } },
+            'fulfilled_only': { '$sum': { '$cond': [ { '$eq': [ '$status', 'fulfilled' ] }, 1, 0 ] } },
+            'delivered_only': { '$sum': { '$cond': [ { '$eq': [ '$status', 'delivered' ] }, 1, 0 ] } },
+            'cancelled': { '$sum': { '$cond': [ { '$eq': [ '$status', 'cancelled' ] }, 1, 0 ] } },
+        }})
+        res = await sales_orders_collection.aggregate(pipeline).to_list(1)
+        if not res:
+            return { 'total_orders': 0, 'draft': 0, 'submitted': 0, 'fulfilled': 0, 'cancelled': 0, 'total_amount': 0 }
+        grp = res[0]
+        fulfilled_total = (grp.get('fulfilled_only', 0) or 0) + (grp.get('delivered_only', 0) or 0)
+        return {
+            'total_orders': grp.get('total_count', 0),
+            'draft': grp.get('draft', 0),
+            'submitted': grp.get('submitted', 0),
+            'fulfilled': fulfilled_total,
+            'cancelled': grp.get('cancelled', 0),
+            'total_amount': grp.get('total_amount', 0)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
 
