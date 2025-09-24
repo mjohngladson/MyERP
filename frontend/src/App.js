@@ -20,6 +20,8 @@ import PurchaseInvoiceView from './components/PurchaseInvoiceView';
 import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
+import ItemsList from './components/ItemsList';
+import CustomersList from './components/CustomersList';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
