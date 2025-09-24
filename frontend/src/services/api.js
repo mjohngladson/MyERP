@@ -159,6 +159,25 @@ export const api = {
     download: (exportId) => makeRequest(() => apiClient.get(`/reports/download/${exportId}`)),
   },
 
+  // Stock
+  stock: {
+    getSettings: () => makeRequest(() => apiClient.get('/stock/settings')),
+    updateSettings: (data) => makeRequest(() => apiClient.put('/stock/settings', data)),
+    listWarehouses: () => makeRequest(() => apiClient.get('/stock/warehouses')),
+    createWarehouse: (data) => makeRequest(() => apiClient.post('/stock/warehouses', data)),
+    updateWarehouse: (id, data) => makeRequest(() => apiClient.put(`/stock/warehouses/${id}`, data)),
+    deleteWarehouse: (id) => makeRequest(() => apiClient.delete(`/stock/warehouses/${id}`)),
+    createEntry: (data) => makeRequest(() => apiClient.post('/stock/entries', data)),
+    ledger: (params) => makeRequest(() => apiClient.get('/stock/ledger', { params })),
+    valuationReport: () => makeRequest(() => apiClient.get('/stock/valuation/report')),
+    reorderReport: () => makeRequest(() => apiClient.get('/stock/reorder/report')),
+  },
+
+  // PoS / Items
+  pos: {
+    products: (search = '', limit = 50) => makeRequest(() => apiClient.get('/pos/products', { params: { search, limit } })),
+  },
+
   // Generic API call helper
   get: (endpoint) => makeRequest(() => apiClient.get(endpoint)),
   post: (endpoint, data) => makeRequest(() => apiClient.post(endpoint, data)),
