@@ -8,10 +8,7 @@ const ItemsList = ({ onBack }) => {
   const [debounced, setDebounced] = React.useState('');
   React.useEffect(()=>{ const t=setTimeout(()=>setDebounced(search),500); return ()=>clearTimeout(t); },[search]);
 
-  const { data, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/pos/products?search=${encodeURIComponent(debounced)}&limit=50`)
-      .then(r => r.json())
-  , [debounced]);
+  const { data, loading, error } = useApi(() => api.pos.products(debounced, 50).then(r => r.data), [debounced]);
 
   const items = Array.isArray(data) ? data : (data?.items || []);
 

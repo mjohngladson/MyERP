@@ -9,8 +9,7 @@ const CustomersList = ({ onBack }) => {
   React.useEffect(()=>{ const t=setTimeout(()=>setDebounced(search),500); return ()=>clearTimeout(t); },[search]);
 
   const { data, loading, error } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/sales/customers?limit=100`)
-      .then(r => r.json())
+    api.get('/sales/customers', { params: { limit: 100 }}).then(r=>r.data)
   , []);
 
   const customers = (Array.isArray(data) ? data : []).filter(c => {
