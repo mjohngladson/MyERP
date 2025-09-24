@@ -64,9 +64,12 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
       from_date: fromDate || '',
       to_date: toDate || ''
     });
-    return fetch(`${api.getBaseUrl()}/api/invoices/stats/overview?${qs.toString()}`)
-      .then(res => res.ok ? res.json() : {})
-      .catch(() => ({}));
+    return api.get('/invoices/stats/overview', { params: {
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data).catch(()=> ({}));
   }, [showStats, filterStatus, debouncedSearch, fromDate, toDate]);
 
   const invoicesList = Array.isArray(invoicesData) ? invoicesData : (invoicesData?.items || invoicesData?.data || []);
