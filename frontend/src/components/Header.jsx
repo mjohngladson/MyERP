@@ -21,6 +21,7 @@ const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = ()
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
   
   const handleLogout = async () => {
     await logout();
