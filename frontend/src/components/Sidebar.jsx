@@ -74,11 +74,13 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
   };
 
   const handleSubItemClick = (moduleId, subItem) => {
+    // Ensure sidebar is visible for navigation clicks in collapsed mode
+    if (collapsed) setCollapsed(false);
     if (onSubItemClick) {
       onSubItemClick(moduleId, subItem);
     }
-    // Expand the parent module briefly to show active state, then keep state as is
-    setExpandedModules(prev => ({ ...prev, [moduleId]: true }));
+    setExpandedModules({ [moduleId]: true });
+    try { localStorage.setItem('gili_sidebar_expanded', moduleId); } catch (e) { /* no-op */ }
   };
 
   const filteredModules = (mockModules || []).filter(module => 
