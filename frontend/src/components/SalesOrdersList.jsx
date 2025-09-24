@@ -29,8 +29,16 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
   React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 500); return ()=>clearTimeout(t); }, [searchTerm]);
 
   const { data: ordersData, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/sales/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
-      .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
+    api.sales.getOrdersFiltered({
+      limit: pageSize,
+      skip: (currentPage-1)*pageSize,
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      sort_by: sortBy,
+      sort_dir: sortDir,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    })
   , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
 
   // Filter-aware stats (only when visible)
