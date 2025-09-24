@@ -1198,6 +1198,19 @@ frontend:
     implemented: true
     working: true
     file: "components/Header.jsx"
+
+frontend:
+  - task: "Automated UI tests - end-to-end flows"
+    implemented: true
+    working: "NA"
+    file: "frontend/src"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Initiating auto Frontend UI tests as requested by user. Focus: Dashboard load, Sidebar collapse/persist, Create dropdown clickability, Global Search (Ctrl+K, suggestions, escape to close, quick actions), Sales Orders/Invoices & Purchase Orders/Invoices lists (load, search debounce 500ms, filters, stats insights toggle), Quotation list basic load, Settings bottom menu visibility + Stock Settings toggles, Reports consolidated page (Valuation/Reorder)."
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
