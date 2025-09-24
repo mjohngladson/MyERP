@@ -4235,17 +4235,16 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on Purchase Orders with mixed date types"""
-        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS MIXED DATE TYPES TEST")
+        """Run backend tests focusing on Sales Orders Stats Filters"""
+        print("🚀 Starting GiLi Backend API Testing Suite - SALES ORDERS STATS FILTERS TEST")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🛒 Focus: Purchase Orders list endpoint with mixed order_date data types")
+        print("📊 Focus: Sales Orders stats filters comprehensive testing")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
             self.test_health_check,  # Verify /api/ returns "GiLi API is running"
-            self.test_purchase_orders_mixed_date_types,  # Main focus - mixed date types
-            self.test_purchase_orders_aggregation_todate_conversion,  # Check for $toDate issues
+            self.test_sales_orders_stats_filters,  # Main focus - stats filters testing
         ]
         
         passed = 0
@@ -4269,7 +4268,7 @@ class BackendTester:
         success_rate = (passed / total * 100) if total > 0 else 0
         
         print("=" * 80)
-        print("🏁 PURCHASE ORDERS SMOKE TESTING COMPLETE")
+        print("🏁 SALES ORDERS STATS FILTERS TESTING COMPLETE")
         print(f"✅ Passed: {passed}")
         print(f"❌ Failed: {failed}")
         print(f"📊 Success Rate: {success_rate:.1f}%")
