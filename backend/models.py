@@ -176,3 +176,35 @@ class SalesInvoice(BaseModel):
     company_id: str = "default_company"
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+# Quotation Models
+class QuotationItem(BaseModel):
+    item_id: str
+    item_name: str
+    quantity: int
+    rate: float
+    amount: float
+
+class QuotationCreate(BaseModel):
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[QuotationItem]
+    discount_amount: Optional[float] = 0
+    tax_rate: Optional[float] = 0
+    company_id: Optional[str] = "default_company"
+
+class Quotation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    quotation_number: str
+    customer_id: str
+    customer_name: Optional[str] = None
+    items: List[QuotationItem]
+    subtotal: float = 0
+    discount_amount: float = 0
+    tax_amount: float = 0
+    total_amount: float = 0
+    status: str = "draft"  # draft, sent, accepted, rejected
+    quotation_date: Optional[datetime] = None
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
