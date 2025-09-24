@@ -603,6 +603,90 @@ frontend:
           comment: "Frontend sync interface already implemented with automatic sync, manual sync triggers, connection monitoring, and comprehensive status display integration with main process via IPC."
 
 backend:
+  - task: "Items CRUD API - GET /api/stock/items"
+    implemented: true
+    working: true
+    file: "routers/master_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Items CRUD API - List Items endpoint working perfectly. GET /api/stock/items returns array of items with proper structure. Search functionality working correctly with ?search=Product parameter. Retrieved 2 existing items successfully."
+
+  - task: "Items CRUD API - POST /api/stock/items"
+    implemented: true
+    working: true
+    file: "routers/master_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Items CRUD API - Create Item endpoint working perfectly. POST /api/stock/items successfully creates new items with all required fields (name, item_code, category, unit_price, active). Returns proper response with generated UUID ID. Test item created successfully with ID: 5d8836e1-2a85-4bdb-9a99-b9f8b1fd365d."
+
+  - task: "Items CRUD API - GET /api/stock/items/{id}"
+    implemented: true
+    working: true
+    file: "routers/master_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Items CRUD API - Get Item by ID endpoint working perfectly. GET /api/stock/items/{id} successfully retrieves individual items by UUID. Returns complete item details including all fields (id, name, item_code, category, unit_price, active, created_at, updated_at)."
+
+  - task: "Items CRUD API - PUT /api/stock/items/{id}"
+    implemented: true
+    working: true
+    file: "routers/master_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Items CRUD API - Update Item endpoint working perfectly. PUT /api/stock/items/{id} successfully updates item fields (name, unit_price, category). Partial updates supported. Updated test item from 'Test Item for CRUD Testing' to 'Updated Test Item' and price from ₹99.99 to ₹149.99."
+
+  - task: "Items CRUD API - DELETE /api/stock/items/{id}"
+    implemented: true
+    working: true
+    file: "routers/master_data.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Items CRUD API - Delete Item endpoint working perfectly. DELETE /api/stock/items/{id} successfully deletes items and returns {success: true}. Proper 404 error handling verified - attempting to GET deleted item returns HTTP 404 as expected."
+
+  - task: "Sales Order Detail API - GET /api/sales/orders/{id}"
+    implemented: true
+    working: true
+    file: "routers/sales.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Sales Order Detail API working perfectly. GET /api/sales/orders/{id} returns complete sales order details including all required fields (id, order_number, customer_name, total_amount, status, items). Items array properly structured with item_name, quantity, rate, amount fields. Totals breakdown included (subtotal, tax_amount, discount_amount). Proper 404 error handling for invalid IDs. Test order retrieved: Total ₹236.0 with 1 item."
+
+  - task: "Basic API Health Checks - Core Endpoints"
+    implemented: true
+    working: true
+    file: "server.py, routers/search.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Basic API Health Checks working perfectly. GET /api/ returns proper 'GiLi API is running' message confirming API is operational. GET /api/search/suggestions?query=test returns proper suggestions array with 3 suggestions, confirming Global Search functionality is working correctly."
+
   - task: "Global Search API - Suggestions Endpoint"
     implemented: true
     working: true
