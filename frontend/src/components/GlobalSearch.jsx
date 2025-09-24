@@ -162,6 +162,7 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
         fetchSearchResults(searchTerm);
       }
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       onClose();
     }
   };
