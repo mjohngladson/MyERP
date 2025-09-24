@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
 const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
