@@ -5347,16 +5347,16 @@ class BackendTester:
             return 0, 1
 
 async def main():
-    """Main function to run Purchase Orders Smoke Tests"""
+    """Main function to run Stability and Intermittency Tests"""
     async with BackendTester() as tester:
-        # Run purchase orders smoke tests as requested in review
-        passed, total, results = await tester.run_purchase_orders_smoke_tests()
+        # Run stability and intermittency tests as requested in review
+        passed, failed = await tester.run_stability_tests_only()
         
-        if passed == total:
-            print("🎉 Purchase Orders Smoke Tests PASSED!")
+        if passed > 0 and failed == 0:
+            print("🎉 Stability and Intermittency Tests PASSED!")
             return 0
         else:
-            print("💥 Some Purchase Orders Smoke Tests FAILED!")
+            print("💥 Stability and Intermittency Tests detected issues!")
             return 1
 
 if __name__ == "__main__":
