@@ -185,9 +185,9 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                       <div className="flex items-center space-x-3">
                         <div 
                           className="p-2 rounded-md"
-                          style={{ backgroundColor: `${module.color}15`, color: module.color }}
+                          style={{ backgroundColor: `${module.color}25`, color: module.color }}
                         >
-                          <IconComponent size={20} />
+                          <IconComponent size={24} />
                         </div>
                         <span className={`font-medium text-gray-700 transition-all ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100 w-auto'}`}>{module.name}</span>
                       </div>
