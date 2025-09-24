@@ -189,7 +189,7 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
                         >
                           <IconComponent size={24} />
                         </div>
-                        <span className={`font-medium text-gray-700 transition-all ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100 w-auto'}`}>{module.name}</span>
+                        <span className={`font-medium text-gray-700 transition-all ${collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100 w-auto'}`} title={module.name}>{module.name}</span>
                       </div>
                       {collapsed ? (
                         <ChevronRight size={16} className="text-gray-400" />
