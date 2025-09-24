@@ -158,95 +158,90 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <button onClick={onBack} className="p-2 text-gray-600 hover:text-gray-900"><ChevronLeft className="h-5 w-5" /></button>
-          <h1 className="text-2xl font-semibold text-gray-900">Sales Invoices</h1>
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{totalCount} total</span>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <button onClick={onBack} className="p-2 text-gray-600 hover:text-gray-900"><ChevronLeft className="h-5 w-5" /></button>
+            <h1 className="text-3xl font-bold text-gray-800">Sales Invoices</h1>
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{totalCount} total</span>
+          </div>
+          <div className="flex space-x-3">
+            <button onClick={onCreateInvoice} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              <Plus className="h-4 w-4" />
+              <span>New Invoice</span>
+            </button>
+          </div>
         </div>
-        <div className="flex space-x-3">
-          <button onClick={onCreateInvoice} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            <Plus className="h-4 w-4" />
-            <span>New Invoice</span>
+
+        {/* Stats Toggle */}
+        <div className="mb-3 flex justify-end">
+          <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
+            <span>{showStats ? 'Hide insights' : 'Show insights'}</span>
           </button>
         </div>
-      </div>
 
-      {/* Stats Toggle */}
-      <div className="mb-3 flex justify-end">
-        <button onClick={()=>setShowStats(s=>!s)} className="inline-flex items-center space-x-2 px-3 py-1.5 border rounded-md text-sm bg-white hover:bg-gray-50">
-          <span>{showStats ? 'Hide insights' : 'Show insights'}</span>
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      {showStats && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Invoices</p><p className="text-2xl font-bold text-gray-900">{stats.total_invoices || 0}</p></div><FileText className="h-8 w-8 text-blue-600" /></div></div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Amount</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Submitted</p><p className="text-2xl font-bold text-blue-600">{stats.submitted_count || 0}</p></div><Calendar className="h-8 w-8 text-blue-600" /></div></div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Paid</p><p className="text-2xl font-bold text-green-600">{stats.paid_count || 0}</p></div><DollarSign className="h-8 w-8 text-green-600" /></div></div>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-6">
-        {/* Search */}
-        <div className="xl:col-span-5">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input type="text" placeholder="Search invoices..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        {/* Stats Cards */}
+        {showStats && stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Invoices</p><p className="text-2xl font-bold text-gray-900">{stats.total_invoices || 0}</p></div><FileText className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Total Amount</p><p className="text-2xl font-bold text-green-600">{formatCurrency(stats.total_amount || 0)}</p></div><TrendingUp className="h-8 w-8 text-green-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Submitted</p><p className="text-2xl font-bold text-blue-600">{stats.submitted_count || 0}</p></div><Calendar className="h-8 w-8 text-blue-600" /></div></div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-600">Paid</p><p className="text-2xl font-bold text-green-600">{stats.paid_count || 0}</p></div><DollarSign className="h-8 w-8 text-green-600" /></div></div>
           </div>
-        </div>
+        )}
 
-        {/* Dates */}
-        <div className="xl:col-span-4">
+        {/* Filters - match other modules layout */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input type="text" placeholder="Search invoices..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="hidden lg:flex items-center space-x-2 mr-2">
+              <label className="text-sm text-gray-600">From</label>
+              <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+              <label className="text-sm text-gray-600">To</label>
+              <input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} className="px-2 py-2 border rounded text-sm" />
+            </div>
+            <div>
+              <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className="appearance-none bg-white border rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500">
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+                <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
           <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-600">From</label>
-            <input type="date" value={fromDate} onChange={(e)=>setFromDate(e.target.value)} className="px-2 py-2 border rounded text-sm w-full" />
-            <label className="text-sm text-gray-600">To</label>
-            <input type="date" value={toDate} onChange={(e)=>setToDate(e.target.value)} className="px-2 py-2 border rounded text-sm w-full" />
+            <button onClick={()=>{ setSearchTerm(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('invoice_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
+            <select value={pageSize} onChange={(e)=>setPageSize(parseInt(e.target.value))} className="px-3 py-2 border rounded">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            <button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><Plus className="h-4 w-4" /><span>New Invoice</span></button>
           </div>
         </div>
 
-        {/* Status + Page size + Clear/Refresh */}
-        <div className="xl:col-span-3 flex items-center space-x-2 justify-end">
-          <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className="appearance-none bg-white border rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500">
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
-            <option value="paid">Paid</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select value={pageSize} onChange={(e)=>setPageSize(parseInt(e.target.value))} className="px-3 py-2 border rounded">
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          <button onClick={()=>{ setSearchTerm(''); setFilterStatus('all'); setFromDate(''); setToDate(''); setSortBy('invoice_date'); setSortDir('desc'); setCurrentPage(1); refetch && refetch(); }} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Clear Filters</button>
-          <button onClick={refetch} className="px-3 py-2 border rounded text-sm bg-white hover:bg-gray-50">Refresh</button>
-        </div>
-      </div>
-
-      {/* Invoices List */}
-      {filteredInvoices.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales Invoices Found</h3>
-          <p className="text-gray-500 mb-4">{searchTerm || filterStatus !== 'all' ? 'Try adjusting your search or filter criteria.' : 'Get started by creating your first sales invoice.'}</p>
-          {(!searchTerm && filterStatus === 'all') && (
-            <button onClick={onCreateInvoice} className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              <Plus className="h-4 w-4" />
-              <span>Create Invoice</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        {/* Invoices List */}
+        {filteredInvoices.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><FileText className="text-gray-400" size={32}/></div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Sales Invoices Found</h3>
+            <p className="text-gray-600 mb-6">{searchTerm || filterStatus !== 'all' ? 'No invoices match your search.' : 'Create your first sales invoice.'}</p>
+            {(!searchTerm && filterStatus === 'all') && (
+              <button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto">
+                <Plus size={20} /><span>Create Invoice</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-[900px] w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
