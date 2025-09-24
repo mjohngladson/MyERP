@@ -23,9 +23,9 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Debounce search input
+  // Debounce search input for smoother typing
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchTerm), 250); return ()=>clearTimeout(t); }, [searchTerm]);
+  React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 350); return ()=>clearTimeout(t); }, [searchInput]);
 
   const { data: ordersData, loading, error, refetch } = useApi(() =>
     fetch(`${api.getBaseUrl()}/api/purchase/orders?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
