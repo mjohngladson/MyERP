@@ -92,7 +92,7 @@ export const networkUtils = {
 };
 
 // Enhanced API call wrapper with retry logic and better error handling
-const makeRequest = async (requestFn, retries = 1) => {
+const makeRequest = async (requestFn, retries = 2) => {
   try {
     return await requestFn();
   } catch (error) {
