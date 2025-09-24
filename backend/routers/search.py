@@ -34,6 +34,7 @@ async def global_search(
         "suppliers": 0, 
         "items": 0,
         "sales_orders": 0,
+        "invoices": 0,
         "purchase_orders": 0,
         "transactions": 0
     }
