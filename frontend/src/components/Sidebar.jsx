@@ -44,8 +44,8 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
     if (onSubItemClick) {
       onSubItemClick(moduleId, subItem);
     }
-    // For accessible keyboard users, also collapse after navigation for better UX on mobile
-    setExpandedModules(prev => ({ ...prev, [moduleId]: false }));
+    // Expand the parent module briefly to show active state, then keep state as is
+    setExpandedModules(prev => ({ ...prev, [moduleId]: true }));
   };
 
   const filteredModules = (mockModules || []).filter(module => 
