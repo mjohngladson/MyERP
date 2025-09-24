@@ -165,7 +165,7 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
             </div>
           </div>
           <div className="divide-y divide-gray-100">
-            {filteredOrders.map(order => (
+            {(filteredOrders || []).map(order => ()
               <div key={order.id} className="px-6 py-4 hover:bg-gray-50">
                 <div className="grid grid-cols-12 gap-4 items-center">
                   <div className="col-span-3">
