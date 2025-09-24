@@ -49,6 +49,38 @@ class MonthlyReport(BaseModel):
     purchases: float
     profit: float
 
+# Customer Models
+class Customer(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    company_id: str = "default_company"
+    loyalty_points: Optional[float] = 0
+    created_at: Optional[datetime] = None
+
+# Supplier Models
+class Supplier(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+
+# Item Models
+class Item(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    item_code: Optional[str] = None
+    category: Optional[str] = None
+    unit_price: float = 0
+    stock_qty: Optional[int] = 0
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+
 # Sales Order Models
 class SalesOrderItem(BaseModel):
     item_id: str
@@ -76,6 +108,38 @@ class SalesOrder(BaseModel):
     tax_amount: float = 0
     total_amount: float = 0
     status: str = "draft"  # draft, submitted, delivered, cancelled
+    order_date: Optional[datetime] = None
+    company_id: str = "default_company"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+# Purchase Order Models
+class PurchaseOrderItem(BaseModel):
+    item_id: str
+    item_name: str
+    quantity: int
+    rate: float
+    amount: float
+
+class PurchaseOrderCreate(BaseModel):
+    supplier_id: str
+    supplier_name: Optional[str] = None
+    items: List[PurchaseOrderItem]
+    discount_amount: Optional[float] = 0
+    tax_rate: Optional[float] = 0
+    company_id: Optional[str] = "default_company"
+
+class PurchaseOrder(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    order_number: str
+    supplier_id: str
+    supplier_name: Optional[str] = None
+    items: List[PurchaseOrderItem]
+    subtotal: float = 0
+    discount_amount: float = 0
+    tax_amount: float = 0
+    total_amount: float = 0
+    status: str = "draft"  # draft, submitted, received, cancelled
     order_date: Optional[datetime] = None
     company_id: str = "default_company"
     created_at: Optional[datetime] = None
