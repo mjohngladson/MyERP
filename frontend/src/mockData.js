@@ -27,7 +27,7 @@ export const mockModules = [
     name: 'Stock',
     icon: 'Package',
     color: '#059669',
-    items: ['Stock Entry', 'Item', 'Warehouse', 'Stock Reconciliation']
+    items: ['Item', 'Warehouse', 'Stock Entry', 'Stock Reconciliation']
   },
   {
     id: 'accounts',
