@@ -233,9 +233,16 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
 
   if (!isOpen) return null;
 
+  // Close on global escape
+  useEffect(() => {
+    const onEsc = (e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center pt-20">
-      <div className="w-full max-w-2xl mx-4">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center pt-20" onClick={onClose}>
+      <div className="w-full max-w-2xl mx-4" onClick={(e)=>e.stopPropagation()}>
         <div className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* Search Input */}
           <div className="p-4 border-b border-gray-200">
