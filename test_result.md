@@ -205,7 +205,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All critical navigation issues resolved"
+    - "Items CRUD API Testing - COMPLETED ✅"
+    - "Sales Order Detail API Testing - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -217,12 +218,18 @@ test_plan:
     - "Sidebar Navigation System - COMPLETED ✅"
     - "Purchase Orders List Frontend Integration - COMPLETED ✅"
     - "Quotations List Frontend Integration - COMPLETED ✅"
+    - "Items CRUD API Testing - COMPLETED ✅"
+    - "Sales Order Detail API Testing - COMPLETED ✅"
+    - "Basic API Health Checks - COMPLETED ✅"
   critical_issues_found: []
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
     - "onSubItemClick handler properly wired between Sidebar.jsx and App.js"
     - "Navigation clicks working correctly with proper page transitions"
     - "API calls to /api/quotations and /api/purchase/orders working as expected"
+    - "Items CRUD API endpoints fully functional - all CRUD operations working correctly"
+    - "Sales Order Detail API returning complete order information with proper structure"
+    - "Global Search API suggestions endpoint working correctly"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
