@@ -87,7 +87,7 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
           <p className="text-red-600">Error loading purchase invoices</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm border"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><DollarSign className="text-gray-400" size={32}/></div><h3 className="text-xl font-semibold text-gray-800 mb-2">No Purchase Invoices Found</h3><p className="text-gray-600 mb-6">{searchTerm || filterStatus !== 'all' ? 'No purchase invoices match your search.' : 'Create your first purchase invoice.'}</p><button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto"><Plus size={20} /><span>Create Purchase Invoice</span></button></div>
+        <div className="bg-white rounded-xl p-12 text-center shadow-sm border"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><DollarSign className="text-gray-400" size={32}/></div><h3 className="text-xl font-semibold text-gray-800 mb-2">No Purchase Invoices Found</h3><p className="text-gray-600 mb-6">{searchInput || filterStatus !== 'all' ? 'No purchase invoices match your search.' : 'Create your first purchase invoice.'}</p><button onClick={onCreateInvoice} className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 mx-auto"><Plus size={20} /><span>Create Purchase Invoice</span></button></div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="bg-gray-50 px-6 py-4 border-b">
