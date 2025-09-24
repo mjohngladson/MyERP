@@ -76,17 +76,26 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
           {/* Header */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-800">GiLi</h1>
-              <button 
-                onClick={toggleSidebar}
-                className="lg:hidden p-2 hover:bg-gray-100 rounded-md"
-              >
-                <Menu size={20} />
-              </button>
+              <h1 className={`text-xl font-bold text-gray-800 transition-opacity ${collapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>GiLi</h1>
+              <div className="flex items-center space-x-1">
+                <button 
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="hidden lg:inline-flex p-2 hover:bg-gray-100 rounded-md"
+                  title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {collapsed ? <ChevronRight size={18}/> : <ChevronLeft size={18}/>}            
+                </button>
+                <button 
+                  onClick={toggleSidebar}
+                  className="lg:hidden p-2 hover:bg-gray-100 rounded-md"
+                >
+                  <Menu size={20} />
+                </button>
+              </div>
             </div>
             
             {/* Search */}
-            <div className="mt-4 relative">
+            <div className={`mt-4 relative transition-all ${collapsed ? 'opacity-0 pointer-events-none h-0' : 'opacity-100 h-auto'}`}>
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
