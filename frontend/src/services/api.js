@@ -128,9 +128,10 @@ export const api = {
 
   // Sales
   sales: {
-    getOrders: (limit = 20) => makeRequest(() => apiClient.get(`/sales/orders?limit=${limit}`)),
+    getOrders: (limit = 20) => makeRequest(() => apiClient.get(`/sales/orders`, { params: { limit } })),
+    getOrdersFiltered: (params = {}) => makeRequest(() => apiClient.get('/sales/orders', { params })),
     createOrder: (orderData) => makeRequest(() => apiClient.post('/sales/orders', orderData)),
-    getCustomers: (limit = 50) => makeRequest(() => apiClient.get(`/sales/customers?limit=${limit}`)),
+    getCustomers: (limit = 50) => makeRequest(() => apiClient.get(`/sales/customers`, { params: { limit } })),
     createCustomer: (customerData) => makeRequest(() => apiClient.post('/sales/customers', customerData)),
   },
 
