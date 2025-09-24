@@ -4040,16 +4040,17 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run minimal backend tests focusing on Purchase Orders smoke tests"""
-        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS SMOKE TEST")
+        """Run backend tests focusing on Purchase Orders with mixed date types"""
+        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE ORDERS MIXED DATE TYPES TEST")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🛒 Focus: Purchase Orders minimal smoke tests after restart")
+        print("🛒 Focus: Purchase Orders list endpoint with mixed order_date data types")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
             self.test_health_check,  # Verify /api/ returns "GiLi API is running"
-            self.test_purchase_orders_minimal_smoke_test,  # Main focus
+            self.test_purchase_orders_mixed_date_types,  # Main focus - mixed date types
+            self.test_purchase_orders_aggregation_todate_conversion,  # Check for $toDate issues
         ]
         
         passed = 0
