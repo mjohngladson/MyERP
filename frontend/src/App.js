@@ -149,10 +149,18 @@ function AppContent() {
         'Sales Order': 'sales-order-list',
         'Sales Invoice': 'sales-invoice-list',
         'Quotation': 'quotation-list',
+        'Customer': 'customers-list',
+        'Item': 'items-list',
       },
       buying: {
         'Purchase Order': 'purchase-order-list',
         'Purchase Invoice': 'purchase-invoice-list',
+      },
+      stock: {
+        'Item': 'items-list',
+        'Warehouse': 'warehouses',
+        'Stock Entry': 'stock-entry',
+        'Stock Reconciliation': 'stock-ledger',
       }
     };
     const key = mapById[id]?.[subItem];
