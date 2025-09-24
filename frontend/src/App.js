@@ -135,7 +135,9 @@ function AppContent() {
       }
     };
     const key = mapById[id]?.[subItem];
-    if (key) setActiveModule(key);
+    if (key) {
+      setActiveModule(key);
+    }
   };
 
   const { isAuthenticated, loading } = useAuth();
