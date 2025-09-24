@@ -96,6 +96,10 @@ async def api_update_settings(body: Dict[str, Any]):
         if body["valuation_method"] not in ("FIFO", "MovingAverage"):
             raise HTTPException(status_code=400, detail="Invalid valuation_method")
         update["valuation_method"] = body["valuation_method"]
+    if "enable_batches" in body:
+        update["enable_batches"] = bool(body["enable_batches"])
+    if "enable_serials" in body:
+        update["enable_serials"] = bool(body["enable_serials"])
     if not update:
         return current
     update["updated_at"] = now_utc()
