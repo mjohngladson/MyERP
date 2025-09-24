@@ -4481,16 +4481,17 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on Sales Orders Stats Filters"""
-        print("🚀 Starting GiLi Backend API Testing Suite - SALES ORDERS STATS FILTERS TEST")
+        """Run backend tests focusing on Items CRUD API and Sales Order Detail API"""
+        print("🚀 Starting GiLi Backend API Testing Suite - ITEMS CRUD & SALES ORDER DETAIL API TEST")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Sales Orders stats filters comprehensive testing")
+        print("📊 Focus: Items CRUD API endpoints and Sales Order Detail API testing")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
-            self.test_health_check,  # Verify /api/ returns "GiLi API is running"
-            self.test_sales_orders_stats_filters,  # Main focus - stats filters testing
+            self.test_basic_api_health_checks,  # Basic API health checks
+            self.test_items_crud_operations,    # Items CRUD API testing
+            self.test_sales_order_detail_api,   # Sales Order Detail API testing
         ]
         
         passed = 0
@@ -4514,7 +4515,7 @@ class BackendTester:
         success_rate = (passed / total * 100) if total > 0 else 0
         
         print("=" * 80)
-        print("🏁 SALES ORDERS STATS FILTERS TESTING COMPLETE")
+        print("🏁 ITEMS CRUD & SALES ORDER DETAIL API TESTING COMPLETE")
         print(f"✅ Passed: {passed}")
         print(f"❌ Failed: {failed}")
         print(f"📊 Success Rate: {success_rate:.1f}%")
