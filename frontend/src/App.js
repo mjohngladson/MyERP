@@ -22,11 +22,12 @@ import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
 import ItemsList from './components/ItemsList';
 import CustomersList from './components/CustomersList';
+import SuppliersList from './components/SuppliersList';
 import Warehouses from './components/Warehouses';
 import StockEntryForm from './components/StockEntryForm';
 import StockLedger from './components/StockLedger';
 import StockReports from './components/StockReports';
-import StockSettings from './components/StockSettings';
+import GeneralSettings from './components/GeneralSettings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -67,7 +68,7 @@ function AppContent() {
 
       // Sales Invoices
       case 'sales-invoice-list':
-        return <SalesInvoicesList onBack={() => setActiveModule('dashboard')} />;
+        return <SalesInvoicesList onBack={() => setActiveModule('dashboard')} onViewInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceView: inv})); setActiveModule('sales-invoice-view'); }} onEditInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceEdit: inv})); setActiveModule('sales-invoice-form'); }} />;
       case 'sales-invoice-form':
         return <SalesInvoiceForm invoiceId={pageState.invoiceEdit?.id} onBack={() => setActiveModule('sales-invoice-list')} onSave={() => setActiveModule('sales-invoice-list')} />;
       case 'sales-invoice-view':
@@ -121,11 +122,13 @@ function AppContent() {
       case 'profile':
         return <ProfilePage onBack={() => setActiveModule('dashboard')} />;
       case 'settings':
-        return <SettingsPage onBack={() => setActiveModule('dashboard')} />;
+        return <GeneralSettings onBack={() => setActiveModule('dashboard')} />;
       case 'items-list':
         return <ItemsList onBack={() => setActiveModule('dashboard')} />;
       case 'customers-list':
         return <CustomersList onBack={() => setActiveModule('dashboard')} />;
+      case 'suppliers-list':
+        return <SuppliersList onBack={() => setActiveModule('dashboard')} />;
       case 'warehouses':
         return <Warehouses onBack={() => setActiveModule('dashboard')} />;
       case 'stock-entry':
@@ -134,8 +137,8 @@ function AppContent() {
         return <StockLedger onBack={() => setActiveModule('dashboard')} />;
       case 'reports':
         return <StockReports onBack={() => setActiveModule('dashboard')} />;
-      case 'stock-settings':
-        return <StockSettings onBack={() => setActiveModule('dashboard')} />;
+      case 'general-settings':
+        return <GeneralSettings onBack={() => setActiveModule('dashboard')} />;
 
       default:
         return <Dashboard />;
@@ -145,6 +148,7 @@ function AppContent() {
   const handleSubItemClick = (moduleId, subItem) => {
     const id = (moduleId || '').toString().toLowerCase();
     const mapById = {
+      reports: { 'Reports': 'reports' },
       sales: {
         'Sales Order': 'sales-order-list',
         'Sales Invoice': 'sales-invoice-list',
@@ -155,6 +159,7 @@ function AppContent() {
       buying: {
         'Purchase Order': 'purchase-order-list',
         'Purchase Invoice': 'purchase-invoice-list',
+        'Supplier': 'suppliers-list',
       },
       stock: {
         'Item': 'items-list',
@@ -196,7 +201,7 @@ function AppContent() {
         <Header 
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
           onProfileClick={() => setActiveModule('profile')} 
-          onSettingsClick={() => setActiveModule('settings')} 
+          onSettingsClick={() => setActiveModule('general-settings')} 
           onNavigate={(path) => {
             const routes = {
               '/sales/orders': 'sales-order-list',
@@ -204,8 +209,11 @@ function AppContent() {
               '/sales/invoices': 'sales-invoice-list',
               '/buying/purchase-orders': 'purchase-order-list',
               '/buying/purchase-invoices': 'purchase-invoice-list',
+              '/buying/suppliers': 'suppliers-list',
               '/stock/items': 'items-list',
+              '/stock/entry': 'stock-entry',
               '/sales/customers': 'customers-list',
+              '/reports': 'reports',
             };
             const key = routes[path];
             if (key) {

@@ -15,6 +15,8 @@ from routers import dashboard, auth, sales, search, reporting, invoices, quotati
 from routers.purchase_invoices import router as purchase_invoices_router
 from routers.pos_integration import get_pos_router
 from routers.stock import router as stock_router
+from routers.general_settings import router as general_settings_router
+from routers.master_data import router as master_data_router
 from database import init_sample_data
 
 ROOT_DIR = Path(__file__).parent
@@ -108,6 +110,8 @@ app.include_router(quotations.router)
 app.include_router(purchase.router)
 app.include_router(purchase_invoices_router)
 app.include_router(stock_router)
+app.include_router(general_settings_router)
+app.include_router(master_data_router)
 app.include_router(get_pos_router())
 
 app.add_middleware(
