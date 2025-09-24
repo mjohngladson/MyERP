@@ -89,10 +89,36 @@ const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = ()
       {/* Right section */}
       <div className="flex items-center space-x-4">
         {/* Quick create button */}
-        <button className="hidden sm:flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus size={16} />
-          <span className="text-sm font-medium">Create</span>
-        </button>
+        <div className="hidden sm:flex items-center space-x-2">
+          <div className="relative group">
+            <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <Plus size={16} />
+              <span className="text-sm font-medium">Create</span>
+            </button>
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
+              <button onClick={() => onNavigate('/sales/orders')} className="w-full flex items-center space-x-2 px-4 py-2 text-sm hover:bg-gray-50">
+                <ShoppingCart size={14} className="text-gray-600" />
+                <span>Sales Order</span>
+              </button>
+              <button onClick={() => onNavigate('/sales/invoices')} className="w-full flex items-center space-x-2 px-4 py-2 text-sm hover:bg-gray-50">
+                <Receipt size={14} className="text-gray-600" />
+                <span>Sales Invoice</span>
+              </button>
+              <button onClick={() => onNavigate('/buying/purchase-orders')} className="w-full flex items-center space-x-2 px-4 py-2 text-sm hover:bg-gray-50">
+                <FileText size={14} className="text-gray-600" />
+                <span>Purchase Order</span>
+              </button>
+              <button onClick={() => onNavigate('/buying/purchase-invoices')} className="w-full flex items-center space-x-2 px-4 py-2 text-sm hover:bg-gray-50">
+                <Receipt size={14} className="text-gray-600" />
+                <span>Purchase Invoice</span>
+              </button>
+              <button onClick={() => onNavigate('/stock/entry')} className="w-full flex items-center space-x-2 px-4 py-2 text-sm hover:bg-gray-50">
+                <Package size={14} className="text-gray-600" />
+                <span>Stock Entry</span>
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* Notifications */}
         <div className="relative">
