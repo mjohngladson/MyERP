@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, FileText, AlertTriangle } from 'lucide-react';
 
-const StockReports = ({ onBack }) => {
+const StockReports = ({ onBack, embed = false }) => {
   const [tab, setTab] = React.useState('valuation');
   const [loading, setLoading] = React.useState(false);
   const [valuation, setValuation] = React.useState({ rows: [], total_value: 0 });
