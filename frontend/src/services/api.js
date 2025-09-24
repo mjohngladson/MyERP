@@ -92,14 +92,17 @@ export const networkUtils = {
 };
 
 // Enhanced API call wrapper with retry logic and better error handling
-const makeRequest = async (requestFn, retries = 2) => {
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+const makeRequest = async (requestFn, retries = 2, attempt = 0) => {
   try {
     return await requestFn();
   } catch (error) {
-    if (retries > 0 && (error.code === 'ECONNABORTED' || !error.response)) {
-      // Retry once for timeout or network errors
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      return makeRequest(requestFn, retries - 1);
+    const status = error?.response?.status;
+    const retriable = error.code === 'ECONNABORTED' || !error.response || [502, 503, 504].includes(status);
+    if (retries > 0 && retriable) {
+      const backoff = 500 * Math.pow(2, attempt); // 500ms, 1000ms, ...
+      await sleep(backoff);
+      return makeRequest(requestFn, retries - 1, attempt + 1);
     }
     throw error;
   }
