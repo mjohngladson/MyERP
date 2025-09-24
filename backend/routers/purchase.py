@@ -59,7 +59,7 @@ async def list_purchase_orders(
 
         pipeline = [
             { '$addFields': {
-                'order_date_sort': { '$toDate': { '$ifNull': [ '$order_date', '$created_at' ] } }
+                'order_date_sort': { '$toDate': { '$cond': [ { '$or': [ { '$eq': [ '$order_date', None ] }, { '$eq': [ '$order_date', '' ] } ] }, '$created_at', '$order_date' ] } }
             }},
         ]
         if query:
