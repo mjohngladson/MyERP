@@ -19,8 +19,16 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   React.useEffect(()=>{ const t = setTimeout(()=> setDebouncedSearch(searchInput), 500); return ()=>clearTimeout(t); }, [searchInput]);
 
   const { data: invData, loading, error, refetch } = useApi(() =>
-    fetch(`${api.getBaseUrl()}/api/purchase/invoices?limit=${pageSize}&skip=${(currentPage-1)*pageSize}&status=${filterStatus!=='all'?filterStatus:''}&search=${encodeURIComponent(debouncedSearch)}&sort_by=${encodeURIComponent(sortBy)}&sort_dir=${encodeURIComponent(sortDir)}&from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}`)
-      .then(r => { if(!r.ok) throw new Error('Failed'); return r.json(); })
+    api.get('/purchase/invoices', { params: {
+      limit: pageSize,
+      skip: (currentPage-1)*pageSize,
+      status: filterStatus !== 'all' ? filterStatus : undefined,
+      search: debouncedSearch || undefined,
+      sort_by: sortBy,
+      sort_dir: sortDir,
+      from_date: fromDate || undefined,
+      to_date: toDate || undefined,
+    }}).then(r => r.data)
   , [pageSize, currentPage, filterStatus, sortBy, sortDir, fromDate, toDate, debouncedSearch]);
 
   // Filter-aware stats (only when visible)
