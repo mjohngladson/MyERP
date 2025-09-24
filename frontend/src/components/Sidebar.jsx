@@ -26,7 +26,9 @@ const iconComponents = {
   Users,
   FolderOpen,
   Cog,
-  UserCheck
+  UserCheck,
+  LayoutDashboard,
+  DollarSign
 };
 
 const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubItemClick }) => {
