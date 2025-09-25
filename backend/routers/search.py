@@ -34,8 +34,12 @@ async def global_search(
         "suppliers": 0, 
         "items": 0,
         "sales_orders": 0,
+        "quotations": 0,
         "invoices": 0,
         "purchase_orders": 0,
+        "purchase_invoices": 0,
+        "credit_notes": 0,
+        "debit_notes": 0,
         "transactions": 0
     }
     
