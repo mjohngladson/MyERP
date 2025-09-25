@@ -7093,19 +7093,21 @@ class BackendTester:
             self.log_test("Debit Notes Calculation Fix", False, f"Error: {str(e)}")
             return False
     async def run_all_tests(self):
-        """Run backend tests focusing on Credit Notes and Debit Notes Timestamp Tracking Issue"""
-        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT/DEBIT NOTES TIMESTAMP TRACKING TESTING")
+        """Run backend tests focusing on Backend Improvements for Global Search and Dashboard"""
+        print("🚀 Starting GiLi Backend API Testing Suite - BACKEND IMPROVEMENTS TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Credit Notes and Debit Notes Timestamp Tracking Issue")
-        print("🎯 Testing: last_sent_at timestamp update after SMS send operations")
-        print("🐛 Bug: After sending SMS, it still shows 'sent 5h ago' instead of current time")
+        print("📊 Focus: Backend Improvements for Global Search and Dashboard Real Transactions")
+        print("🎯 Testing: Enhanced Global Search, Dashboard Real Transactions, View All Transactions, Enhanced Search Navigation")
+        print("🔍 Improvements: Added missing transaction types, real data fetching, proper IDs for navigation")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_credit_notes_timestamp_tracking,      # Credit Notes Timestamp Tracking Issue
-            self.test_debit_notes_timestamp_tracking,       # Debit Notes Timestamp Tracking Issue
+            self.test_enhanced_global_search,               # Global Search Enhanced - Added missing transaction types
+            self.test_dashboard_real_transactions,          # Dashboard Real Transactions - Updated to fetch real data
+            self.test_view_all_transactions_endpoint,       # View All Transactions - New endpoint
+            self.test_enhanced_search_suggestions,          # Enhanced Search Navigation - Results include proper IDs
         ]
         
         passed = 0
