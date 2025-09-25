@@ -216,24 +216,44 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-                <select
+                <AutocompleteSearch
+                  options={customers.map(customer => ({
+                    ...customer,
+                    subtitle: customer.email || customer.phone || customer.mobile
+                  }))}
                   value={form.customer_name}
-                  onChange={e => selectCustomer(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Customer</option>
-                  {customers.map(customer => (
-                    <option key={customer.id} value={customer.name}>{customer.name}</option>
-                  ))}
-                </select>
-                {form.customer_name && !customers.find(c => c.name === form.customer_name) && (
-                  <input
-                    value={form.customer_name}
-                    onChange={e => updateForm('customer_name', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 mt-2"
-                    placeholder="Or enter custom customer name"
-                  />
-                )}
+                  onChange={value => updateForm('customer_name', value)}
+                  onSelect={customer => {
+                    if (customer && typeof customer === 'object') {
+                      selectCustomer(customer.name);
+                    } else {
+                      updateForm('customer_name', customer || '');
+                    }
+                  }}
+                  placeholder="Search customers..."
+                  displayField="name"
+                  searchFields={['name', 'email', 'phone', 'mobile']}
+                  allowCustom={true}
+                  customPlaceholder="Or enter custom customer name"
+                  renderOption={(customer, index, isHighlighted) => (
+                    <div
+                      key={customer.id || index}
+                      className={`px-3 py-2 cursor-pointer ${
+                        isHighlighted ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        if (typeof customer === 'object') {
+                          selectCustomer(customer.name);
+                        }
+                      }}
+                    >
+                      <div className="font-medium text-sm">{customer.name}</div>
+                      {customer.subtitle && (
+                        <div className="text-xs text-gray-500">{customer.subtitle}</div>
+                      )}
+                    </div>
+                  )}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
