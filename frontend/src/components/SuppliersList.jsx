@@ -269,14 +269,14 @@ const SuppliersList = ({ onBack }) => {
                   <div className="text-sm">{supplier.supplier_type}</div>
                   <div className="text-xs text-gray-500">{supplier.payment_terms || 'Net 30'}</div>
                 </div>
-                <div className="col-span-2 text-gray-700">
+                <div className="col-span-2 text-gray-700 min-w-0">
                   <div className="flex items-center space-x-1 text-sm">
-                    {supplier.email && <Mail size={12} />}
-                    <span>{supplier.email || '-'}</span>
+                    {supplier.email && <Mail size={12} className="flex-shrink-0" />}
+                    <span className="truncate">{supplier.email || '-'}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-sm">
-                    {supplier.phone && <Phone size={12} />}
-                    <span>{supplier.phone || supplier.mobile || '-'}</span>
+                    {supplier.phone && <Phone size={12} className="flex-shrink-0" />}
+                    <span className="truncate">{supplier.phone || supplier.mobile || '-'}</span>
                   </div>
                 </div>
                 <div className="col-span-2 text-gray-700">
