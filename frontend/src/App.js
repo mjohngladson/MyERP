@@ -141,6 +141,8 @@ function AppContent() {
         );
       case 'credit-note-form':
         return <CreditNoteForm creditNoteId={pageState.creditNoteEdit?.id} onBack={() => setActiveModule('credit-note-list')} onSave={() => setActiveModule('credit-note-list')} />;
+      case 'credit-note-view':
+        return <CreditNoteView creditNoteId={pageState.creditNoteView?.id} onBack={() => setActiveModule('credit-note-list')} />;
 
       // Debit Notes
       case 'debit-note-list':
@@ -154,6 +156,8 @@ function AppContent() {
         );
       case 'debit-note-form':
         return <DebitNoteForm debitNoteId={pageState.debitNoteEdit?.id} onBack={() => setActiveModule('debit-note-list')} onSave={() => setActiveModule('debit-note-list')} />;
+      case 'debit-note-view':
+        return <DebitNoteView debitNoteId={pageState.debitNoteView?.id} onBack={() => setActiveModule('debit-note-list')} />;
 
       case 'profile':
         return <ProfilePage onBack={() => setActiveModule('dashboard')} />;
