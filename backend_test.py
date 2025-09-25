@@ -7552,21 +7552,22 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on Backend Improvements for Global Search and Dashboard"""
-        print("🚀 Starting GiLi Backend API Testing Suite - BACKEND IMPROVEMENTS TESTING")
+        """Run backend tests focusing on CRITICAL FIXES for user-reported issues"""
+        print("🚀 Starting GiLi Backend API Testing Suite - CRITICAL FIXES TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Backend Improvements for Global Search and Dashboard Real Transactions")
-        print("🎯 Testing: Enhanced Global Search, Dashboard Real Transactions, View All Transactions, Enhanced Search Navigation")
-        print("🔍 Improvements: Added missing transaction types, real data fetching, proper IDs for navigation")
+        print("🎯 CRITICAL FIXES TO TEST:")
+        print("   1. Sales Invoice Send Button Fix - Verify POST /api/invoices/{id}/send works")
+        print("   2. Individual Email/SMS Status Tracking - Test separate email_sent_at, sms_sent_at fields")
+        print("   3. Email Delivery Issue - Test actual SendGrid email sending")
+        print("   4. Uniform Status Tracking - Verify Credit/Debit Notes use same format as Invoices")
         print("=" * 80)
         
-        # Tests to run (as requested in review)
+        # Tests to run (CRITICAL FIXES as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_enhanced_global_search,               # Global Search Enhanced - Added missing transaction types
-            self.test_dashboard_real_transactions,          # Dashboard Real Transactions - Updated to fetch real data
-            self.test_view_all_transactions_endpoint,       # View All Transactions - New endpoint
-            self.test_enhanced_search_suggestions,          # Enhanced Search Navigation - Results include proper IDs
+            self.test_sales_invoice_send_fixes,             # CRITICAL: Sales Invoice Send Button Fix + Individual Status Tracking
+            self.test_credit_debit_notes_uniform_status,    # CRITICAL: Uniform Status Tracking for Credit/Debit Notes
+            self.test_sendgrid_email_delivery,              # CRITICAL: Email Delivery Issue - Test actual SendGrid
         ]
         
         passed = 0
