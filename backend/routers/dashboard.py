@@ -172,6 +172,78 @@ async def get_recent_transactions(limit: int = 10, days_back: int = 2):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching transactions: {str(e)}")
 
+@router.get("/transactions/all")
+async def get_all_transactions(days_back: int = 2, limit: int = 50):
+    """Get all transactions for View All modal - last 2 days or last 10 transactions"""
+    try:
+        from database import sales_invoices_collection, purchase_invoices_collection, credit_notes_collection, debit_notes_collection
+        
+        # Calculate date filter for last X days
+        cutoff_date = datetime.utcnow() - timedelta(days=days_back)
+        
+        all_transactions = []
+        
+        # Fetch all transaction types from last X days
+        collections_config = [
+            (sales_invoices_collection, "sales_invoice", "invoice_number", "customer_name", "invoice_date"),
+            (purchase_invoices_collection, "purchase_invoice", "invoice_number", "supplier_name", "invoice_date"),
+            (credit_notes_collection, "credit_note", "credit_note_number", "customer_name", "credit_note_date"),
+            (debit_notes_collection, "debit_note", "debit_note_number", "supplier_name", "debit_note_date")
+        ]
+        
+        for collection, type_name, number_field, party_field, date_field in collections_config:
+            documents = await collection.find({
+                "created_at": {"$gte": cutoff_date}
+            }).sort("created_at", -1).to_list(100)
+            
+            for doc in documents:
+                all_transactions.append({
+                    "id": doc.get("id", str(doc.get("_id"))),
+                    "type": type_name,
+                    "reference_number": doc.get(number_field, "N/A"),
+                    "party_name": doc.get(party_field, "Unknown"),
+                    "amount": doc.get("total_amount", 0),
+                    "date": doc.get(date_field, doc.get("created_at")),
+                    "status": doc.get("status", "draft"),
+                    "created_at": doc.get("created_at", datetime.utcnow().isoformat())
+                })
+        
+        # If less than 10 found in last 2 days, get last 10 regardless of date
+        if len(all_transactions) < 10:
+            for collection, type_name, number_field, party_field, date_field in collections_config:
+                additional_docs = await collection.find().sort("created_at", -1).to_list(10)
+                existing_ids = {t["id"] for t in all_transactions}
+                
+                for doc in additional_docs:
+                    doc_id = doc.get("id", str(doc.get("_id")))
+                    if doc_id not in existing_ids:
+                        all_transactions.append({
+                            "id": doc_id,
+                            "type": type_name,
+                            "reference_number": doc.get(number_field, "N/A"),
+                            "party_name": doc.get(party_field, "Unknown"),
+                            "amount": doc.get("total_amount", 0),
+                            "date": doc.get(date_field, doc.get("created_at")),
+                            "status": doc.get("status", "draft"),
+                            "created_at": doc.get("created_at", datetime.utcnow().isoformat())
+                        })
+                        
+                        if len(all_transactions) >= 10:
+                            break
+        
+        # Sort by created_at descending
+        all_transactions.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        
+        return {
+            "transactions": all_transactions[:limit],
+            "total": len(all_transactions),
+            "days_back": days_back,
+            "cutoff_date": cutoff_date.isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching all transactions: {str(e)}")
+
 @router.get("/notifications", response_model=List[Notification])
 async def get_notifications(user_id: str, limit: int = 10):
     """Get user notifications"""
