@@ -248,8 +248,18 @@ async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
         else:
             raise HTTPException(status_code=400, detail="Invalid method. Use 'email' or 'sms'")
         
-        # Update send status based on result with individual tracking
+        # Update send status based on result with individual tracking (uniform format)
+        errors = {}
+        if send_result and not send_result.get("success"):
+            error_msg = send_result.get("error", "Unknown error")
+            if method == "email":
+                errors["email"] = error_msg
+            elif method == "sms":
+                errors["sms"] = error_msg
+        
         update_data = {
+            "last_send_result": {method: send_result} if send_result else {},
+            "last_send_errors": errors,
             "last_send_attempt_at": now,
             "sent_to": recipient,
             "send_method": method,
@@ -265,20 +275,18 @@ async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
             elif method == "sms":
                 update_data["sms_sent_at"] = now
                 update_data["sms_status"] = "sent"
-            update_data.pop("last_send_error", None)
         else:
-            error_msg = send_result.get("error", "Unknown error") if send_result else "Unknown error"
-            update_data["last_send_error"] = error_msg
             if method == "email":
                 update_data["email_status"] = "failed"
-                if "last_send_errors" not in update_data:
-                    update_data["last_send_errors"] = {}
-                update_data["last_send_errors"]["email"] = error_msg
             elif method == "sms":
-                update_data["sms_status"] = "failed" 
-                if "last_send_errors" not in update_data:
-                    update_data["last_send_errors"] = {}
-                update_data["last_send_errors"]["sms"] = error_msg
+                update_data["sms_status"] = "failed"
+        
+        # Keep legacy sent_at for backward compatibility
+        if send_result and send_result.get("success"):
+            update_data.update({
+                "sent_at": now,
+                "sent_via": [method]
+            })
         
         await credit_notes_collection.update_one(
             {"id": credit_note_id}, 
