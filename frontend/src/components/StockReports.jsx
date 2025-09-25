@@ -83,12 +83,12 @@ const StockReports = ({ onBack, embed = false }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {valuation.rows.map((r, idx) => (
+                {(valuation?.rows || []).map((r, idx) => (
                   <tr key={idx}>
-                    <td className="px-4 py-2">{r.item_id}</td>
-                    <td className="px-4 py-2">{r.warehouse_id}</td>
-                    <td className="px-4 py-2 text-right">{r.qty}</td>
-                    <td className="px-4 py-2 text-right">₹ {Math.round(r.value).toLocaleString('en-IN')}</td>
+                    <td className="px-4 py-2">{r?.item_id || '-'}</td>
+                    <td className="px-4 py-2">{r?.warehouse_id || '-'}</td>
+                    <td className="px-4 py-2 text-right">{r?.qty || 0}</td>
+                    <td className="px-4 py-2 text-right">₹ {Math.round(r?.value || 0).toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
