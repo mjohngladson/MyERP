@@ -191,15 +191,36 @@ async def get_recent_transactions(limit: int = 10, days_back: int = 2):
         }).sort("created_at", -1).to_list(50)
         
         for note in debit_notes:
+            # Handle date fields properly
+            note_date = note.get("debit_note_date") or note.get("created_at") or datetime.utcnow()
+            if isinstance(note_date, str) and note_date.strip() == "":
+                note_date = datetime.utcnow()
+            elif isinstance(note_date, str):
+                try:
+                    from dateutil.parser import parse
+                    note_date = parse(note_date)
+                except:
+                    note_date = datetime.utcnow()
+            
+            created_at = note.get("created_at") or datetime.utcnow()
+            if isinstance(created_at, str) and created_at.strip() == "":
+                created_at = datetime.utcnow()
+            elif isinstance(created_at, str):
+                try:
+                    from dateutil.parser import parse
+                    created_at = parse(created_at)
+                except:
+                    created_at = datetime.utcnow()
+            
             all_transactions.append({
                 "id": note.get("id", str(note.get("_id"))),
                 "type": "debit_note",
                 "reference_number": note.get("debit_note_number", "N/A"),
                 "party_name": note.get("supplier_name", "Unknown Supplier"),
                 "amount": note.get("total_amount", 0),
-                "date": note.get("debit_note_date", note.get("created_at")),
+                "date": note_date,
                 "status": note.get("status", "draft"),
-                "created_at": note.get("created_at", datetime.utcnow().isoformat())
+                "created_at": created_at
             })
         
         # If we have less than 10 transactions from last 2 days, get the last 10 regardless of date
