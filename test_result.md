@@ -1687,6 +1687,8 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Please run backend tests focused on /api/sales/orders/stats/overview filters (status, search, from_date, to_date) and verify counts/amounts align with filtered list results. Skip frontend automated UI tests for now; user will verify Sales Invoices layout manually."
+  - agent: "testing"
+    message: "🎯 CREDIT NOTES & DEBIT NOTES CALCULATION FIX TESTING COMPLETED SUCCESSFULLY - ALL REQUIREMENTS VERIFIED: Conducted comprehensive testing of Credit Notes and Debit Notes calculation fix as requested in review. RESULTS: (1) ✅ EXACT SCENARIO TESTING - Tested the exact scenario from review request: Subtotal ₹350, Discount ₹50, Tax Rate 18%, Expected Tax ₹54 (on discounted amount ₹300), Total ₹354 - ALL VALUES MATCH EXACTLY (2) ✅ CREDIT NOTES CALCULATION FIX - Both CREATE and UPDATE operations working correctly, tax calculated on discounted amount (₹300) not original subtotal (₹350), giving correct tax of ₹54 and total of ₹354 (3) ✅ DEBIT NOTES CALCULATION FIX - Both CREATE and UPDATE operations working correctly, same calculation logic verified (4) ✅ UPDATE ENDPOINT VERIFICATION - UPDATE endpoints properly recalculate totals when discount_amount or tax_rate fields are changed, following correct order: subtotal - discount = discounted_total, then tax on discounted_total (5) ✅ BUG FIX CONFIRMED - The calculation bug where tax was calculated on original subtotal instead of discounted amount has been successfully fixed. All calculation scenarios tested with 100% success rate."
   - task: "Header User Profile Dropdown"
     implemented: true
     working: true
