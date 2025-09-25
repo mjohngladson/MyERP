@@ -76,6 +76,15 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
     const newItems = [...form.items];
     newItems[index] = { ...newItems[index], [field]: value };
     
+    // If selecting an item from dropdown, auto-populate rate
+    if (field === 'item_name' && value) {
+      const selectedItem = masterItems.find(item => item.name === value);
+      if (selectedItem) {
+        newItems[index].rate = selectedItem.unit_price || 0;
+        newItems[index].amount = newItems[index].quantity * (selectedItem.unit_price || 0);
+      }
+    }
+    
     // Auto-calculate amount
     if (field === 'quantity' || field === 'rate') {
       const quantity = field === 'quantity' ? parseFloat(value) || 0 : newItems[index].quantity;
@@ -84,6 +93,19 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
     }
     
     setForm(prev => ({ ...prev, items: newItems }));
+  };
+
+  const selectSupplier = (supplierName) => {
+    const supplier = suppliers.find(s => s.name === supplierName);
+    if (supplier) {
+      setForm(prev => ({
+        ...prev,
+        supplier_name: supplier.name,
+        supplier_email: supplier.email || '',
+        supplier_phone: supplier.phone || supplier.mobile || '',
+        supplier_address: supplier.billing_address || ''
+      }));
+    }
   };
 
   const addItem = () => {
