@@ -6128,7 +6128,7 @@ class BackendTester:
                         # Try to send via SMS to trigger Twilio
                         sms_payload = {
                             "method": "sms",
-                            "phone": "+1234567890"
+                            "phone": "+15551234567"  # Valid US phone number format for testing
                         }
                         
                         async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=sms_payload) as send_response:
