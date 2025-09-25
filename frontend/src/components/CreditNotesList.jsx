@@ -355,6 +355,20 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                   placeholder={sendMethod === 'email' ? 'customer@email.com' : '+91 9876543210'}
                 />
               </div>
+
+              {sendMethod === 'email' && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={attachPdf}
+                    onChange={e => setAttachPdf(e.target.checked)}
+                    id="attach-pdf"
+                  />
+                  <label htmlFor="attach-pdf" className="text-sm text-gray-600">
+                    Attach PDF
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end space-x-2">
