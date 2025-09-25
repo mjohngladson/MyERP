@@ -227,8 +227,8 @@ const Sidebar = ({ isOpen, toggleSidebar, activeModule, setActiveModule, onSubIt
           {/* Footer with Settings at bottom */}
           <div className="mt-auto p-4 border-t border-gray-200">
             <button
-              onClick={() => setActiveModule('stock-settings')}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 ${activeModule === 'stock-settings' ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+              onClick={() => setActiveModule('general-settings')}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 ${activeModule === 'general-settings' ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
             >
               <div className="p-2 rounded-md" style={{ backgroundColor: `#64748b25`, color: '#334155' }}>
                 <Cog size={20} />
