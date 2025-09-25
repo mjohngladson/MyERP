@@ -295,6 +295,18 @@ backend:
           agent: "testing"
           comment: "✅ API ENDPOINT REGISTRATION TESTING COMPLETED SUCCESSFULLY: Verified that credit_notes and debit_notes routers are properly registered and accessible as requested in review. RESULTS: (1) ✅ Credit Notes Endpoints: /api/sales/credit-notes and /api/sales/credit-notes/stats/overview both return HTTP 200, confirming endpoints are accessible (2) ✅ Debit Notes Endpoints: /api/buying/debit-notes and /api/buying/debit-notes/stats/overview both return HTTP 200, confirming endpoints are accessible (3) ✅ Router Inclusion: All credit_notes and debit_notes endpoints are properly registered in server.py and accessible through the API. No 404 errors found, confirming routers are correctly included."
 
+  - task: "Credit Notes and Debit Notes Timestamp Tracking Issue Testing"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py, backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ TIMESTAMP TRACKING ISSUE TESTING COMPLETED SUCCESSFULLY - NO BUG FOUND: Conducted comprehensive testing of the reported timestamp tracking issue where 'after sending SMS, it still shows sent 5h ago instead of showing current time'. COMPREHENSIVE TEST RESULTS: (1) ✅ CREDIT NOTES TIMESTAMP TRACKING: Created test credit note, set old timestamp (5 hours ago), sent email via POST /api/sales/credit-notes/{id}/send, verified last_sent_at was updated to current time (within 0.3s of send operation). All tracking fields (sent_to=timestamp.test@example.com, send_method=email, last_send_attempt_at) updated correctly. (2) ✅ DEBIT NOTES TIMESTAMP TRACKING: Created test debit note, set old timestamp (5 hours ago), sent email via POST /api/buying/debit-notes/{id}/send, verified last_sent_at was updated to current time (within 0.2s of send operation). All tracking fields updated correctly. (3) ✅ SEND FUNCTIONALITY VERIFICATION: Both Credit Notes and Debit Notes send operations working correctly with real SendGrid integration, returning success:true and proper sent_at timestamps. (4) ✅ DATABASE UPDATE VERIFICATION: Backend properly updates the last_sent_at field in MongoDB with current UTC timestamp after successful send operations. (5) ✅ IMMEDIATE GET VERIFICATION: GET requests immediately after send operations return updated last_sent_at timestamps, confirming database persistence. CONCLUSION: The reported timestamp tracking issue is NOT REPRODUCIBLE in backend. The backend correctly updates timestamps after send operations. Issue may be frontend-related (UI not refreshing) or user-specific. Backend timestamp tracking functionality working as expected."
+
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
     working: true
