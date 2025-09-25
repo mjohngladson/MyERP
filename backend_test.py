@@ -1065,7 +1065,7 @@ class BackendTester:
                     send_response = await response.json()
                     if send_response.get("success"):
                         sent_at_from_response = send_response.get("sent_at")
-                        self.log_test("Credit Notes Timestamp - Send SMS", True, f"SMS sent successfully, response sent_at: {sent_at_from_response}")
+                        self.log_test("Credit Notes Timestamp - Send Email", True, f"Email sent successfully, response sent_at: {sent_at_from_response}")
                         
                         # Step 5: CRITICAL - Immediately get the credit note to verify timestamp update
                         async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as get_response:
