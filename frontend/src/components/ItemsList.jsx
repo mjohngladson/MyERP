@@ -87,6 +87,12 @@ const ItemsList = ({ onBack }) => {
   React.useEffect(() => { loadSettings(); }, []);
 
   const openNew = () => { 
+    if (!settings) {
+      // Settings not loaded yet, wait a bit and try again
+      setTimeout(() => openNew(), 500);
+      return;
+    }
+    
     setForm({ 
       id: null,
       name: '',
