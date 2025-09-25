@@ -981,6 +981,297 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_timestamp_tracking(self):
+        """Test Credit Notes timestamp tracking issue - CRITICAL BUG REPRODUCTION"""
+        try:
+            # Step 1: Create a test credit note
+            create_payload = {
+                "customer_name": "Test Customer for Timestamp",
+                "customer_email": "timestamp.test@example.com",
+                "customer_phone": "+1234567890",
+                "credit_note_date": "2024-01-15",
+                "reference_invoice": "INV-TEST-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Item",
+                        "quantity": 1,
+                        "rate": 100.0,
+                        "amount": 100.0
+                    }
+                ],
+                "discount_amount": 0,
+                "tax_rate": 18,
+                "status": "Draft"
+            }
+            
+            credit_note_id = None
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=create_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and data.get("credit_note"):
+                        credit_note_id = data["credit_note"]["id"]
+                        self.log_test("Credit Notes Timestamp - Create", True, f"Created credit note: {credit_note_id}")
+                    else:
+                        self.log_test("Credit Notes Timestamp - Create", False, "Failed to create credit note", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes Timestamp - Create", False, f"HTTP {response.status}")
+                    return False
+            
+            if not credit_note_id:
+                self.log_test("Credit Notes Timestamp - Create", False, "No credit note ID returned")
+                return False
+            
+            # Step 2: Simulate old timestamp by updating the credit note with an old last_sent_at
+            import time
+            old_timestamp = datetime.now(timezone.utc).replace(hour=datetime.now().hour - 5)  # 5 hours ago
+            
+            # Update with old timestamp to simulate the issue
+            async with self.session.put(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}", json={
+                "last_sent_at": old_timestamp.isoformat(),
+                "sent_to": "old.test@example.com",
+                "send_method": "email"
+            }) as response:
+                if response.status == 200:
+                    self.log_test("Credit Notes Timestamp - Set Old Timestamp", True, f"Set old timestamp: {old_timestamp.isoformat()}")
+                else:
+                    self.log_test("Credit Notes Timestamp - Set Old Timestamp", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 3: Get the credit note to verify old timestamp
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as response:
+                if response.status == 200:
+                    before_send_data = await response.json()
+                    old_last_sent_at = before_send_data.get("last_sent_at")
+                    self.log_test("Credit Notes Timestamp - Verify Old Timestamp", True, f"Old last_sent_at: {old_last_sent_at}")
+                else:
+                    self.log_test("Credit Notes Timestamp - Verify Old Timestamp", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 4: Send SMS (the critical test)
+            send_payload = {
+                "method": "sms",
+                "phone": "+1234567890",
+                "attach_pdf": False
+            }
+            
+            send_time_before = datetime.now(timezone.utc)
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=send_payload) as response:
+                send_time_after = datetime.now(timezone.utc)
+                
+                if response.status == 200:
+                    send_response = await response.json()
+                    if send_response.get("success"):
+                        sent_at_from_response = send_response.get("sent_at")
+                        self.log_test("Credit Notes Timestamp - Send SMS", True, f"SMS sent successfully, response sent_at: {sent_at_from_response}")
+                        
+                        # Step 5: CRITICAL - Immediately get the credit note to verify timestamp update
+                        async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as get_response:
+                            if get_response.status == 200:
+                                after_send_data = await get_response.json()
+                                new_last_sent_at = after_send_data.get("last_sent_at")
+                                
+                                # Parse timestamps for comparison
+                                if new_last_sent_at:
+                                    try:
+                                        new_timestamp = datetime.fromisoformat(new_last_sent_at.replace('Z', '+00:00'))
+                                        old_timestamp_parsed = datetime.fromisoformat(old_last_sent_at.replace('Z', '+00:00')) if old_last_sent_at else None
+                                        
+                                        # Check if timestamp was updated (should be recent, not 5 hours ago)
+                                        time_diff_seconds = (send_time_after - new_timestamp).total_seconds()
+                                        
+                                        if abs(time_diff_seconds) < 60:  # Within 1 minute of send time
+                                            self.log_test("Credit Notes Timestamp - Verify Update", True, f"✅ TIMESTAMP CORRECTLY UPDATED: New last_sent_at ({new_last_sent_at}) is current, not old ({old_last_sent_at})")
+                                            
+                                            # Additional verification - check other tracking fields
+                                            last_send_attempt_at = after_send_data.get("last_send_attempt_at")
+                                            sent_to = after_send_data.get("sent_to")
+                                            send_method = after_send_data.get("send_method")
+                                            
+                                            if (last_send_attempt_at and sent_to == "+1234567890" and send_method == "sms"):
+                                                self.log_test("Credit Notes Timestamp - Verify Tracking Fields", True, f"All tracking fields updated correctly: sent_to={sent_to}, method={send_method}")
+                                            else:
+                                                self.log_test("Credit Notes Timestamp - Verify Tracking Fields", False, f"Tracking fields not updated correctly: sent_to={sent_to}, method={send_method}, attempt_at={last_send_attempt_at}")
+                                                return False
+                                        else:
+                                            self.log_test("Credit Notes Timestamp - Verify Update", False, f"❌ TIMESTAMP NOT UPDATED: New last_sent_at ({new_last_sent_at}) is not current. Time diff: {time_diff_seconds} seconds. This is the reported bug!")
+                                            return False
+                                    except Exception as e:
+                                        self.log_test("Credit Notes Timestamp - Verify Update", False, f"Error parsing timestamps: {str(e)}")
+                                        return False
+                                else:
+                                    self.log_test("Credit Notes Timestamp - Verify Update", False, "❌ CRITICAL: last_sent_at field is missing after send operation")
+                                    return False
+                            else:
+                                self.log_test("Credit Notes Timestamp - Verify Update", False, f"Failed to get credit note after send: HTTP {get_response.status}")
+                                return False
+                    else:
+                        self.log_test("Credit Notes Timestamp - Send SMS", False, f"Send failed: {send_response}")
+                        return False
+                else:
+                    self.log_test("Credit Notes Timestamp - Send SMS", False, f"HTTP {response.status}")
+                    return False
+            
+            # Cleanup - delete test credit note
+            async with self.session.delete(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as response:
+                if response.status == 200:
+                    self.log_test("Credit Notes Timestamp - Cleanup", True, "Test credit note deleted")
+                else:
+                    self.log_test("Credit Notes Timestamp - Cleanup", False, f"Failed to delete test credit note: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Credit Notes Timestamp Tracking", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_timestamp_tracking(self):
+        """Test Debit Notes timestamp tracking issue - CRITICAL BUG REPRODUCTION"""
+        try:
+            # Step 1: Create a test debit note
+            create_payload = {
+                "supplier_name": "Test Supplier for Timestamp",
+                "supplier_email": "timestamp.test@example.com",
+                "supplier_phone": "+1234567890",
+                "debit_note_date": "2024-01-15",
+                "reference_invoice": "PINV-TEST-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Item",
+                        "quantity": 1,
+                        "rate": 100.0,
+                        "amount": 100.0
+                    }
+                ],
+                "discount_amount": 0,
+                "tax_rate": 18,
+                "status": "Draft"
+            }
+            
+            debit_note_id = None
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=create_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and data.get("debit_note"):
+                        debit_note_id = data["debit_note"]["id"]
+                        self.log_test("Debit Notes Timestamp - Create", True, f"Created debit note: {debit_note_id}")
+                    else:
+                        self.log_test("Debit Notes Timestamp - Create", False, "Failed to create debit note", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes Timestamp - Create", False, f"HTTP {response.status}")
+                    return False
+            
+            if not debit_note_id:
+                self.log_test("Debit Notes Timestamp - Create", False, "No debit note ID returned")
+                return False
+            
+            # Step 2: Simulate old timestamp by updating the debit note with an old last_sent_at
+            old_timestamp = datetime.now(timezone.utc).replace(hour=datetime.now().hour - 5)  # 5 hours ago
+            
+            # Update with old timestamp to simulate the issue
+            async with self.session.put(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}", json={
+                "last_sent_at": old_timestamp.isoformat(),
+                "sent_to": "old.test@example.com",
+                "send_method": "email"
+            }) as response:
+                if response.status == 200:
+                    self.log_test("Debit Notes Timestamp - Set Old Timestamp", True, f"Set old timestamp: {old_timestamp.isoformat()}")
+                else:
+                    self.log_test("Debit Notes Timestamp - Set Old Timestamp", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 3: Get the debit note to verify old timestamp
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as response:
+                if response.status == 200:
+                    before_send_data = await response.json()
+                    old_last_sent_at = before_send_data.get("last_sent_at")
+                    self.log_test("Debit Notes Timestamp - Verify Old Timestamp", True, f"Old last_sent_at: {old_last_sent_at}")
+                else:
+                    self.log_test("Debit Notes Timestamp - Verify Old Timestamp", False, f"HTTP {response.status}")
+                    return False
+            
+            # Step 4: Send SMS (the critical test)
+            send_payload = {
+                "method": "sms",
+                "phone": "+1234567890",
+                "attach_pdf": False
+            }
+            
+            send_time_before = datetime.now(timezone.utc)
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", json=send_payload) as response:
+                send_time_after = datetime.now(timezone.utc)
+                
+                if response.status == 200:
+                    send_response = await response.json()
+                    if send_response.get("success"):
+                        sent_at_from_response = send_response.get("sent_at")
+                        self.log_test("Debit Notes Timestamp - Send SMS", True, f"SMS sent successfully, response sent_at: {sent_at_from_response}")
+                        
+                        # Step 5: CRITICAL - Immediately get the debit note to verify timestamp update
+                        async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as get_response:
+                            if get_response.status == 200:
+                                after_send_data = await get_response.json()
+                                new_last_sent_at = after_send_data.get("last_sent_at")
+                                
+                                # Parse timestamps for comparison
+                                if new_last_sent_at:
+                                    try:
+                                        new_timestamp = datetime.fromisoformat(new_last_sent_at.replace('Z', '+00:00'))
+                                        old_timestamp_parsed = datetime.fromisoformat(old_last_sent_at.replace('Z', '+00:00')) if old_last_sent_at else None
+                                        
+                                        # Check if timestamp was updated (should be recent, not 5 hours ago)
+                                        time_diff_seconds = (send_time_after - new_timestamp).total_seconds()
+                                        
+                                        if abs(time_diff_seconds) < 60:  # Within 1 minute of send time
+                                            self.log_test("Debit Notes Timestamp - Verify Update", True, f"✅ TIMESTAMP CORRECTLY UPDATED: New last_sent_at ({new_last_sent_at}) is current, not old ({old_last_sent_at})")
+                                            
+                                            # Additional verification - check other tracking fields
+                                            last_send_attempt_at = after_send_data.get("last_send_attempt_at")
+                                            sent_to = after_send_data.get("sent_to")
+                                            send_method = after_send_data.get("send_method")
+                                            
+                                            if (last_send_attempt_at and sent_to == "+1234567890" and send_method == "sms"):
+                                                self.log_test("Debit Notes Timestamp - Verify Tracking Fields", True, f"All tracking fields updated correctly: sent_to={sent_to}, method={send_method}")
+                                            else:
+                                                self.log_test("Debit Notes Timestamp - Verify Tracking Fields", False, f"Tracking fields not updated correctly: sent_to={sent_to}, method={send_method}, attempt_at={last_send_attempt_at}")
+                                                return False
+                                        else:
+                                            self.log_test("Debit Notes Timestamp - Verify Update", False, f"❌ TIMESTAMP NOT UPDATED: New last_sent_at ({new_last_sent_at}) is not current. Time diff: {time_diff_seconds} seconds. This is the reported bug!")
+                                            return False
+                                    except Exception as e:
+                                        self.log_test("Debit Notes Timestamp - Verify Update", False, f"Error parsing timestamps: {str(e)}")
+                                        return False
+                                else:
+                                    self.log_test("Debit Notes Timestamp - Verify Update", False, "❌ CRITICAL: last_sent_at field is missing after send operation")
+                                    return False
+                            else:
+                                self.log_test("Debit Notes Timestamp - Verify Update", False, f"Failed to get debit note after send: HTTP {get_response.status}")
+                                return False
+                    else:
+                        self.log_test("Debit Notes Timestamp - Send SMS", False, f"Send failed: {send_response}")
+                        return False
+                else:
+                    self.log_test("Debit Notes Timestamp - Send SMS", False, f"HTTP {response.status}")
+                    return False
+            
+            # Cleanup - delete test debit note
+            async with self.session.delete(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as response:
+                if response.status == 200:
+                    self.log_test("Debit Notes Timestamp - Cleanup", True, "Test debit note deleted")
+                else:
+                    self.log_test("Debit Notes Timestamp - Cleanup", False, f"Failed to delete test debit note: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Debit Notes Timestamp Tracking", False, f"Error: {str(e)}")
+            return False
+
     async def test_stock_valuation_report(self):
         """Test GET /api/stock/valuation/report endpoint - CRITICAL for frontend compatibility"""
         try:
