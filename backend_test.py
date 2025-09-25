@@ -6248,6 +6248,229 @@ class BackendTester:
             self.log_test("Send Tracking Fields", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_calculation_fix(self):
+        """Test Credit Notes calculation fix - Tax should be calculated on discounted amount"""
+        try:
+            # Test scenario from review request:
+            # Subtotal: ₹350.00, Discount: ₹50.00, Tax Rate: 18%
+            # Expected: Tax = ₹54.00 (on discounted amount ₹300), Total = ₹354.00
+            
+            test_payload = {
+                "customer_name": "Test Customer for Calculation Fix",
+                "customer_email": "test@example.com",
+                "credit_note_date": "2024-01-15",
+                "reference_invoice": "INV-TEST-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Item A",
+                        "quantity": 1,
+                        "rate": 350.0,
+                        "amount": 350.0
+                    }
+                ],
+                "discount_amount": 50.0,
+                "tax_rate": 18.0,
+                "status": "Draft"
+            }
+            
+            # Create Credit Note
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=test_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        credit_note = data.get("credit_note")
+                        credit_note_id = credit_note.get("id")
+                        
+                        # Verify calculations
+                        subtotal = credit_note.get("subtotal")
+                        discount_amount = credit_note.get("discount_amount")
+                        tax_rate = credit_note.get("tax_rate")
+                        tax_amount = credit_note.get("tax_amount")
+                        total_amount = credit_note.get("total_amount")
+                        
+                        # Expected calculations
+                        expected_subtotal = 350.0
+                        expected_discount = 50.0
+                        expected_discounted_total = 300.0  # 350 - 50
+                        expected_tax_amount = 54.0  # 300 * 18%
+                        expected_total = 354.0  # 300 + 54
+                        
+                        if (abs(subtotal - expected_subtotal) < 0.01 and
+                            abs(discount_amount - expected_discount) < 0.01 and
+                            abs(tax_amount - expected_tax_amount) < 0.01 and
+                            abs(total_amount - expected_total) < 0.01):
+                            
+                            self.log_test("Credit Notes Calculation Fix - CREATE", True, 
+                                f"✅ CALCULATION FIX VERIFIED: Subtotal={subtotal}, Discount={discount_amount}, Tax={tax_amount} (on ₹{expected_discounted_total}), Total={total_amount}", 
+                                credit_note)
+                            
+                            # Test UPDATE scenario - change discount and verify recalculation
+                            update_payload = {
+                                "discount_amount": 30.0,  # Change discount from 50 to 30
+                                "tax_rate": 18.0
+                            }
+                            
+                            async with self.session.put(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}", json=update_payload) as update_response:
+                                if update_response.status == 200:
+                                    updated_data = await update_response.json()
+                                    
+                                    # Verify updated calculations
+                                    updated_subtotal = updated_data.get("subtotal")
+                                    updated_discount = updated_data.get("discount_amount")
+                                    updated_tax_amount = updated_data.get("tax_amount")
+                                    updated_total = updated_data.get("total_amount")
+                                    
+                                    # Expected updated calculations
+                                    expected_updated_discounted = 320.0  # 350 - 30
+                                    expected_updated_tax = 57.6  # 320 * 18%
+                                    expected_updated_total = 377.6  # 320 + 57.6
+                                    
+                                    if (abs(updated_discount - 30.0) < 0.01 and
+                                        abs(updated_tax_amount - expected_updated_tax) < 0.01 and
+                                        abs(updated_total - expected_updated_total) < 0.01):
+                                        
+                                        self.log_test("Credit Notes Calculation Fix - UPDATE", True, 
+                                            f"✅ UPDATE CALCULATION FIX VERIFIED: Discount={updated_discount}, Tax={updated_tax_amount} (on ₹{expected_updated_discounted}), Total={updated_total}", 
+                                            updated_data)
+                                        
+                                        # Clean up - delete test credit note
+                                        await self.session.delete(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}")
+                                        return True
+                                    else:
+                                        self.log_test("Credit Notes Calculation Fix - UPDATE", False, 
+                                            f"❌ UPDATE CALCULATION INCORRECT: Expected Tax=₹{expected_updated_tax}, Total=₹{expected_updated_total}, Got Tax=₹{updated_tax_amount}, Total=₹{updated_total}", 
+                                            updated_data)
+                                        return False
+                                else:
+                                    self.log_test("Credit Notes Calculation Fix - UPDATE", False, f"Update failed with HTTP {update_response.status}")
+                                    return False
+                        else:
+                            self.log_test("Credit Notes Calculation Fix - CREATE", False, 
+                                f"❌ CALCULATION INCORRECT: Expected Tax=₹{expected_tax_amount}, Total=₹{expected_total}, Got Tax=₹{tax_amount}, Total=₹{total_amount}", 
+                                credit_note)
+                            return False
+                    else:
+                        self.log_test("Credit Notes Calculation Fix - CREATE", False, "Credit note creation failed", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes Calculation Fix - CREATE", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Credit Notes Calculation Fix", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_calculation_fix(self):
+        """Test Debit Notes calculation fix - Tax should be calculated on discounted amount"""
+        try:
+            # Test same scenario for Debit Notes:
+            # Subtotal: ₹350.00, Discount: ₹50.00, Tax Rate: 18%
+            # Expected: Tax = ₹54.00 (on discounted amount ₹300), Total = ₹354.00
+            
+            test_payload = {
+                "supplier_name": "Test Supplier for Calculation Fix",
+                "supplier_email": "supplier@example.com",
+                "debit_note_date": "2024-01-15",
+                "reference_invoice": "PINV-TEST-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Item B",
+                        "quantity": 1,
+                        "rate": 350.0,
+                        "amount": 350.0
+                    }
+                ],
+                "discount_amount": 50.0,
+                "tax_rate": 18.0,
+                "status": "Draft"
+            }
+            
+            # Create Debit Note
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=test_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        debit_note = data.get("debit_note")
+                        debit_note_id = debit_note.get("id")
+                        
+                        # Verify calculations
+                        subtotal = debit_note.get("subtotal")
+                        discount_amount = debit_note.get("discount_amount")
+                        tax_rate = debit_note.get("tax_rate")
+                        tax_amount = debit_note.get("tax_amount")
+                        total_amount = debit_note.get("total_amount")
+                        
+                        # Expected calculations
+                        expected_subtotal = 350.0
+                        expected_discount = 50.0
+                        expected_discounted_total = 300.0  # 350 - 50
+                        expected_tax_amount = 54.0  # 300 * 18%
+                        expected_total = 354.0  # 300 + 54
+                        
+                        if (abs(subtotal - expected_subtotal) < 0.01 and
+                            abs(discount_amount - expected_discount) < 0.01 and
+                            abs(tax_amount - expected_tax_amount) < 0.01 and
+                            abs(total_amount - expected_total) < 0.01):
+                            
+                            self.log_test("Debit Notes Calculation Fix - CREATE", True, 
+                                f"✅ CALCULATION FIX VERIFIED: Subtotal={subtotal}, Discount={discount_amount}, Tax={tax_amount} (on ₹{expected_discounted_total}), Total={total_amount}", 
+                                debit_note)
+                            
+                            # Test UPDATE scenario - change discount and verify recalculation
+                            update_payload = {
+                                "discount_amount": 25.0,  # Change discount from 50 to 25
+                                "tax_rate": 18.0
+                            }
+                            
+                            async with self.session.put(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}", json=update_payload) as update_response:
+                                if update_response.status == 200:
+                                    updated_data = await update_response.json()
+                                    
+                                    # Verify updated calculations
+                                    updated_subtotal = updated_data.get("subtotal")
+                                    updated_discount = updated_data.get("discount_amount")
+                                    updated_tax_amount = updated_data.get("tax_amount")
+                                    updated_total = updated_data.get("total_amount")
+                                    
+                                    # Expected updated calculations
+                                    expected_updated_discounted = 325.0  # 350 - 25
+                                    expected_updated_tax = 58.5  # 325 * 18%
+                                    expected_updated_total = 383.5  # 325 + 58.5
+                                    
+                                    if (abs(updated_discount - 25.0) < 0.01 and
+                                        abs(updated_tax_amount - expected_updated_tax) < 0.01 and
+                                        abs(updated_total - expected_updated_total) < 0.01):
+                                        
+                                        self.log_test("Debit Notes Calculation Fix - UPDATE", True, 
+                                            f"✅ UPDATE CALCULATION FIX VERIFIED: Discount={updated_discount}, Tax={updated_tax_amount} (on ₹{expected_updated_discounted}), Total={updated_total}", 
+                                            updated_data)
+                                        
+                                        # Clean up - delete test debit note
+                                        await self.session.delete(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}")
+                                        return True
+                                    else:
+                                        self.log_test("Debit Notes Calculation Fix - UPDATE", False, 
+                                            f"❌ UPDATE CALCULATION INCORRECT: Expected Tax=₹{expected_updated_tax}, Total=₹{expected_updated_total}, Got Tax=₹{updated_tax_amount}, Total=₹{updated_total}", 
+                                            updated_data)
+                                        return False
+                                else:
+                                    self.log_test("Debit Notes Calculation Fix - UPDATE", False, f"Update failed with HTTP {update_response.status}")
+                                    return False
+                        else:
+                            self.log_test("Debit Notes Calculation Fix - CREATE", False, 
+                                f"❌ CALCULATION INCORRECT: Expected Tax=₹{expected_tax_amount}, Total=₹{expected_total}, Got Tax=₹{tax_amount}, Total=₹{total_amount}", 
+                                debit_note)
+                            return False
+                    else:
+                        self.log_test("Debit Notes Calculation Fix - CREATE", False, "Debit note creation failed", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes Calculation Fix - CREATE", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Debit Notes Calculation Fix", False, f"Error: {str(e)}")
+            return False
     async def run_all_tests(self):
         """Run backend tests focusing on Credit Notes and Debit Notes Real Email/SMS Integration"""
         print("🚀 Starting GiLi Backend API Testing Suite - REAL EMAIL/SMS INTEGRATION TESTING")
