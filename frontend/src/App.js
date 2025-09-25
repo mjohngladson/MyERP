@@ -127,6 +127,32 @@ function AppContent() {
       case 'purchase-invoice-view':
         return <PurchaseInvoiceView invoiceId={pageState.purchaseInvoiceView?.id} initialInvoice={pageState.purchaseInvoiceView} onBack={() => setActiveModule('purchase-invoice-list')} />;
 
+      // Credit Notes
+      case 'credit-note-list':
+        return (
+          <CreditNotesList
+            onBack={() => setActiveModule('dashboard')}
+            onViewCreditNote={(note) => { setPageState(ps => ({...ps, creditNoteView: note})); setActiveModule('credit-note-view'); }}
+            onEditCreditNote={(note) => { setPageState(ps => ({...ps, creditNoteEdit: note})); setActiveModule('credit-note-form'); }}
+            onCreateCreditNote={() => { setPageState(ps => ({...ps, creditNoteEdit: null})); setActiveModule('credit-note-form'); }}
+          />
+        );
+      case 'credit-note-form':
+        return <CreditNoteForm creditNoteId={pageState.creditNoteEdit?.id} onBack={() => setActiveModule('credit-note-list')} onSave={() => setActiveModule('credit-note-list')} />;
+
+      // Debit Notes
+      case 'debit-note-list':
+        return (
+          <DebitNotesList
+            onBack={() => setActiveModule('dashboard')}
+            onViewDebitNote={(note) => { setPageState(ps => ({...ps, debitNoteView: note})); setActiveModule('debit-note-view'); }}
+            onEditDebitNote={(note) => { setPageState(ps => ({...ps, debitNoteEdit: note})); setActiveModule('debit-note-form'); }}
+            onCreateDebitNote={() => { setPageState(ps => ({...ps, debitNoteEdit: null})); setActiveModule('debit-note-form'); }}
+          />
+        );
+      case 'debit-note-form':
+        return <DebitNoteForm debitNoteId={pageState.debitNoteEdit?.id} onBack={() => setActiveModule('debit-note-list')} onSave={() => setActiveModule('debit-note-list')} />;
+
       case 'profile':
         return <ProfilePage onBack={() => setActiveModule('dashboard')} />;
       case 'settings':
