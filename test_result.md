@@ -299,6 +299,30 @@ agent_communication:
       message: "📊 STOCK REPORTS API TESTING COMPLETED SUCCESSFULLY - CRITICAL FRONTEND RUNTIME ERRORS RESOLVED: Conducted comprehensive testing of newly implemented Stock Reports API endpoints as requested in review. RESULTS: (1) ✅ Stock Valuation Report API: GET /api/stock/valuation/report returns HTTP 200 with proper JSON structure containing 'rows' array and 'total_value' number as required by frontend. Returns real data: 1 row with Product A (50 qty × ₹100.0 = ₹5000.0 value) (2) ✅ Stock Reorder Report API: GET /api/stock/reorder/report returns HTTP 200 with proper JSON structure containing 'rows' array as required by frontend. Correctly analyzes inventory for reorder requirements (3) ✅ Frontend Compatibility: Both endpoints return object structures that can be mapped over without 'Cannot read properties of undefined (reading 'map')' errors (4) ✅ Error Handling: Both endpoints gracefully handle missing data with empty arrays instead of undefined/null values (5) ✅ JSON Serialization: No ObjectId serialization issues, clean JSON responses (6) ✅ Edge Cases: Both endpoints handle various data scenarios correctly. CRITICAL FIXES APPLIED: Implemented both missing Stock Reports API endpoints that were causing frontend runtime errors. The endpoints now return the expected data structures to prevent JavaScript errors in the StockReports component. Frontend integration issues completely resolved."
 
 backend:
+  - task: "Credit Notes Enhanced API Testing - Search Filters and Send Functionality"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES ENHANCED API TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of enhanced Credit Notes API with search filters and send functionality as requested in review. RESULTS: (1) ✅ Stats Filter-Aware Testing: GET /api/sales/credit-notes/stats/overview?search=test correctly returns filtered counts (2 notes) vs unfiltered counts (4 notes), proving stats honor search filters (2) ✅ Send Functionality - Email: POST /api/sales/credit-notes/{id}/send with email payload successfully sends and returns proper response structure with success:true and sent_at timestamp (3) ✅ Send Functionality - SMS: POST /api/sales/credit-notes/{id}/send with SMS payload successfully sends via sms method (4) ✅ Send Tracking Fields: Verified last_sent_at, last_send_attempt_at, sent_to, and send_method fields are properly updated after send operations (5) ✅ Error Handling: Invalid credit note ID returns proper 404 error for send requests (6) ✅ Filter-Aware Stats: Created test credit notes with 'test' in customer name, verified stats endpoint returns different counts with and without search filter applied (7) ✅ All CRUD operations working: Create (CN-YYYYMMDD-XXXX format), Read, Update, Delete with proper totals calculation. All enhanced features working perfectly with 100% success rate."
+
+  - task: "Debit Notes Enhanced API Testing - Search Filters and Send Functionality"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES ENHANCED API TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of enhanced Debit Notes API with search filters and send functionality as requested in review. RESULTS: (1) ✅ Stats Filter-Aware Testing: GET /api/buying/debit-notes/stats/overview?search=test correctly returns filtered counts (2 notes) vs unfiltered counts (3 notes), proving stats honor search filters (2) ✅ Send Functionality - Email: POST /api/buying/debit-notes/{id}/send with email payload successfully sends and returns proper response structure with success:true and sent_at timestamp (3) ✅ Send Functionality - SMS: POST /api/buying/debit-notes/{id}/send with SMS payload successfully sends via sms method (4) ✅ Send Tracking Fields: Verified last_sent_at, last_send_attempt_at, sent_to, and send_method fields are properly updated after send operations (5) ✅ Error Handling: Invalid debit note ID returns proper 404 error for send requests (6) ✅ Filter-Aware Stats: Created test debit notes with 'test' in supplier name, verified stats endpoint returns different counts with and without search filter applied (7) ✅ All CRUD operations working: Create (DN-YYYYMMDD-XXXX format), Read, Update, Delete with proper totals calculation. All enhanced features working perfectly with 100% success rate."
+
   - task: "Sales Orders Stats Filters - Comprehensive Testing"
     implemented: true
     working: true
