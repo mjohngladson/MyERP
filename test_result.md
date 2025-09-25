@@ -225,7 +225,11 @@ test_plan:
     - "Sales Order Detail API Testing - COMPLETED ✅"
     - "Basic API Health Checks - COMPLETED ✅"
     - "General Settings API Testing - COMPLETED ✅"
-  critical_issues_found: []
+    - "Stock Reports API Testing - COMPLETED ❌ (CRITICAL ISSUES FOUND)"
+  critical_issues_found:
+    - "Stock Valuation Report API endpoint missing - causing frontend runtime errors"
+    - "Stock Reorder Report API endpoint missing - causing frontend runtime errors"
+    - "Frontend 'Cannot read properties of undefined (reading 'map')' errors due to missing endpoints"
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
     - "onSubItemClick handler properly wired between Sidebar.jsx and App.js"
