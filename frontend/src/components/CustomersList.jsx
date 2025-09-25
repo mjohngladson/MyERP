@@ -291,13 +291,13 @@ const CustomersList = ({ onBack }) => {
                     <span className="truncate">{customer.phone || customer.mobile || '-'}</span>
                   </div>
                 </div>
-                <div className="col-span-2 text-gray-700">
+                <div className="col-span-2 text-gray-700 min-w-0">
                   <div className="flex items-center space-x-1 text-sm">
-                    <MapPin size={12} className="text-gray-400" />
-                    <span>{customer.city || customer.state || customer.country || '-'}</span>
+                    <MapPin size={12} className="text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{customer.city || customer.state || customer.country || '-'}</span>
                   </div>
                   {customer.territory !== 'India' && (
-                    <div className="text-xs text-gray-500">{customer.territory}</div>
+                    <div className="text-xs text-gray-500 truncate">{customer.territory}</div>
                   )}
                 </div>
                 {settings?.gst_enabled && (
