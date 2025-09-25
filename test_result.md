@@ -205,7 +205,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Credit Notes and Debit Notes API Testing - COMPLETED ✅"
+    - "Credit Notes and Debit Notes Enhanced API Testing - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -224,6 +224,8 @@ test_plan:
     - "Stock Reports API Testing - COMPLETED ✅ (CRITICAL ISSUES RESOLVED)"
     - "Credit Notes API Testing - COMPLETED ✅ (ALL CRUD OPERATIONS VERIFIED)"
     - "Debit Notes API Testing - COMPLETED ✅ (ALL CRUD OPERATIONS VERIFIED)"
+    - "Credit Notes Enhanced API Testing - COMPLETED ✅ (SEARCH FILTERS & SEND FUNCTIONALITY VERIFIED)"
+    - "Debit Notes Enhanced API Testing - COMPLETED ✅ (SEARCH FILTERS & SEND FUNCTIONALITY VERIFIED)"
   critical_issues_found: []
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
@@ -237,6 +239,8 @@ test_plan:
     - "Stock Valuation Report API endpoint implemented - frontend runtime errors resolved"
     - "Stock Reorder Report API endpoint implemented - frontend runtime errors resolved"
     - "Frontend 'Cannot read properties of undefined (reading 'map')' errors fixed for Stock Reports"
+    - "Credit Notes Enhanced API - Search filters and send functionality working perfectly"
+    - "Debit Notes Enhanced API - Search filters and send functionality working perfectly"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
