@@ -55,6 +55,7 @@ const ItemsList = ({ onBack }) => {
   const loadSettings = async () => {
     try {
       const { data } = await api.settings.getGeneral();
+      console.log('Loaded settings:', data); // Debug log
       setSettings(data);
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -64,6 +65,7 @@ const ItemsList = ({ onBack }) => {
         default_gst_percent: 18,
         enable_variants: true,
         uoms: ['NOS', 'PCS', 'PCK', 'KG', 'G', 'L', 'ML'],
+        payment_terms: ['Net 0', 'Net 15', 'Net 30', 'Net 45'],
       });
     }
   };
