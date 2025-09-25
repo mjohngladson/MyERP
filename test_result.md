@@ -627,6 +627,42 @@ backend:
           agent: "testing"
           comment: "✅ GENERAL SETTINGS API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of GET /api/settings/general endpoint as requested in review. RESULTS: (1) ✅ API Response Structure: Returns complete settings object with all required fields (id, tax_country, gst_enabled, default_gst_percent, enable_variants, uoms, payment_terms, stock) (2) ✅ UOMs Array Verification: Contains expected values ['NOS', 'PCS', 'PCK', 'KG', 'G', 'L', 'ML'] as required for frontend dropdown population (3) ✅ Payment Terms Array Verification: Contains expected values ['Net 0', 'Net 15', 'Net 30', 'Net 45'] as required for frontend dropdown population (4) ✅ JSON Serialization: All fields properly serialized including nested arrays and stock object (5) ✅ Data Types: All field types correct (strings, booleans, numbers, arrays, objects) (6) ✅ Stock Object Structure: Contains all required nested fields (valuation_method, allow_negative_stock, enable_batches, enable_serials). CRITICAL FIX APPLIED: Fixed database initialization issue where general_settings document was missing required fields. API now returns complete data structure matching frontend expectations for dropdown population."
 
+  - task: "Stock Valuation Report API - GET /api/stock/valuation/report"
+    implemented: false
+    working: false
+    file: "routers/stock.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL: Stock Valuation Report API endpoint does not exist (HTTP 404). This is causing frontend runtime errors when trying to access .rows property. Frontend expects an object with 'rows' array and 'total_value' number, but endpoint returns 404 Not Found. This is the root cause of 'Cannot read properties of undefined (reading 'map')' errors in frontend."
+
+  - task: "Stock Reorder Report API - GET /api/stock/reorder/report"
+    implemented: false
+    working: false
+    file: "routers/stock.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL: Stock Reorder Report API endpoint does not exist (HTTP 404). This is causing frontend runtime errors when trying to access .rows property. Frontend expects an object with 'rows' array, but endpoint returns 404 Not Found. This is the root cause of 'Cannot read properties of undefined (reading 'map')' errors in frontend."
+
+  - task: "Stock Reports Error Handling"
+    implemented: false
+    working: false
+    file: "routers/stock.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL: Cannot test error handling for stock report endpoints because the endpoints do not exist. Both /api/stock/valuation/report and /api/stock/reorder/report return HTTP 404. These endpoints need to be implemented to handle missing data gracefully by returning empty structures instead of errors."
+
   - task: "Items CRUD API - GET /api/stock/items"
     implemented: true
     working: true
