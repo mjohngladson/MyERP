@@ -201,7 +201,6 @@ function AppContent() {
         <Header 
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
           onProfileClick={() => setActiveModule('profile')} 
-          onSettingsClick={() => setActiveModule('general-settings')} 
           onNavigate={(path) => {
             const routes = {
               '/sales/orders': 'sales-order-list',
