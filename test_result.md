@@ -205,8 +205,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Stock Valuation Report API - GET /api/stock/valuation/report"
-    - "Stock Reorder Report API - GET /api/stock/reorder/report"
+    - "Credit Notes and Debit Notes API Testing - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -223,6 +222,8 @@ test_plan:
     - "Basic API Health Checks - COMPLETED ✅"
     - "General Settings API Testing - COMPLETED ✅"
     - "Stock Reports API Testing - COMPLETED ✅ (CRITICAL ISSUES RESOLVED)"
+    - "Credit Notes API Testing - COMPLETED ✅ (ALL CRUD OPERATIONS VERIFIED)"
+    - "Debit Notes API Testing - COMPLETED ✅ (ALL CRUD OPERATIONS VERIFIED)"
   critical_issues_found: []
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
