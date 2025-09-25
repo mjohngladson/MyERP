@@ -30,6 +30,8 @@ sales_orders_collection = db.sales_orders
 sales_quotations_collection = db.sales_quotations
 purchase_orders_collection = db.purchase_orders
 purchase_invoices_collection = db.purchase_invoices
+credit_notes_collection = db.credit_notes
+debit_notes_collection = db.debit_notes
 transactions_collection = db.transactions
 notifications_collection = db.notifications
 
