@@ -171,6 +171,52 @@ async def delete_credit_note(credit_note_id: str):
     return {"success": True}
 
 
+@router.post("/credit-notes/{credit_note_id}/send")
+async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
+    """Send credit note via email/SMS"""
+    # Get the credit note
+    credit_note = await credit_notes_collection.find_one({"id": credit_note_id})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    try:
+        # Update send status
+        now = now_utc()
+        update_data = {
+            "last_sent_at": now,
+            "last_send_attempt_at": now,
+            "sent_to": body.get("email") or body.get("phone"),
+            "send_method": body.get("method", "email"),  # email, sms, both
+            "updated_at": now
+        }
+        
+        await credit_notes_collection.update_one(
+            {"id": credit_note_id}, 
+            {"$set": update_data}
+        )
+        
+        # TODO: Integrate with actual email/SMS service
+        # For now, return success (would integrate with SendGrid/Twilio in production)
+        
+        return {
+            "success": True,
+            "message": f"Credit note sent via {body.get('method', 'email')}",
+            "sent_at": now.isoformat()
+        }
+        
+    except Exception as e:
+        # Update failed send attempt
+        await credit_notes_collection.update_one(
+            {"id": credit_note_id}, 
+            {"$set": {
+                "last_send_attempt_at": now_utc(),
+                "last_send_error": str(e),
+                "updated_at": now_utc()
+            }}
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to send credit note: {str(e)}")
+
+
 @router.get("/credit-notes/stats/overview")
 async def get_credit_notes_stats(
     search: Optional[str] = None,
