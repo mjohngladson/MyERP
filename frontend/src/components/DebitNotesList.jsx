@@ -19,6 +19,7 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
   const [sendingNote, setSendingNote] = React.useState(null);
   const [sendMethod, setSendMethod] = React.useState('email');
   const [sendContact, setSendContact] = React.useState('');
+  const [attachPdf, setAttachPdf] = React.useState(true);
 
   React.useEffect(() => { 
     const t = setTimeout(() => setDebounced(search), 500); 
@@ -61,9 +62,19 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
 
   const openSendModal = (note) => {
     setSendingNote(note);
-    setSendContact(note.supplier_email || '');
     setSendMethod('email');
+    setSendContact(note.supplier_email || '');
     setShowSendModal(true);
+  };
+
+  const handleSendMethodChange = (method) => {
+    setSendMethod(method);
+    // Update contact based on method
+    if (method === 'email') {
+      setSendContact(sendingNote?.supplier_email || '');
+    } else if (method === 'sms') {
+      setSendContact(sendingNote?.supplier_phone || '');
+    }
   };
 
   const sendNote = async () => {
@@ -76,7 +87,8 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
     try {
       const payload = {
         method: sendMethod,
-        [sendMethod === 'email' ? 'email' : 'phone']: sendContact
+        [sendMethod === 'email' ? 'email' : 'phone']: sendContact,
+        attach_pdf: attachPdf
       };
 
       await api.post(`/buying/debit-notes/${sendingNote.id}/send`, payload);
