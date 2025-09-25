@@ -287,35 +287,22 @@ async def send_quotation(quotation_id: str, body: dict):
                 results["sms"] = sms_resp
                 if sms_resp.get("success"):
                     sent_via.append("sms")
-        # persist with individual email/SMS tracking
-        current_time_iso = datetime.now(timezone.utc).isoformat()
-        update_fields = {
-            "last_send_result": results,
-            "last_send_attempt_at": current_time_iso
-        }
+        # Use uniform send tracking service
+        from services.send_tracking import create_uniform_send_update, get_uniform_send_response
         
-        # Track individual email/SMS success with separate timestamps
-        if results.get("email") and results["email"].get("success"):
-            update_fields["email_sent_at"] = current_time_iso
-            update_fields["email_status"] = "sent"
-        elif results.get("email") and not results["email"].get("success"):
-            update_fields["email_status"] = "failed"
-            if "last_send_errors" not in update_fields:
-                update_fields["last_send_errors"] = {}
-            update_fields["last_send_errors"]["email"] = results["email"].get("error", "Unknown error")
-            
-        if results.get("sms") and results["sms"].get("success"):
-            update_fields["sms_sent_at"] = current_time_iso
-            update_fields["sms_status"] = "sent"
-        elif results.get("sms") and not results["sms"].get("success"):
-            update_fields["sms_status"] = "failed"
-            if "last_send_errors" not in update_fields:
-                update_fields["last_send_errors"] = {}
-            update_fields["last_send_errors"]["sms"] = results["sms"].get("error", results["sms"].get("message", "Unknown error"))
+        # Build errors dict for uniform response
+        errors = {}
+        if results.get("email") and not results["email"].get("success"):
+            errors["email"] = results["email"].get("error", "Unknown error")
+        if results.get("sms") and not results["sms"].get("success"):
+            errors["sms"] = results["sms"].get("error", results["sms"].get("message", "Unknown error"))
         
-        # Keep legacy sent_at for backward compatibility
-        if sent_via:
-            update_fields.update({"sent_at": current_time_iso, "sent_via": sent_via})
+        update_fields = create_uniform_send_update(
+            send_results=results,
+            method="email" if to_email else "sms",  # Primary method
+            recipient=to_email or phone,
+            attach_pdf=include_pdf
+        )
         await sales_quotations_collection.update_one({"_id": q["_id"]}, {"$set": update_fields})
         return {"success": bool(sent_via), "result": results, "sent_via": sent_via}
     except HTTPException:
