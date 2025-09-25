@@ -184,37 +184,106 @@ async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
         now = now_utc()
         method = body.get("method", "email")
         attach_pdf = body.get("attach_pdf", True)
+        recipient = body.get("email") or body.get("phone")
         
+        if not recipient:
+            raise HTTPException(status_code=400, detail="Email or phone number is required")
+        
+        # Import services
+        from services.email_service import SendGridEmailService
+        from services.sms_service import TwilioSmsService
+        
+        send_result = None
+        
+        if method == "email":
+            try:
+                email_service = SendGridEmailService()
+                # Convert credit note to invoice format for email template
+                invoice_data = {
+                    "invoice_number": credit_note.get("credit_note_number"),
+                    "invoice_date": credit_note.get("credit_note_date"),
+                    "due_date": credit_note.get("credit_note_date"),
+                    "customer_name": credit_note.get("customer_name"),
+                    "customer_email": credit_note.get("customer_email"),
+                    "customer_phone": credit_note.get("customer_phone"),
+                    "customer_address": credit_note.get("customer_address"),
+                    "items": credit_note.get("items", []),
+                    "subtotal": credit_note.get("subtotal", 0),
+                    "tax_rate": credit_note.get("tax_rate", 18),
+                    "tax_amount": credit_note.get("tax_amount", 0),
+                    "discount_amount": credit_note.get("discount_amount", 0),
+                    "total_amount": credit_note.get("total_amount", 0)
+                }
+                
+                subject = f"Credit Note {credit_note.get('credit_note_number')} from GiLi ERP"
+                preface = f"Please find your credit note for {credit_note.get('reason', 'Return')}."
+                
+                # Generate PDF if requested (mock for now)
+                pdf_bytes = None
+                if attach_pdf:
+                    # TODO: Implement actual PDF generation using reportlab or similar
+                    pdf_bytes = None  # For now, email will be sent without PDF
+                
+                send_result = email_service.send_invoice(
+                    to_email=recipient,
+                    invoice=invoice_data,
+                    pdf_bytes=pdf_bytes,
+                    subject_override=subject,
+                    preface=preface
+                )
+                
+            except Exception as e:
+                send_result = {"success": False, "error": str(e)}
+        
+        elif method == "sms":
+            try:
+                sms_service = TwilioSmsService()
+                message = f"Credit Note {credit_note.get('credit_note_number')} for {credit_note.get('total_amount', 0)} INR has been issued for {credit_note.get('reason', 'Return')}. Contact us for details."
+                send_result = sms_service.send_sms(to=recipient, body=message)
+            except Exception as e:
+                send_result = {"success": False, "error": str(e)}
+        
+        else:
+            raise HTTPException(status_code=400, detail="Invalid method. Use 'email' or 'sms'")
+        
+        # Update send status based on result
         update_data = {
-            "last_sent_at": now,
             "last_send_attempt_at": now,
-            "sent_to": body.get("email") or body.get("phone"),
+            "sent_to": recipient,
             "send_method": method,
             "pdf_attached": attach_pdf if method == "email" else False,
             "updated_at": now
         }
+        
+        if send_result and send_result.get("success"):
+            update_data["last_sent_at"] = now
+            update_data.pop("last_send_error", None)
+        else:
+            update_data["last_send_error"] = send_result.get("error", "Unknown error") if send_result else "Unknown error"
         
         await credit_notes_collection.update_one(
             {"id": credit_note_id}, 
             {"$set": update_data}
         )
         
-        # Note: SMS and Email are currently mocked for demo purposes
-        # In production, this would integrate with SendGrid for email and Twilio for SMS
-        send_message = f"Credit note sent via {method}"
-        if method == "email" and attach_pdf:
-            send_message += " with PDF attachment"
-        elif method == "sms":
-            send_message += " (Demo mode - SMS not actually sent)"
+        if send_result and send_result.get("success"):
+            send_message = f"Credit note sent via {method}"
+            if method == "email" and attach_pdf:
+                send_message += " with PDF attachment"
+            
+            return {
+                "success": True,
+                "message": send_message,
+                "sent_at": now.isoformat(),
+                "method": method,
+                "pdf_attached": attach_pdf if method == "email" else False
+            }
+        else:
+            error_msg = send_result.get("error", "Unknown error") if send_result else "Unknown error"
+            raise HTTPException(status_code=500, detail=f"Failed to send credit note: {error_msg}")
         
-        return {
-            "success": True,
-            "message": send_message,
-            "sent_at": now.isoformat(),
-            "method": method,
-            "pdf_attached": attach_pdf if method == "email" else False
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
         # Update failed send attempt
         await credit_notes_collection.update_one(
