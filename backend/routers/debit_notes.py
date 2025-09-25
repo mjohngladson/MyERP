@@ -275,17 +275,11 @@ async def send_debit_note(debit_note_id: str, body: Dict[str, Any]):
         )
         
         if send_result and send_result.get("success"):
-            send_message = f"Debit note sent via {method}"
-            if method == "email" and attach_pdf:
-                send_message += " with PDF attachment"
-            
-            return {
-                "success": True,
-                "message": send_message,
-                "sent_at": now.isoformat(),
-                "method": method,
-                "pdf_attached": attach_pdf if method == "email" else False
-            }
+            return get_uniform_send_response(
+                send_results=send_results,
+                sent_via=sent_via,
+                errors=errors
+            )
         else:
             error_msg = send_result.get("error", "Unknown error") if send_result else "Unknown error"
             raise HTTPException(status_code=500, detail=f"Failed to send debit note: {error_msg}")
