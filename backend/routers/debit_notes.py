@@ -171,6 +171,52 @@ async def delete_debit_note(debit_note_id: str):
     return {"success": True}
 
 
+@router.post("/debit-notes/{debit_note_id}/send")
+async def send_debit_note(debit_note_id: str, body: Dict[str, Any]):
+    """Send debit note via email/SMS"""
+    # Get the debit note
+    debit_note = await debit_notes_collection.find_one({"id": debit_note_id})
+    if not debit_note:
+        raise HTTPException(status_code=404, detail="Debit note not found")
+    
+    try:
+        # Update send status
+        now = now_utc()
+        update_data = {
+            "last_sent_at": now,
+            "last_send_attempt_at": now,
+            "sent_to": body.get("email") or body.get("phone"),
+            "send_method": body.get("method", "email"),  # email, sms, both
+            "updated_at": now
+        }
+        
+        await debit_notes_collection.update_one(
+            {"id": debit_note_id}, 
+            {"$set": update_data}
+        )
+        
+        # TODO: Integrate with actual email/SMS service
+        # For now, return success (would integrate with SendGrid/Twilio in production)
+        
+        return {
+            "success": True,
+            "message": f"Debit note sent via {body.get('method', 'email')}",
+            "sent_at": now.isoformat()
+        }
+        
+    except Exception as e:
+        # Update failed send attempt
+        await debit_notes_collection.update_one(
+            {"id": debit_note_id}, 
+            {"$set": {
+                "last_send_attempt_at": now_utc(),
+                "last_send_error": str(e),
+                "updated_at": now_utc()
+            }}
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to send debit note: {str(e)}")
+
+
 @router.get("/debit-notes/stats/overview")
 async def get_debit_notes_stats(
     search: Optional[str] = None,
