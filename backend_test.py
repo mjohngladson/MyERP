@@ -5081,6 +5081,8 @@ class BackendTester:
             self.test_health_check,              # Basic API health check
             self.test_credit_notes_api,          # Credit Notes API comprehensive testing
             self.test_debit_notes_api,           # Debit Notes API comprehensive testing
+            self.test_credit_notes_enhanced_api, # Credit Notes Enhanced API with search filters and send functionality
+            self.test_debit_notes_enhanced_api,  # Debit Notes Enhanced API with search filters and send functionality
             self.test_stock_valuation_report,    # Stock Valuation Report API
             self.test_stock_reorder_report,      # Stock Reorder Report API  
             self.test_stock_reports_error_handling,  # Error handling tests
