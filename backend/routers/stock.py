@@ -77,31 +77,33 @@ async def api_update_settings(body: Dict[str, Any]):
 
 @router.get("/valuation/report")
 async def get_valuation_report():
-    """Get stock valuation report showing current stock value by item and warehouse"""
+    """Get stock valuation report showing current stock value by item"""
     try:
-        # For now, return mock data structure until we implement full inventory tracking
-        # In a full implementation, this would aggregate from stock_ledger and calculate values
-        
-        # Get items and warehouses for basic structure
-        items = await items_collection.find({"active": True}).to_list(length=100)
-        warehouses_cursor = warehouses.find({"active": True})
-        warehouse_list = await warehouses_cursor.to_list(length=50)
+        # Get active items with inventory tracking
+        items = await items_collection.find({
+            "active": True,
+            "track_inventory": True
+        }).to_list(length=100)
         
         rows = []
         total_value = 0
         
-        # Generate sample valuation data based on existing items and warehouses  
-        for item in items[:5]:  # Limit to first 5 items for demo
-            for warehouse in warehouse_list[:2]:  # First 2 warehouses
-                qty = 10  # Mock quantity
-                unit_price = item.get('unit_price', 0)
-                value = qty * unit_price
-                total_value += value
-                
+        # Generate valuation data based on existing items
+        for item in items:
+            item_name = item.get('name', 'Unknown Item')
+            item_code = item.get('item_code', '-')
+            quantity = item.get('stock_qty', 0) or item.get('stock_quantity', 0)
+            rate = item.get('unit_price', 0) or item.get('price', 0)
+            value = quantity * rate
+            total_value += value
+            
+            # Only include items with stock or value
+            if quantity > 0 or value > 0:
                 rows.append({
-                    "item_id": item.get('name', 'Unknown Item'),
-                    "warehouse_id": warehouse.get('name', 'Main Warehouse'), 
-                    "qty": qty,
+                    "item_name": item_name,
+                    "item_code": item_code,
+                    "quantity": quantity,
+                    "rate": rate,
                     "value": value
                 })
         
