@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import GlobalSearch from './GlobalSearch';
 
-const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = () => {}, onNavigate = () => {} }) => {
+const Header = ({ toggleSidebar, onProfileClick = () => {}, onNavigate = () => {} }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
