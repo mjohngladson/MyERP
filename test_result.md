@@ -207,10 +207,7 @@ test_plan:
   current_focus:
     - "Stock Valuation Report API - GET /api/stock/valuation/report"
     - "Stock Reorder Report API - GET /api/stock/reorder/report"
-  stuck_tasks:
-    - "Stock Valuation Report API - GET /api/stock/valuation/report"
-    - "Stock Reorder Report API - GET /api/stock/reorder/report"
-    - "Stock Reports Error Handling"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   completed_tests:
@@ -225,11 +222,8 @@ test_plan:
     - "Sales Order Detail API Testing - COMPLETED ✅"
     - "Basic API Health Checks - COMPLETED ✅"
     - "General Settings API Testing - COMPLETED ✅"
-    - "Stock Reports API Testing - COMPLETED ❌ (CRITICAL ISSUES FOUND)"
-  critical_issues_found:
-    - "Stock Valuation Report API endpoint missing - causing frontend runtime errors"
-    - "Stock Reorder Report API endpoint missing - causing frontend runtime errors"
-    - "Frontend 'Cannot read properties of undefined (reading 'map')' errors due to missing endpoints"
+    - "Stock Reports API Testing - COMPLETED ✅ (CRITICAL ISSUES RESOLVED)"
+  critical_issues_found: []
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
     - "onSubItemClick handler properly wired between Sidebar.jsx and App.js"
@@ -239,6 +233,9 @@ test_plan:
     - "Sales Order Detail API returning complete order information with proper structure"
     - "Global Search API suggestions endpoint working correctly"
     - "General Settings API database initialization issue fixed - complete data structure now returned"
+    - "Stock Valuation Report API endpoint implemented - frontend runtime errors resolved"
+    - "Stock Reorder Report API endpoint implemented - frontend runtime errors resolved"
+    - "Frontend 'Cannot read properties of undefined (reading 'map')' errors fixed for Stock Reports"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
