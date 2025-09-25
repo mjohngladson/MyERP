@@ -303,16 +303,18 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{formatCurrency(invoice.total_amount)}</div>
-                      {invoice.sent_at && (
-                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Sent {invoice.sent_via ? `via ${Array.isArray(invoice.sent_via) ? invoice.sent_via.join(', ') : invoice.sent_via}` : ''}
-                        </div>
-                      )}
-                      {invoice.last_send_errors && (invoice.last_send_errors.email || invoice.last_send_errors.sms) && (
-                        <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title={(invoice.last_send_errors.email || '') + ' ' + (invoice.last_send_errors.sms || '')}>
-                          Send failed
-                        </div>
-                      )}
+                      <div className="flex flex-col space-y-1 mt-1">
+                        {invoice.sent_at && (
+                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Sent {invoice.sent_via ? `via ${Array.isArray(invoice.sent_via) ? invoice.sent_via.join(', ') : invoice.sent_via}` : ''}
+                          </div>
+                        )}
+                        {invoice.last_send_errors && (invoice.last_send_errors.email || invoice.last_send_errors.sms) && (
+                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title={(invoice.last_send_errors.email || '') + ' ' + (invoice.last_send_errors.sms || '')}>
+                            Send failed
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
