@@ -1108,7 +1108,7 @@ class BackendTester:
                                 self.log_test("Credit Notes Timestamp - Verify Update", False, f"Failed to get credit note after send: HTTP {get_response.status}")
                                 return False
                     else:
-                        self.log_test("Credit Notes Timestamp - Send SMS", False, f"Send failed: {send_response}")
+                        self.log_test("Credit Notes Timestamp - Send Email", False, f"Send failed: {send_response}")
                         return False
                 else:
                     self.log_test("Credit Notes Timestamp - Send SMS", False, f"HTTP {response.status}")
