@@ -189,11 +189,13 @@ function AppContent() {
         'Quotation': 'quotation-list',
         'Customer': 'customers-list',
         'Item': 'items-list',
+        'Credit Note': 'credit-note-list',
       },
       buying: {
         'Purchase Order': 'purchase-order-list',
         'Purchase Invoice': 'purchase-invoice-list',
         'Supplier': 'suppliers-list',
+        'Debit Note': 'debit-note-list',
       },
       stock: {
         'Item': 'items-list',
