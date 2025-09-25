@@ -137,9 +137,34 @@ async def create_supplier(body: Dict[str, Any]):
     doc = {
         "id": str(uuid.uuid4()),
         "name": body.get("name"),
+        "supplier_type": body.get("supplier_type", "Company"),  # Company, Individual
+        
+        # Contact Info
         "email": body.get("email"),
         "phone": body.get("phone"),
-        "address": body.get("address"),
+        "mobile": body.get("mobile"),
+        "website": body.get("website"),
+        
+        # Address
+        "billing_address": body.get("billing_address"),
+        "city": body.get("city"),
+        "state": body.get("state"),
+        "country": body.get("country", "India"),
+        "pincode": body.get("pincode"),
+        
+        # GST/Tax Info
+        "gstin": body.get("gstin"),
+        "pan": body.get("pan"),
+        "tax_category": body.get("tax_category", "In State"),  # In State, Out of State, Import
+        
+        # Business Info
+        "credit_limit": float(body.get("credit_limit", 0) or 0),
+        "payment_terms": body.get("payment_terms", "Net 30"),
+        
+        # Additional Info
+        "supplier_group": body.get("supplier_group", "All Supplier Groups"),
+        "territory": body.get("territory", "India"),
+        
         "active": body.get("active", True),
         "created_at": now_utc(),
         "updated_at": now_utc(),
@@ -156,7 +181,21 @@ async def get_supplier(sid: str):
 
 @router.put("/master/suppliers/{sid}")
 async def update_supplier(sid: str, body: Dict[str, Any]):
-    upd = {k: body.get(k) for k in ["name", "email", "phone", "address", "active"] if k in body}
+    allowed_fields = [
+        "name", "supplier_type", "email", "phone", "mobile", "website",
+        "billing_address", "city", "state", "country", "pincode",
+        "gstin", "pan", "tax_category", "credit_limit", "payment_terms",
+        "supplier_group", "territory", "active"
+    ]
+    upd = {k: body.get(k) for k in allowed_fields if k in body}
+    
+    # Handle float fields
+    if "credit_limit" in upd:
+        try:
+            upd["credit_limit"] = float(upd["credit_limit"] or 0)
+        except Exception:
+            upd["credit_limit"] = 0
+    
     if not upd:
         return {"success": True}
     upd["updated_at"] = now_utc()
