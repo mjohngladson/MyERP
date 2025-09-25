@@ -4968,6 +4968,20 @@ class BackendTester:
             
             # Test 4: PUT /api/buying/debit-notes/{id} - Update debit note
             update_data = {
+                "items": [
+                    {
+                        "item_name": "Defective Product A",
+                        "quantity": 3,
+                        "rate": 80.0,
+                        "amount": 240.0
+                    },
+                    {
+                        "item_name": "Defective Product B",
+                        "quantity": 2,
+                        "rate": 120.0,
+                        "amount": 240.0
+                    }
+                ],
                 "status": "Issued",
                 "discount_amount": 60.0,  # Change discount to test recalculation
                 "notes": "Updated debit note for testing"
