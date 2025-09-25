@@ -373,36 +373,106 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           </div>
         </div>
         
-        {/* Simple bar chart representation */}
+        {/* Enhanced bar chart representation */}
         {reportsLoading ? (
-          <div className="h-64 flex items-center justify-center text-gray-500">
-            Loading chart data...
+          <div className="h-80 flex items-center justify-center text-gray-500">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="animate-spin" size={20} />
+              <span>Loading chart data...</span>
+            </div>
           </div>
         ) : reports && reports.length > 0 ? (
-          <div className="grid grid-cols-6 gap-4 h-64">
-            {reports.map((data, index) => (
-              <div key={index} className="flex flex-col items-center justify-end space-y-2">
-                <div className="flex flex-col items-center space-y-1 w-full">
-                  <div 
-                    className="w-4 bg-green-500 rounded-t" 
-                    style={{ height: `${Math.max((data.profit / 30000) * 100, 5)}px` }}
-                  ></div>
-                  <div 
-                    className="w-4 bg-red-500" 
-                    style={{ height: `${Math.max((data.purchases / 1000), 5)}px` }}
-                  ></div>
-                  <div 
-                    className="w-4 bg-blue-500 rounded-b" 
-                    style={{ height: `${Math.max((data.sales / 1000), 5)}px` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-gray-600 font-medium">{data.month}</span>
+          <div className="h-80">
+            {/* Chart container */}
+            <div className="grid grid-cols-6 gap-6 h-72 items-end">
+              {reports.map((data, index) => {
+                // Calculate max values for proper scaling
+                const maxSales = Math.max(...reports.map(r => r.sales || 0));
+                const maxPurchases = Math.max(...reports.map(r => r.purchases || 0));
+                const maxProfit = Math.max(...reports.map(r => Math.abs(r.profit || 0)));
+                const maxValue = Math.max(maxSales, maxPurchases, maxProfit);
+                
+                // Calculate heights (percentage of max height = 200px)
+                const salesHeight = maxValue > 0 ? Math.max((data.sales / maxValue) * 200, 4) : 4;
+                const purchasesHeight = maxValue > 0 ? Math.max((data.purchases / maxValue) * 200, 4) : 4;
+                const profitHeight = maxValue > 0 ? Math.max(Math.abs(data.profit) / maxValue * 200, 4) : 4;
+                
+                return (
+                  <div key={index} className="flex flex-col items-center justify-end space-y-3">
+                    {/* Values display */}
+                    <div className="text-center space-y-1">
+                      <div className="text-xs font-medium text-green-700">
+                        {formatCurrency(data.profit || 0)}
+                      </div>
+                    </div>
+                    
+                    {/* Bars */}
+                    <div className="flex items-end space-x-2">
+                      {/* Sales bar */}
+                      <div className="flex flex-col items-center">
+                        <div 
+                          className="w-6 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                          style={{ height: `${salesHeight}px` }}
+                          title={`Sales: ${formatCurrency(data.sales || 0)}`}
+                        ></div>
+                        <span className="text-xs text-blue-600 mt-1 font-medium">S</span>
+                      </div>
+                      
+                      {/* Purchases bar */}
+                      <div className="flex flex-col items-center">
+                        <div 
+                          className="w-6 bg-gradient-to-t from-red-600 to-red-400 rounded-t shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                          style={{ height: `${purchasesHeight}px` }}
+                          title={`Purchases: ${formatCurrency(data.purchases || 0)}`}
+                        ></div>
+                        <span className="text-xs text-red-600 mt-1 font-medium">P</span>
+                      </div>
+                      
+                      {/* Profit bar */}
+                      <div className="flex flex-col items-center">
+                        <div 
+                          className={`w-6 bg-gradient-to-t ${data.profit >= 0 ? 'from-green-600 to-green-400' : 'from-orange-600 to-orange-400'} rounded-t shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
+                          style={{ height: `${profitHeight}px` }}
+                          title={`Profit: ${formatCurrency(data.profit || 0)}`}
+                        ></div>
+                        <span className={`text-xs ${data.profit >= 0 ? 'text-green-600' : 'text-orange-600'} mt-1 font-medium`}>
+                          {data.profit >= 0 ? '↑' : '↓'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Month label */}
+                    <div className="bg-gray-100 px-3 py-1 rounded-full">
+                      <span className="text-sm text-gray-700 font-semibold">{data.month}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Chart legend */}
+            <div className="mt-4 flex justify-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-blue-400 rounded"></div>
+                <span className="text-gray-700">Sales (S)</span>
               </div>
-            ))}
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-red-600 to-red-400 rounded"></div>
+                <span className="text-gray-700">Purchases (P)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-green-600 to-green-400 rounded"></div>
+                <span className="text-gray-700">Profit (↑↓)</span>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="h-64 flex items-center justify-center text-gray-500">
-            No chart data available
+          <div className="h-80 flex flex-col items-center justify-center text-gray-500 space-y-3">
+            <BarChart3 className="w-16 h-16 text-gray-300" />
+            <div className="text-center">
+              <p className="font-medium">No Performance Data Available</p>
+              <p className="text-sm">Create some transactions to see monthly performance</p>
+            </div>
           </div>
         )}
       </div>
