@@ -32,11 +32,6 @@ const Header = ({ toggleSidebar, onProfileClick = () => {}, onNavigate = () => {
     setShowUserMenu(false);
   };
 
-  const handleSettingsClick = () => {
-    onSettingsClick();
-    setShowUserMenu(false);
-  };
-
   const handleSearchClick = () => {
     setShowSearch(true);
   };
