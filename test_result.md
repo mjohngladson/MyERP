@@ -217,11 +217,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend Improvements Testing - COMPLETED ✅"
-    - "Global Search Enhanced Testing - COMPLETED ✅"
-    - "Dashboard Real Transactions Testing - COMPLETED ✅"
-    - "View All Transactions Testing - COMPLETED ✅"
-    - "Enhanced Search Navigation Testing - COMPLETED ✅"
+    - "CRITICAL FIXES TESTING - COMPLETED ✅"
+    - "Sales Invoice Send Button Fix - COMPLETED ✅"
+    - "Individual Email/SMS Status Tracking - COMPLETED ✅"
+    - "SendGrid Email Delivery Issue - COMPLETED ✅"
+    - "Uniform Status Tracking - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
