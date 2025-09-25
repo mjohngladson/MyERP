@@ -31,10 +31,17 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
     try {
       const searchParams = { limit: 50 };
       if (debounced) searchParams.search = debounced;
+      // Add cache-busting timestamp to ensure fresh data
+      searchParams._t = Date.now();
 
       const [listRes, statsRes] = await Promise.all([
         api.get('/sales/credit-notes', { params: searchParams }),
-        api.get('/sales/credit-notes/stats/overview', { params: debounced ? { search: debounced } : {} })
+        api.get('/sales/credit-notes/stats/overview', { 
+          params: { 
+            ...(debounced ? { search: debounced } : {}),
+            _t: Date.now()
+          } 
+        })
       ]);
       
       setRows(Array.isArray(listRes.data) ? listRes.data : []);
