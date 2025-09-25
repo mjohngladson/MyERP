@@ -6427,6 +6427,14 @@ class BackendTester:
                             
                             # Test UPDATE scenario - change discount and verify recalculation
                             update_payload = {
+                                "items": [
+                                    {
+                                        "item_name": "Test Item B",
+                                        "quantity": 1,
+                                        "rate": 350.0,
+                                        "amount": 350.0
+                                    }
+                                ],
                                 "discount_amount": 25.0,  # Change discount from 50 to 25
                                 "tax_rate": 18.0
                             }
