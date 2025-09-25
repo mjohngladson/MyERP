@@ -336,26 +336,45 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
                   {form.items.map((item, index) => (
                     <tr key={index}>
                       <td className="px-3 py-2">
-                        <select
+                        <AutocompleteSearch
+                          options={masterItems.map(masterItem => ({
+                            ...masterItem,
+                            subtitle: `₹${(masterItem.unit_price || 0).toFixed(2)} • ${masterItem.item_code || 'No Code'}`
+                          }))}
                           value={item.item_name}
-                          onChange={e => updateItem(index, 'item_name', e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                        >
-                          <option value="">Select Item</option>
-                          {masterItems.map(masterItem => (
-                            <option key={masterItem.id} value={masterItem.name}>
-                              {masterItem.name} - {new Intl.NumberFormat('en-IN', {style:'currency',currency:'INR'}).format(masterItem.unit_price || 0)}
-                            </option>
-                          ))}
-                        </select>
-                        {item.item_name && !masterItems.find(mi => mi.name === item.item_name) && (
-                          <input
-                            value={item.item_name}
-                            onChange={e => updateItem(index, 'item_name', e.target.value)}
-                            className="w-full px-2 py-1 border rounded text-sm mt-1"
-                            placeholder="Or enter custom item name"
-                          />
-                        )}
+                          onChange={value => updateItem(index, 'item_name', value)}
+                          onSelect={selectedItem => {
+                            if (selectedItem && typeof selectedItem === 'object') {
+                              updateItem(index, 'item_name', selectedItem.name);
+                            } else {
+                              updateItem(index, 'item_name', selectedItem || '');
+                            }
+                          }}
+                          placeholder="Search items..."
+                          displayField="name"
+                          searchFields={['name', 'item_code', 'description']}
+                          allowCustom={true}
+                          customPlaceholder="Or enter custom item name"
+                          className="text-sm"
+                          renderOption={(masterItem, idx, isHighlighted) => (
+                            <div
+                              key={masterItem.id || idx}
+                              className={`px-3 py-2 cursor-pointer ${
+                                isHighlighted ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                              }`}
+                              onClick={() => {
+                                if (typeof masterItem === 'object') {
+                                  updateItem(index, 'item_name', masterItem.name);
+                                }
+                              }}
+                            >
+                              <div className="font-medium text-sm">{masterItem.name}</div>
+                              {masterItem.subtitle && (
+                                <div className="text-xs text-gray-500">{masterItem.subtitle}</div>
+                              )}
+                            </div>
+                          )}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         <input
