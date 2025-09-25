@@ -6779,18 +6779,19 @@ class BackendTester:
             self.log_test("Debit Notes Calculation Fix", False, f"Error: {str(e)}")
             return False
     async def run_all_tests(self):
-        """Run backend tests focusing on Credit Notes and Debit Notes Calculation Fix"""
-        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT/DEBIT NOTES CALCULATION FIX TESTING")
+        """Run backend tests focusing on Credit Notes and Debit Notes Timestamp Tracking Issue"""
+        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT/DEBIT NOTES TIMESTAMP TRACKING TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Credit Notes and Debit Notes Calculation Fix")
-        print("🎯 Testing: Tax calculation on discounted amount (not original subtotal)")
+        print("📊 Focus: Credit Notes and Debit Notes Timestamp Tracking Issue")
+        print("🎯 Testing: last_sent_at timestamp update after SMS send operations")
+        print("🐛 Bug: After sending SMS, it still shows 'sent 5h ago' instead of current time")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_credit_notes_calculation_fix,         # Credit Notes Calculation Fix Testing
-            self.test_debit_notes_calculation_fix,          # Debit Notes Calculation Fix Testing
+            self.test_credit_notes_timestamp_tracking,      # Credit Notes Timestamp Tracking Issue
+            self.test_debit_notes_timestamp_tracking,       # Debit Notes Timestamp Tracking Issue
         ]
         
         passed = 0
