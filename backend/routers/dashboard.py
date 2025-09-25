@@ -343,15 +343,36 @@ async def get_all_transactions(days_back: int = 2, limit: int = 50):
                 for doc in additional_docs:
                     doc_id = doc.get("id", str(doc.get("_id")))
                     if doc_id not in existing_ids:
+                        # Handle date fields properly
+                        doc_date = doc.get(date_field) or doc.get("created_at") or datetime.utcnow()
+                        if isinstance(doc_date, str) and doc_date.strip() == "":
+                            doc_date = datetime.utcnow()
+                        elif isinstance(doc_date, str):
+                            try:
+                                from dateutil.parser import parse
+                                doc_date = parse(doc_date)
+                            except:
+                                doc_date = datetime.utcnow()
+                        
+                        created_at = doc.get("created_at") or datetime.utcnow()
+                        if isinstance(created_at, str) and created_at.strip() == "":
+                            created_at = datetime.utcnow()
+                        elif isinstance(created_at, str):
+                            try:
+                                from dateutil.parser import parse
+                                created_at = parse(created_at)
+                            except:
+                                created_at = datetime.utcnow()
+                        
                         all_transactions.append({
                             "id": doc_id,
                             "type": type_name,
                             "reference_number": doc.get(number_field, "N/A"),
                             "party_name": doc.get(party_field, "Unknown"),
                             "amount": doc.get("total_amount", 0),
-                            "date": doc.get(date_field, doc.get("created_at")),
+                            "date": doc_date,
                             "status": doc.get("status", "draft"),
-                            "created_at": doc.get("created_at", datetime.utcnow().isoformat())
+                            "created_at": created_at
                         })
                         
                         if len(all_transactions) >= 10:
