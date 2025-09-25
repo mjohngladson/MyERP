@@ -304,7 +304,11 @@ async def send_quotation(quotation_id: str, body: dict):
             attach_pdf=include_pdf
         )
         await sales_quotations_collection.update_one({"_id": q["_id"]}, {"$set": update_fields})
-        return {"success": bool(sent_via), "result": results, "sent_via": sent_via}
+        return get_uniform_send_response(
+            send_results=results,
+            sent_via=sent_via,
+            errors=errors
+        )
     except HTTPException:
         raise
     except Exception as e:
