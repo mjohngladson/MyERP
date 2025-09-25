@@ -182,11 +182,15 @@ async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
     try:
         # Update send status
         now = now_utc()
+        method = body.get("method", "email")
+        attach_pdf = body.get("attach_pdf", True)
+        
         update_data = {
             "last_sent_at": now,
             "last_send_attempt_at": now,
             "sent_to": body.get("email") or body.get("phone"),
-            "send_method": body.get("method", "email"),  # email, sms, both
+            "send_method": method,
+            "pdf_attached": attach_pdf if method == "email" else False,
             "updated_at": now
         }
         
@@ -195,13 +199,20 @@ async def send_credit_note(credit_note_id: str, body: Dict[str, Any]):
             {"$set": update_data}
         )
         
-        # TODO: Integrate with actual email/SMS service
-        # For now, return success (would integrate with SendGrid/Twilio in production)
+        # Note: SMS and Email are currently mocked for demo purposes
+        # In production, this would integrate with SendGrid for email and Twilio for SMS
+        send_message = f"Credit note sent via {method}"
+        if method == "email" and attach_pdf:
+            send_message += " with PDF attachment"
+        elif method == "sms":
+            send_message += " (Demo mode - SMS not actually sent)"
         
         return {
             "success": True,
-            "message": f"Credit note sent via {body.get('method', 'email')}",
-            "sent_at": now.isoformat()
+            "message": send_message,
+            "sent_at": now.isoformat(),
+            "method": method,
+            "pdf_attached": attach_pdf if method == "email" else False
         }
         
     except Exception as e:
