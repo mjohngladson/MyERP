@@ -23,6 +23,21 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
   });
 
   React.useEffect(() => {
+    // Load master data
+    const loadMasterData = async () => {
+      try {
+        const [itemsRes, suppliersRes] = await Promise.all([
+          api.items.list('', 100),
+          api.master.suppliers.list('', 100)
+        ]);
+        setMasterItems(itemsRes.data || []);
+        setSuppliers(suppliersRes.data || []);
+      } catch (e) {
+        console.error('Failed to load master data:', e);
+      }
+    };
+    loadMasterData();
+
     if (debitNoteId) {
       const load = async () => {
         try {
