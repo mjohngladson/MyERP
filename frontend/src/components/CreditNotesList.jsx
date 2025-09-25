@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, FileText, Search, Plus, Edit, Trash2, Eye, Calendar, User, DollarSign } from 'lucide-react';
+import { ChevronLeft, FileText, Search, Plus, Edit, Trash2, Eye, Calendar, User, DollarSign, ChevronUp, ChevronDown, Send, Mail, MessageSquare } from 'lucide-react';
 import { api } from '../services/api';
 
 const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateCreditNote }) => {
@@ -14,6 +14,11 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
     issued_count: 0,
     applied_count: 0
   });
+  const [statsCollapsed, setStatsCollapsed] = React.useState(false);
+  const [showSendModal, setShowSendModal] = React.useState(false);
+  const [sendingNote, setSendingNote] = React.useState(null);
+  const [sendMethod, setSendMethod] = React.useState('email');
+  const [sendContact, setSendContact] = React.useState('');
 
   React.useEffect(() => { 
     const t = setTimeout(() => setDebounced(search), 500); 
@@ -23,9 +28,12 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
   const load = async () => {
     setLoading(true);
     try {
+      const searchParams = { limit: 50 };
+      if (debounced) searchParams.search = debounced;
+
       const [listRes, statsRes] = await Promise.all([
-        api.get('/sales/credit-notes', { params: { search: debounced || undefined, limit: 50 } }),
-        api.get('/sales/credit-notes/stats/overview')
+        api.get('/sales/credit-notes', { params: searchParams }),
+        api.get('/sales/credit-notes/stats/overview', { params: debounced ? { search: debounced } : {} })
       ]);
       
       setRows(Array.isArray(listRes.data) ? listRes.data : []);
@@ -48,6 +56,35 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
       load(); 
     } catch (e) { 
       alert(e?.response?.data?.detail || 'Failed to delete credit note'); 
+    }
+  };
+
+  const openSendModal = (note) => {
+    setSendingNote(note);
+    setSendContact(note.customer_email || '');
+    setSendMethod('email');
+    setShowSendModal(true);
+  };
+
+  const sendNote = async () => {
+    if (!sendingNote?.id) return;
+    if (!sendContact.trim()) {
+      alert('Please enter email or phone number');
+      return;
+    }
+
+    try {
+      const payload = {
+        method: sendMethod,
+        [sendMethod === 'email' ? 'email' : 'phone']: sendContact
+      };
+
+      await api.post(`/sales/credit-notes/${sendingNote.id}/send`, payload);
+      setShowSendModal(false);
+      load(); // Refresh to show updated send status
+      alert('Credit note sent successfully!');
+    } catch (e) {
+      alert(e?.response?.data?.detail || 'Failed to send credit note');
     }
   };
 
@@ -74,6 +111,21 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
     return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
   };
 
+  const formatRelativeTime = (date) => {
+    if (!date) return '';
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now - past;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    if (diffMinutes > 0) return `${diffMinutes}m ago`;
+    return 'Just now';
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="mb-4 flex items-center justify-between">
@@ -92,28 +144,40 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-sm text-gray-600">Total Notes</div>
-          <div className="text-2xl font-semibold text-gray-800">{stats.total_notes}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-sm text-gray-600">Total Amount</div>
-          <div className="text-2xl font-semibold text-gray-800">{formatCurrency(stats.total_amount)}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-sm text-gray-600">Draft</div>
-          <div className="text-2xl font-semibold text-gray-600">{stats.draft_count}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-sm text-gray-600">Issued</div>
-          <div className="text-2xl font-semibold text-yellow-600">{stats.issued_count}</div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-sm text-gray-600">Applied</div>
-          <div className="text-2xl font-semibold text-green-600">{stats.applied_count}</div>
-        </div>
+      {/* Collapsible Stats Cards */}
+      <div className="mb-6">
+        <button
+          onClick={() => setStatsCollapsed(!statsCollapsed)}
+          className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 mb-3"
+        >
+          {statsCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+          <span className="font-medium">Statistics {debounced && '(Filtered)'}</span>
+        </button>
+        
+        {!statsCollapsed && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="text-sm text-gray-600">Total Notes</div>
+              <div className="text-2xl font-semibold text-gray-800">{stats.total_notes}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="text-sm text-gray-600">Total Amount</div>
+              <div className="text-2xl font-semibold text-gray-800">{formatCurrency(stats.total_amount)}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="text-sm text-gray-600">Draft</div>
+              <div className="text-2xl font-semibold text-gray-600">{stats.draft_count}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="text-sm text-gray-600">Issued</div>
+              <div className="text-2xl font-semibold text-yellow-600">{stats.issued_count}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="text-sm text-gray-600">Applied</div>
+              <div className="text-2xl font-semibold text-green-600">{stats.applied_count}</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mb-4 max-w-md relative">
@@ -165,7 +229,14 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                   </div>
                   <div>
                     <div className="font-medium text-gray-800">{note.credit_note_number}</div>
-                    <div className="text-xs text-gray-500">{note.reason || 'Return'}</div>
+                    <div className="text-xs text-gray-500 flex items-center space-x-2">
+                      <span>{note.reason || 'Return'}</span>
+                      {note.last_sent_at && (
+                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded" title={`Last sent: ${formatRelativeTime(note.last_sent_at)}`}>
+                          Sent {formatRelativeTime(note.last_sent_at)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="col-span-2 text-gray-700 min-w-0">
@@ -207,6 +278,13 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                     <Edit size={14} className="text-gray-600" />
                   </button>
                   <button 
+                    onClick={() => openSendModal(note)} 
+                    className="p-1 hover:bg-gray-100 rounded" 
+                    title="Send"
+                  >
+                    <Send size={14} className="text-blue-600" />
+                  </button>
+                  <button 
                     onClick={() => remove(note)} 
                     className="p-1 hover:bg-gray-100 rounded" 
                     title="Delete"
@@ -216,6 +294,71 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Send Modal */}
+      {showSendModal && sendingNote && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold mb-4">
+              Send Credit Note {sendingNote.credit_note_number}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Send Method</label>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setSendMethod('email')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
+                      sendMethod === 'email' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
+                    }`}
+                  >
+                    <Mail size={16} />
+                    <span>Email</span>
+                  </button>
+                  <button
+                    onClick={() => setSendMethod('sms')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
+                      sendMethod === 'sms' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
+                    }`}
+                  >
+                    <MessageSquare size={16} />
+                    <span>SMS</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {sendMethod === 'email' ? 'Email Address' : 'Phone Number'}
+                </label>
+                <input
+                  type={sendMethod === 'email' ? 'email' : 'tel'}
+                  value={sendContact}
+                  onChange={e => setSendContact(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder={sendMethod === 'email' ? 'customer@email.com' : '+91 9876543210'}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-2">
+              <button 
+                onClick={() => setShowSendModal(false)} 
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={sendNote} 
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Send Credit Note
+              </button>
+            </div>
           </div>
         </div>
       )}
