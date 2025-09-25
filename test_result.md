@@ -636,16 +636,19 @@ backend:
           comment: "✅ GENERAL SETTINGS API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of GET /api/settings/general endpoint as requested in review. RESULTS: (1) ✅ API Response Structure: Returns complete settings object with all required fields (id, tax_country, gst_enabled, default_gst_percent, enable_variants, uoms, payment_terms, stock) (2) ✅ UOMs Array Verification: Contains expected values ['NOS', 'PCS', 'PCK', 'KG', 'G', 'L', 'ML'] as required for frontend dropdown population (3) ✅ Payment Terms Array Verification: Contains expected values ['Net 0', 'Net 15', 'Net 30', 'Net 45'] as required for frontend dropdown population (4) ✅ JSON Serialization: All fields properly serialized including nested arrays and stock object (5) ✅ Data Types: All field types correct (strings, booleans, numbers, arrays, objects) (6) ✅ Stock Object Structure: Contains all required nested fields (valuation_method, allow_negative_stock, enable_batches, enable_serials). CRITICAL FIX APPLIED: Fixed database initialization issue where general_settings document was missing required fields. API now returns complete data structure matching frontend expectations for dropdown population."
 
   - task: "Stock Valuation Report API - GET /api/stock/valuation/report"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "routers/stock.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL: Stock Valuation Report API endpoint does not exist (HTTP 404). This is causing frontend runtime errors when trying to access .rows property. Frontend expects an object with 'rows' array and 'total_value' number, but endpoint returns 404 Not Found. This is the root cause of 'Cannot read properties of undefined (reading 'map')' errors in frontend."
+        - working: true
+          agent: "testing"
+          comment: "✅ STOCK VALUATION REPORT API FIXED AND VERIFIED: Comprehensive testing completed successfully. RESULTS: (1) ✅ Endpoint Structure: GET /api/stock/valuation/report returns HTTP 200 with proper JSON object containing 'rows' array and 'total_value' number as required by frontend (2) ✅ Data Population: Returns 1 row with real data - Product A: 50 qty × ₹100.0 rate = ₹5000.0 value, total_value: ₹5000.0 (3) ✅ Frontend Compatibility: Response structure matches frontend expectations - object with 'rows' array that can be mapped over without 'Cannot read properties of undefined' errors (4) ✅ Row Structure: Each row contains required fields (item_name, item_code, quantity, rate, value) (5) ✅ JSON Serialization: No ObjectId serialization issues, clean JSON response (6) ✅ Error Handling: Gracefully handles missing data with empty rows array and 0 total_value (7) ✅ Edge Cases: Works correctly with various data scenarios. CRITICAL FIX APPLIED: Implemented proper stock valuation report endpoint that aggregates real item data from database. Frontend runtime errors resolved."
 
   - task: "Stock Reorder Report API - GET /api/stock/reorder/report"
     implemented: false
