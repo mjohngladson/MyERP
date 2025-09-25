@@ -351,46 +351,23 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
                 err = f"{err} - Twilio trial can send only to verified numbers or upgrade your account."
             errors["sms"] = err
 
-        # Always save last send attempt result with individual tracking
-        current_time_iso = datetime.now(timezone.utc).isoformat()
-        update_fields = {
-            "last_send_result": results,
-            "last_send_errors": errors,
-            "last_send_attempt_at": current_time_iso,
-        }
+        # Use uniform send tracking service
+        from services.send_tracking import create_uniform_send_update, get_uniform_send_response
         
-        # Track individual email/SMS success with separate timestamps
-        if results.get("email") and results["email"].get("success"):
-            update_fields["email_sent_at"] = current_time_iso
-            update_fields["email_status"] = "sent"
-        elif results.get("email") and not results["email"].get("success"):
-            update_fields["email_status"] = "failed"
-            
-        if results.get("sms") and results["sms"].get("success"):
-            update_fields["sms_sent_at"] = current_time_iso
-            update_fields["sms_status"] = "sent"
-        elif results.get("sms") and not results["sms"].get("success"):
-            update_fields["sms_status"] = "failed"
+        update_fields = create_uniform_send_update(
+            send_results=results,
+            method="email" if to_email else "sms",  # Primary method
+            recipient=to_email or phone,
+            attach_pdf=include_pdf
+        )
         
-        # Keep legacy sent_at for backward compatibility
-        if overall_success:
-            update_fields.update({
-                "sent_at": current_time_iso,
-                "sent_via": sent_via,
-            })
-            
         await sales_invoices_collection.update_one({"_id": inv["_id"]}, {"$set": update_fields})
 
-        message = f"Invoice sent via {', '.join(sent_via)}" if overall_success else "Sending failed"
-
-        return {
-            "success": overall_success,
-            "message": message,
-            "result": results,
-            "errors": errors,
-            "sent_via": sent_via,
-            "sent_at": current_time_iso,
-        }
+        return get_uniform_send_response(
+            send_results=results,
+            sent_via=sent_via,
+            errors=errors
+        )
 
     except HTTPException:
         raise
