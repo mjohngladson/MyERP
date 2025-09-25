@@ -5,6 +5,8 @@ import { api } from '../services/api';
 const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
   const [loading, setLoading] = React.useState(!!creditNoteId);
   const [saving, setSaving] = React.useState(false);
+  const [masterItems, setMasterItems] = React.useState([]);
+  const [customers, setCustomers] = React.useState([]);
   const [form, setForm] = React.useState({
     customer_name: '',
     customer_email: '',
