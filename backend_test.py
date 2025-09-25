@@ -7092,6 +7092,465 @@ class BackendTester:
         except Exception as e:
             self.log_test("Debit Notes Calculation Fix", False, f"Error: {str(e)}")
             return False
+
+    async def test_sales_invoice_send_fixes(self):
+        """Test Sales Invoice Send Button Fix and Individual Email/SMS Status Tracking"""
+        try:
+            # First, create a test sales invoice with customer email
+            test_invoice_data = {
+                "customer_name": "Test Customer for Send",
+                "customer_email": "test.invoice@example.com",
+                "customer_phone": "+919876543210",
+                "invoice_date": "2024-01-15",
+                "items": [
+                    {
+                        "item_name": "Test Item",
+                        "quantity": 2,
+                        "rate": 100.0,
+                        "amount": 200.0
+                    }
+                ],
+                "discount_amount": 10.0,
+                "tax_rate": 18.0,
+                "status": "submitted"
+            }
+            
+            # Create the invoice
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=test_invoice_data) as response:
+                if response.status == 200:
+                    create_result = await response.json()
+                    if create_result.get("success") and create_result.get("invoice"):
+                        invoice_id = create_result["invoice"]["id"]
+                        self.log_test("Sales Invoice Send Fix - Create Test Invoice", True, 
+                                    f"Created test invoice with ID: {invoice_id}")
+                    else:
+                        self.log_test("Sales Invoice Send Fix - Create Test Invoice", False, 
+                                    "Failed to create test invoice", create_result)
+                        return False
+                else:
+                    self.log_test("Sales Invoice Send Fix - Create Test Invoice", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 1: Send via email using POST /api/invoices/{id}/send
+            email_send_data = {
+                "email": "test.invoice@example.com",
+                "include_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices/{invoice_id}/send", 
+                                       json=email_send_data) as response:
+                if response.status == 200:
+                    send_result = await response.json()
+                    
+                    # Check response structure
+                    required_fields = ["success", "message", "result", "sent_via"]
+                    if all(field in send_result for field in required_fields):
+                        if send_result.get("success") and "email" in send_result.get("sent_via", []):
+                            self.log_test("Sales Invoice Send Fix - Email Send", True, 
+                                        f"Email send successful: {send_result['message']}", send_result)
+                        else:
+                            self.log_test("Sales Invoice Send Fix - Email Send", False, 
+                                        f"Email send failed: {send_result.get('message')}", send_result)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in send_result]
+                        self.log_test("Sales Invoice Send Fix - Email Send", False, 
+                                    f"Missing response fields: {missing}", send_result)
+                        return False
+                else:
+                    self.log_test("Sales Invoice Send Fix - Email Send", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Verify individual email status tracking
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    
+                    # Check for individual email/SMS status fields
+                    status_fields = ["email_sent_at", "email_status", "last_send_attempt_at"]
+                    present_fields = [f for f in status_fields if f in invoice_data]
+                    
+                    if "email_sent_at" in invoice_data and invoice_data.get("email_status") == "sent":
+                        self.log_test("Sales Invoice Send Fix - Individual Email Status", True, 
+                                    f"Email status tracking working: {present_fields}", 
+                                    {k: invoice_data.get(k) for k in status_fields if k in invoice_data})
+                    else:
+                        self.log_test("Sales Invoice Send Fix - Individual Email Status", False, 
+                                    f"Email status tracking not working. Present fields: {present_fields}", 
+                                    {k: invoice_data.get(k) for k in status_fields if k in invoice_data})
+                        return False
+                else:
+                    self.log_test("Sales Invoice Send Fix - Individual Email Status", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Send via SMS
+            sms_send_data = {
+                "phone": "+919876543210"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices/{invoice_id}/send", 
+                                       json=sms_send_data) as response:
+                if response.status == 200:
+                    sms_result = await response.json()
+                    
+                    # SMS might fail due to Twilio trial restrictions, but should handle gracefully
+                    if sms_result.get("success") or (sms_result.get("errors") and "sms" in sms_result.get("errors", {})):
+                        self.log_test("Sales Invoice Send Fix - SMS Send", True, 
+                                    f"SMS send handled correctly: {sms_result.get('message')}", sms_result)
+                    else:
+                        self.log_test("Sales Invoice Send Fix - SMS Send", False, 
+                                    f"SMS send not handled properly", sms_result)
+                        return False
+                else:
+                    self.log_test("Sales Invoice Send Fix - SMS Send", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Verify individual SMS status tracking
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    
+                    # Check for SMS status fields (might be "failed" due to Twilio trial)
+                    if "sms_status" in invoice_data and invoice_data["sms_status"] in ["sent", "failed"]:
+                        self.log_test("Sales Invoice Send Fix - Individual SMS Status", True, 
+                                    f"SMS status tracking working: {invoice_data.get('sms_status')}", 
+                                    {"sms_status": invoice_data.get("sms_status"), 
+                                     "sms_sent_at": invoice_data.get("sms_sent_at")})
+                    else:
+                        self.log_test("Sales Invoice Send Fix - Individual SMS Status", False, 
+                                    f"SMS status tracking not working", 
+                                    {"sms_status": invoice_data.get("sms_status")})
+                        return False
+                else:
+                    self.log_test("Sales Invoice Send Fix - Individual SMS Status", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Clean up - delete test invoice
+            async with self.session.delete(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    self.log_test("Sales Invoice Send Fix - Cleanup", True, "Test invoice deleted")
+                else:
+                    self.log_test("Sales Invoice Send Fix - Cleanup", False, f"Failed to delete test invoice")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Invoice Send Fix", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_credit_debit_notes_uniform_status(self):
+        """Test Uniform Status Tracking for Credit Notes and Debit Notes"""
+        try:
+            # Test Credit Notes uniform status tracking
+            test_credit_note_data = {
+                "customer_name": "Test Customer for Credit",
+                "customer_email": "test.credit@example.com",
+                "customer_phone": "+919876543210",
+                "credit_note_date": "2024-01-15",
+                "reference_invoice": "INV-TEST-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Item",
+                        "quantity": 1,
+                        "rate": 100.0,
+                        "amount": 100.0
+                    }
+                ],
+                "discount_amount": 5.0,
+                "tax_rate": 18.0,
+                "status": "Issued"
+            }
+            
+            # Create credit note
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", 
+                                       json=test_credit_note_data) as response:
+                if response.status == 200:
+                    create_result = await response.json()
+                    if create_result.get("success") and create_result.get("credit_note"):
+                        credit_note_id = create_result["credit_note"]["id"]
+                        self.log_test("Credit Notes Uniform Status - Create", True, 
+                                    f"Created test credit note with ID: {credit_note_id}")
+                    else:
+                        self.log_test("Credit Notes Uniform Status - Create", False, 
+                                    "Failed to create test credit note", create_result)
+                        return False
+                else:
+                    self.log_test("Credit Notes Uniform Status - Create", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Send credit note via email
+            credit_send_data = {
+                "method": "email",
+                "email": "test.credit@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", 
+                                       json=credit_send_data) as response:
+                if response.status == 200:
+                    send_result = await response.json()
+                    if send_result.get("success"):
+                        self.log_test("Credit Notes Uniform Status - Email Send", True, 
+                                    f"Credit note email send successful", send_result)
+                    else:
+                        self.log_test("Credit Notes Uniform Status - Email Send", False, 
+                                    f"Credit note email send failed", send_result)
+                        return False
+                else:
+                    self.log_test("Credit Notes Uniform Status - Email Send", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Verify credit note status tracking format matches invoices
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as response:
+                if response.status == 200:
+                    credit_note_data = await response.json()
+                    
+                    # Check for uniform status fields like invoices
+                    uniform_fields = ["email_sent_at", "email_status", "last_send_attempt_at", "sent_to", "send_method"]
+                    present_fields = [f for f in uniform_fields if f in credit_note_data]
+                    
+                    if len(present_fields) >= 3:  # At least 3 status fields should be present
+                        self.log_test("Credit Notes Uniform Status - Status Format", True, 
+                                    f"Uniform status tracking present: {present_fields}", 
+                                    {k: credit_note_data.get(k) for k in uniform_fields if k in credit_note_data})
+                    else:
+                        self.log_test("Credit Notes Uniform Status - Status Format", False, 
+                                    f"Uniform status tracking missing. Present: {present_fields}", 
+                                    {k: credit_note_data.get(k) for k in uniform_fields if k in credit_note_data})
+                        return False
+                else:
+                    self.log_test("Credit Notes Uniform Status - Status Format", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test Debit Notes uniform status tracking
+            test_debit_note_data = {
+                "supplier_name": "Test Supplier for Debit",
+                "supplier_email": "test.debit@example.com",
+                "supplier_phone": "+919876543210",
+                "debit_note_date": "2024-01-15",
+                "reference_invoice": "PINV-TEST-001",
+                "reason": "Quality Issue",
+                "items": [
+                    {
+                        "item_name": "Test Item",
+                        "quantity": 1,
+                        "rate": 100.0,
+                        "amount": 100.0
+                    }
+                ],
+                "discount_amount": 5.0,
+                "tax_rate": 18.0,
+                "status": "Issued"
+            }
+            
+            # Create debit note
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", 
+                                       json=test_debit_note_data) as response:
+                if response.status == 200:
+                    create_result = await response.json()
+                    if create_result.get("success") and create_result.get("debit_note"):
+                        debit_note_id = create_result["debit_note"]["id"]
+                        self.log_test("Debit Notes Uniform Status - Create", True, 
+                                    f"Created test debit note with ID: {debit_note_id}")
+                    else:
+                        self.log_test("Debit Notes Uniform Status - Create", False, 
+                                    "Failed to create test debit note", create_result)
+                        return False
+                else:
+                    self.log_test("Debit Notes Uniform Status - Create", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Send debit note via email
+            debit_send_data = {
+                "method": "email",
+                "email": "test.debit@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", 
+                                       json=debit_send_data) as response:
+                if response.status == 200:
+                    send_result = await response.json()
+                    if send_result.get("success"):
+                        self.log_test("Debit Notes Uniform Status - Email Send", True, 
+                                    f"Debit note email send successful", send_result)
+                    else:
+                        self.log_test("Debit Notes Uniform Status - Email Send", False, 
+                                    f"Debit note email send failed", send_result)
+                        return False
+                else:
+                    self.log_test("Debit Notes Uniform Status - Email Send", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Verify debit note status tracking format matches invoices
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as response:
+                if response.status == 200:
+                    debit_note_data = await response.json()
+                    
+                    # Check for uniform status fields like invoices
+                    uniform_fields = ["email_sent_at", "email_status", "last_send_attempt_at", "sent_to", "send_method"]
+                    present_fields = [f for f in uniform_fields if f in debit_note_data]
+                    
+                    if len(present_fields) >= 3:  # At least 3 status fields should be present
+                        self.log_test("Debit Notes Uniform Status - Status Format", True, 
+                                    f"Uniform status tracking present: {present_fields}", 
+                                    {k: debit_note_data.get(k) for k in uniform_fields if k in debit_note_data})
+                    else:
+                        self.log_test("Debit Notes Uniform Status - Status Format", False, 
+                                    f"Uniform status tracking missing. Present: {present_fields}", 
+                                    {k: debit_note_data.get(k) for k in uniform_fields if k in debit_note_data})
+                        return False
+                else:
+                    self.log_test("Debit Notes Uniform Status - Status Format", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Clean up - delete test notes
+            await self.session.delete(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}")
+            await self.session.delete(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}")
+            self.log_test("Credit/Debit Notes Uniform Status - Cleanup", True, "Test notes deleted")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Credit/Debit Notes Uniform Status", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_sendgrid_email_delivery(self):
+        """Test actual SendGrid email delivery configuration"""
+        try:
+            # Test 1: Check if SendGrid is properly configured by attempting to send a test invoice
+            test_invoice_data = {
+                "customer_name": "SendGrid Test Customer",
+                "customer_email": "sendgrid.test@example.com",
+                "invoice_date": "2024-01-15",
+                "items": [
+                    {
+                        "item_name": "Email Test Item",
+                        "quantity": 1,
+                        "rate": 50.0,
+                        "amount": 50.0
+                    }
+                ],
+                "tax_rate": 18.0,
+                "status": "submitted"
+            }
+            
+            # Create test invoice
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=test_invoice_data) as response:
+                if response.status == 200:
+                    create_result = await response.json()
+                    if create_result.get("success") and create_result.get("invoice"):
+                        invoice_id = create_result["invoice"]["id"]
+                        self.log_test("SendGrid Email Delivery - Create Test Invoice", True, 
+                                    f"Created test invoice for email delivery test")
+                    else:
+                        self.log_test("SendGrid Email Delivery - Create Test Invoice", False, 
+                                    "Failed to create test invoice", create_result)
+                        return False
+                else:
+                    self.log_test("SendGrid Email Delivery - Create Test Invoice", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test actual email sending
+            email_send_data = {
+                "email": "sendgrid.test@example.com",
+                "include_pdf": False,  # Skip PDF to focus on email delivery
+                "subject": "Test Email Delivery - GiLi ERP",
+                "message": "This is a test email to verify SendGrid integration is working correctly."
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices/{invoice_id}/send", 
+                                       json=email_send_data) as response:
+                if response.status == 200:
+                    send_result = await response.json()
+                    
+                    # Check if email was actually sent or just marked as sent
+                    if send_result.get("success") and send_result.get("result", {}).get("email", {}).get("success"):
+                        email_result = send_result["result"]["email"]
+                        
+                        # Check for SendGrid-specific response indicators
+                        if "message_id" in str(email_result) or "accepted" in str(email_result):
+                            self.log_test("SendGrid Email Delivery - Actual Delivery", True, 
+                                        f"Email actually sent via SendGrid", email_result)
+                        else:
+                            self.log_test("SendGrid Email Delivery - Actual Delivery", False, 
+                                        f"Email marked as sent but may not be actually delivered", email_result)
+                            return False
+                    elif send_result.get("errors", {}).get("email"):
+                        error_msg = send_result["errors"]["email"]
+                        if "unauthorized" in error_msg.lower() or "401" in error_msg:
+                            self.log_test("SendGrid Email Delivery - Configuration Issue", False, 
+                                        f"SendGrid authentication failed: {error_msg}")
+                        elif "503" in str(response.status) or "not configured" in error_msg.lower():
+                            self.log_test("SendGrid Email Delivery - Configuration Issue", False, 
+                                        f"SendGrid not configured: {error_msg}")
+                        else:
+                            self.log_test("SendGrid Email Delivery - Send Error", False, 
+                                        f"Email send error: {error_msg}")
+                        return False
+                    else:
+                        self.log_test("SendGrid Email Delivery - Unexpected Response", False, 
+                                    f"Unexpected send response", send_result)
+                        return False
+                else:
+                    if response.status == 503:
+                        self.log_test("SendGrid Email Delivery - Service Unavailable", False, 
+                                    "Email service not configured (HTTP 503)")
+                    else:
+                        self.log_test("SendGrid Email Delivery - HTTP Error", False, 
+                                    f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Verify email status is accurately recorded
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    
+                    # Check if email status reflects actual delivery attempt
+                    email_status = invoice_data.get("email_status")
+                    last_send_result = invoice_data.get("last_send_result", {})
+                    
+                    if email_status == "sent" and last_send_result.get("email", {}).get("success"):
+                        self.log_test("SendGrid Email Delivery - Status Accuracy", True, 
+                                    f"Email status accurately reflects successful delivery", 
+                                    {"email_status": email_status, "email_sent_at": invoice_data.get("email_sent_at")})
+                    elif email_status == "failed" and not last_send_result.get("email", {}).get("success"):
+                        self.log_test("SendGrid Email Delivery - Status Accuracy", True, 
+                                    f"Email status accurately reflects failed delivery", 
+                                    {"email_status": email_status, "last_send_errors": invoice_data.get("last_send_errors")})
+                    else:
+                        self.log_test("SendGrid Email Delivery - Status Accuracy", False, 
+                                    f"Email status may not accurately reflect delivery", 
+                                    {"email_status": email_status, "last_send_result": last_send_result})
+                        return False
+                else:
+                    self.log_test("SendGrid Email Delivery - Status Check", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Clean up
+            await self.session.delete(f"{self.base_url}/api/invoices/{invoice_id}")
+            self.log_test("SendGrid Email Delivery - Cleanup", True, "Test invoice deleted")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("SendGrid Email Delivery", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Backend Improvements for Global Search and Dashboard"""
         print("🚀 Starting GiLi Backend API Testing Suite - BACKEND IMPROVEMENTS TESTING")
