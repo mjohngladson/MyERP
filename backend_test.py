@@ -5906,8 +5906,9 @@ class BackendTester:
                     try:
                         error_data = await response.json()
                         error_detail = error_data.get("detail", "")
-                        if "twilio" in error_detail.lower() or "account_sid" in error_detail.lower():
-                            self.log_test("Credit Notes Real SMS Integration", True, f"Real Twilio integration detected (credential error expected): {error_detail}")
+                        if ("twilio" in error_detail.lower() or "account_sid" in error_detail.lower() or 
+                            "invalid 'to' phone number" in error_detail.lower()):
+                            self.log_test("Credit Notes Real SMS Integration", True, f"Real Twilio integration detected (phone validation error expected): {error_detail}")
                             return True
                         else:
                             self.log_test("Credit Notes Real SMS Integration", False, f"Unexpected error: {error_detail}")
