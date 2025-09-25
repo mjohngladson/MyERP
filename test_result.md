@@ -612,6 +612,18 @@ frontend:
           comment: "Frontend sync interface already implemented with automatic sync, manual sync triggers, connection monitoring, and comprehensive status display integration with main process via IPC."
 
 backend:
+  - task: "General Settings API - GET /api/settings/general"
+    implemented: true
+    working: true
+    file: "routers/general_settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GENERAL SETTINGS API TESTING COMPLETED SUCCESSFULLY: Comprehensive testing of GET /api/settings/general endpoint as requested in review. RESULTS: (1) ✅ API Response Structure: Returns complete settings object with all required fields (id, tax_country, gst_enabled, default_gst_percent, enable_variants, uoms, payment_terms, stock) (2) ✅ UOMs Array Verification: Contains expected values ['NOS', 'PCS', 'PCK', 'KG', 'G', 'L', 'ML'] as required for frontend dropdown population (3) ✅ Payment Terms Array Verification: Contains expected values ['Net 0', 'Net 15', 'Net 30', 'Net 45'] as required for frontend dropdown population (4) ✅ JSON Serialization: All fields properly serialized including nested arrays and stock object (5) ✅ Data Types: All field types correct (strings, booleans, numbers, arrays, objects) (6) ✅ Stock Object Structure: Contains all required nested fields (valuation_method, allow_negative_stock, enable_batches, enable_serials). CRITICAL FIX APPLIED: Fixed database initialization issue where general_settings document was missing required fields. API now returns complete data structure matching frontend expectations for dropdown population."
+
   - task: "Items CRUD API - GET /api/stock/items"
     implemented: true
     working: true
