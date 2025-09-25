@@ -216,24 +216,44 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name *</label>
-                <select
+                <AutocompleteSearch
+                  options={suppliers.map(supplier => ({
+                    ...supplier,
+                    subtitle: supplier.email || supplier.phone || supplier.mobile
+                  }))}
                   value={form.supplier_name}
-                  onChange={e => selectSupplier(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Supplier</option>
-                  {suppliers.map(supplier => (
-                    <option key={supplier.id} value={supplier.name}>{supplier.name}</option>
-                  ))}
-                </select>
-                {form.supplier_name && !suppliers.find(s => s.name === form.supplier_name) && (
-                  <input
-                    value={form.supplier_name}
-                    onChange={e => updateForm('supplier_name', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 mt-2"
-                    placeholder="Or enter custom supplier name"
-                  />
-                )}
+                  onChange={value => updateForm('supplier_name', value)}
+                  onSelect={supplier => {
+                    if (supplier && typeof supplier === 'object') {
+                      selectSupplier(supplier.name);
+                    } else {
+                      updateForm('supplier_name', supplier || '');
+                    }
+                  }}
+                  placeholder="Search suppliers..."
+                  displayField="name"
+                  searchFields={['name', 'email', 'phone', 'mobile']}
+                  allowCustom={true}
+                  customPlaceholder="Or enter custom supplier name"
+                  renderOption={(supplier, index, isHighlighted) => (
+                    <div
+                      key={supplier.id || index}
+                      className={`px-3 py-2 cursor-pointer ${
+                        isHighlighted ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        if (typeof supplier === 'object') {
+                          selectSupplier(supplier.name);
+                        }
+                      }}
+                    >
+                      <div className="font-medium text-sm">{supplier.name}</div>
+                      {supplier.subtitle && (
+                        <div className="text-xs text-gray-500">{supplier.subtitle}</div>
+                      )}
+                    </div>
+                  )}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
