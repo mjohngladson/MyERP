@@ -61,9 +61,19 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
 
   const openSendModal = (note) => {
     setSendingNote(note);
-    setSendContact(note.customer_email || '');
     setSendMethod('email');
+    setSendContact(note.customer_email || '');
     setShowSendModal(true);
+  };
+
+  const handleSendMethodChange = (method) => {
+    setSendMethod(method);
+    // Update contact based on method
+    if (method === 'email') {
+      setSendContact(sendingNote?.customer_email || '');
+    } else if (method === 'sms') {
+      setSendContact(sendingNote?.customer_phone || '');
+    }
   };
 
   const sendNote = async () => {
