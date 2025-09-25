@@ -327,7 +327,11 @@ async def send_purchase_order(order_id: str, body: dict):
         )
         await purchase_orders_collection.update_one({"_id": order["_id"]}, {"$set": update_fields})
 
-        return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": current_time_iso}
+        return get_uniform_send_response(
+            send_results=results,
+            sent_via=sent_via,
+            errors=errors
+        )
     except HTTPException:
         raise
     except Exception as e:
