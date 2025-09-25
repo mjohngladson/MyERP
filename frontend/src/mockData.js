@@ -13,14 +13,14 @@ export const mockModules = [
     name: 'Sales',
     icon: 'DollarSign',
     color: '#2563eb',
-    items: ['Sales Order', 'Quotation', 'Customer', 'Item', 'Sales Invoice']
+    items: ['Sales Order', 'Quotation', 'Customer', 'Item', 'Sales Invoice', 'Credit Note']
   },
   {
     id: 'buying',
     name: 'Buying',
     icon: 'ShoppingCart',
     color: '#7c3aed',
-    items: ['Purchase Order', 'Supplier', 'Purchase Invoice', 'Purchase Receipt']
+    items: ['Purchase Order', 'Supplier', 'Purchase Invoice', 'Purchase Receipt', 'Debit Note']
   },
   {
     id: 'stock',
