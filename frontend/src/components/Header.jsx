@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Menu,
   Bell,
-  Settings,
   LogOut,
   User,
   ChevronDown,
