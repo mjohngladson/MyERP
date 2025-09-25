@@ -248,6 +248,7 @@ test_plan:
     - "Frontend 'Cannot read properties of undefined (reading 'map')' errors fixed for Stock Reports"
     - "Credit Notes Enhanced API - Search filters and send functionality working perfectly"
     - "Debit Notes Enhanced API - Search filters and send functionality working perfectly"
+    - "Credit Notes and Debit Notes Frontend Timestamp Tracking Fix - User reported issue resolved, timestamps update correctly after send operations"
 backend:
   - task: "Credit Notes Real Email/SMS Integration Testing"
     implemented: true
