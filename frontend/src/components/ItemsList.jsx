@@ -407,10 +407,11 @@ const ItemsList = ({ onBack }) => {
                     onChange={e => updateForm('uom', e.target.value)}
                     className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                   >
-                    {(settings?.uoms || ['NOS']).map(uom => (
+                    {(settings?.uoms || ['NOS', 'PCS', 'PCK', 'KG', 'G', 'L', 'ML']).map(uom => (
                       <option key={uom} value={uom}>{uom}</option>
                     ))}
                   </select>
+                  {!settings && <div className="text-xs text-gray-500 mt-1">Loading UoMs...</div>}
                 </div>
 
                 {/* Item Type Checkboxes */}
