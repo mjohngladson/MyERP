@@ -44,9 +44,37 @@ async def create_customer(body: Dict[str, Any]):
     doc = {
         "id": str(uuid.uuid4()),
         "name": body.get("name"),
+        "customer_type": body.get("customer_type", "Individual"),  # Individual, Company
+        
+        # Contact Info
         "email": body.get("email"),
         "phone": body.get("phone"),
-        "address": body.get("address"),
+        "mobile": body.get("mobile"),
+        "website": body.get("website"),
+        
+        # Address
+        "billing_address": body.get("billing_address"),
+        "shipping_address": body.get("shipping_address"),
+        "city": body.get("city"),
+        "state": body.get("state"),
+        "country": body.get("country", "India"),
+        "pincode": body.get("pincode"),
+        
+        # GST/Tax Info
+        "gstin": body.get("gstin"),
+        "pan": body.get("pan"),
+        "tax_category": body.get("tax_category", "In State"),  # In State, Out of State, Export
+        
+        # Business Info
+        "credit_limit": float(body.get("credit_limit", 0) or 0),
+        "payment_terms": body.get("payment_terms", "Net 30"),
+        "price_list": body.get("price_list", "Standard Selling"),
+        
+        # Additional Info
+        "customer_group": body.get("customer_group", "All Customer Groups"),
+        "territory": body.get("territory", "India"),
+        "loyalty_points": float(body.get("loyalty_points", 0) or 0),
+        
         "active": body.get("active", True),
         "created_at": now_utc(),
         "updated_at": now_utc(),
@@ -63,7 +91,23 @@ async def get_customer(cid: str):
 
 @router.put("/master/customers/{cid}")
 async def update_customer(cid: str, body: Dict[str, Any]):
-    upd = {k: body.get(k) for k in ["name", "email", "phone", "address", "active"] if k in body}
+    allowed_fields = [
+        "name", "customer_type", "email", "phone", "mobile", "website",
+        "billing_address", "shipping_address", "city", "state", "country", "pincode",
+        "gstin", "pan", "tax_category", "credit_limit", "payment_terms", "price_list",
+        "customer_group", "territory", "loyalty_points", "active"
+    ]
+    upd = {k: body.get(k) for k in allowed_fields if k in body}
+    
+    # Handle float fields
+    float_fields = ["credit_limit", "loyalty_points"]
+    for field in float_fields:
+        if field in upd:
+            try:
+                upd[field] = float(upd[field] or 0)
+            except Exception:
+                upd[field] = 0
+    
     if not upd:
         return {"success": True}
     upd["updated_at"] = now_utc()
