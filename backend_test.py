@@ -4492,6 +4492,7 @@ class BackendTester:
             self.test_basic_api_health_checks,  # Basic API health checks
             self.test_items_crud_operations,    # Items CRUD API testing
             self.test_sales_order_detail_api,   # Sales Order Detail API testing
+            self.test_general_settings_api,     # General Settings API testing
         ]
         
         passed = 0
