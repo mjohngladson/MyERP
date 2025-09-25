@@ -281,14 +281,14 @@ const CustomersList = ({ onBack }) => {
                     <div className="text-xs text-gray-500">{customer.customer_group}</div>
                   )}
                 </div>
-                <div className="col-span-2 text-gray-700">
+                <div className="col-span-2 text-gray-700 min-w-0">
                   <div className="flex items-center space-x-1 text-sm">
-                    {customer.email && <Mail size={12} />}
-                    <span>{customer.email || '-'}</span>
+                    {customer.email && <Mail size={12} className="flex-shrink-0" />}
+                    <span className="truncate">{customer.email || '-'}</span>
                   </div>
                   <div className="flex items-center space-x-1 text-sm">
-                    {customer.phone && <Phone size={12} />}
-                    <span>{customer.phone || customer.mobile || '-'}</span>
+                    {customer.phone && <Phone size={12} className="flex-shrink-0" />}
+                    <span className="truncate">{customer.phone || customer.mobile || '-'}</span>
                   </div>
                 </div>
                 <div className="col-span-2 text-gray-700">
