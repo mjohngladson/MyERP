@@ -28,9 +28,14 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
       supplier: Truck,
       item: Package,
       sales_order: ShoppingCart,
+      quotation: FileText,
       purchase_order: Receipt,
+      purchase_invoice: DollarSign,
+      credit_note: FileText,
+      debit_note: FileText,
       transaction: FileText,
       invoice: DollarSign,
+      sales_invoice: DollarSign,
       employee: Users
     };
     return icons[type] || FileText;
