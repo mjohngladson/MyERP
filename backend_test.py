@@ -4781,6 +4781,20 @@ class BackendTester:
             
             # Test 4: PUT /api/sales/credit-notes/{id} - Update credit note
             update_data = {
+                "items": [
+                    {
+                        "item_name": "Test Product A",
+                        "quantity": 2,
+                        "rate": 100.0,
+                        "amount": 200.0
+                    },
+                    {
+                        "item_name": "Test Product B", 
+                        "quantity": 1,
+                        "rate": 150.0,
+                        "amount": 150.0
+                    }
+                ],
                 "status": "Issued",
                 "discount_amount": 50.0,  # Change discount to test recalculation
                 "notes": "Updated credit note for testing"
