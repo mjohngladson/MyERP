@@ -205,7 +205,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Credit Notes and Debit Notes Send Functionality Testing - COMPLETED ✅"
+    - "Real Email/SMS Integration Testing"
+    - "Autocomplete Search Functionality Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
