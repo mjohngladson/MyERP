@@ -48,9 +48,14 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
       supplier: 'green',
       item: 'purple',
       sales_order: 'orange',
+      quotation: 'cyan',
       purchase_order: 'indigo',
+      purchase_invoice: 'red',
+      credit_note: 'pink',
+      debit_note: 'yellow',
       transaction: 'gray',
       invoice: 'orange',
+      sales_invoice: 'orange',
       employee: 'indigo'
     };
     return colors[type] || 'gray';
