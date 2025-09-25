@@ -476,6 +476,85 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
           </div>
         )}
       </div>
+
+      {/* View All Transactions Modal */}
+      {showAllTransactions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800">All Recent Transactions</h2>
+              <button 
+                onClick={() => setShowAllTransactions(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto max-h-96">
+              {allTransactions.length > 0 ? (
+                <div className="divide-y divide-gray-100">
+                  {allTransactions.map((transaction, index) => (
+                    <div key={transaction?.id || index} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              transaction.type === 'sales_invoice' ? 'bg-blue-100' :
+                              transaction.type === 'purchase_invoice' ? 'bg-red-100' :
+                              transaction.type === 'credit_note' ? 'bg-green-100' :
+                              transaction.type === 'debit_note' ? 'bg-orange-100' : 'bg-gray-100'
+                            }`}>
+                              <FileText className={`${
+                                transaction.type === 'sales_invoice' ? 'text-blue-600' :
+                                transaction.type === 'purchase_invoice' ? 'text-red-600' :
+                                transaction.type === 'credit_note' ? 'text-green-600' :
+                                transaction.type === 'debit_note' ? 'text-orange-600' : 'text-gray-600'
+                              }`} size={20} />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-gray-800">
+                                {(transaction.type || 'Transaction').replace('_', ' ').toUpperCase()}
+                              </h3>
+                              <p className="text-sm text-gray-600">{transaction.reference_number || 'N/A'}</p>
+                              {transaction.party_name && (
+                                <p className="text-xs text-gray-500">{transaction.party_name}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-800">{formatCurrency(transaction.amount || 0)}</p>
+                          <p className="text-sm text-gray-500">{formatDate(transaction.date)}</p>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            transaction.status === 'paid' || transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            transaction.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {(transaction.status || 'draft').charAt(0).toUpperCase() + (transaction.status || 'draft').slice(1)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-lg font-medium">No Transactions Found</p>
+                  <p className="text-sm">Create your first transaction to see it here</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <p className="text-sm text-gray-600 text-center">
+                Showing transactions from last 2 days, or last 10 transactions if less than 10 found
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
