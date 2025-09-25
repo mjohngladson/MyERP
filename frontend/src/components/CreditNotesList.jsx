@@ -323,7 +323,7 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                 <label className="block text-sm font-medium text-gray-700 mb-2">Send Method</label>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => setSendMethod('email')}
+                    onClick={() => handleSendMethodChange('email')}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
                       sendMethod === 'email' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
                     }`}
@@ -332,7 +332,7 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
                     <span>Email</span>
                   </button>
                   <button
-                    onClick={() => setSendMethod('sms')}
+                    onClick={() => handleSendMethodChange('sms')}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
                       sendMethod === 'sms' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
                     }`}
