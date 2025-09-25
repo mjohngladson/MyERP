@@ -87,7 +87,8 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
     try {
       const payload = {
         method: sendMethod,
-        [sendMethod === 'email' ? 'email' : 'phone']: sendContact
+        [sendMethod === 'email' ? 'email' : 'phone']: sendContact,
+        attach_pdf: attachPdf
       };
 
       await api.post(`/sales/credit-notes/${sendingNote.id}/send`, payload);
