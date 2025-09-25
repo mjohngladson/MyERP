@@ -981,6 +981,150 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_stock_valuation_report(self):
+        """Test GET /api/stock/valuation/report endpoint - CRITICAL for frontend compatibility"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/stock/valuation/report") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check if response has the required structure for frontend compatibility
+                    if isinstance(data, dict):
+                        # Frontend expects an object with 'rows' array and 'total_value' number
+                        if "rows" in data and "total_value" in data:
+                            if isinstance(data["rows"], list) and isinstance(data["total_value"], (int, float)):
+                                self.log_test("Stock Valuation Report - Structure", True, f"Correct structure: {len(data['rows'])} rows, total value: {data['total_value']}", data)
+                                
+                                # Test row structure if rows exist
+                                if len(data["rows"]) > 0:
+                                    row = data["rows"][0]
+                                    expected_fields = ["item_name", "item_code", "quantity", "rate", "value"]
+                                    if all(field in row for field in expected_fields):
+                                        self.log_test("Stock Valuation Report - Row Structure", True, f"Row structure valid", row)
+                                    else:
+                                        missing = [f for f in expected_fields if f not in row]
+                                        self.log_test("Stock Valuation Report - Row Structure", False, f"Missing row fields: {missing}", row)
+                                        return False
+                                else:
+                                    self.log_test("Stock Valuation Report - Row Structure", True, "Empty rows array (acceptable)", data)
+                                
+                                return True
+                            else:
+                                self.log_test("Stock Valuation Report - Structure", False, f"Invalid data types - rows: {type(data['rows'])}, total_value: {type(data['total_value'])}", data)
+                                return False
+                        else:
+                            missing_fields = []
+                            if "rows" not in data:
+                                missing_fields.append("rows")
+                            if "total_value" not in data:
+                                missing_fields.append("total_value")
+                            self.log_test("Stock Valuation Report - Structure", False, f"Missing required fields for frontend: {missing_fields}. Frontend expects object with 'rows' array and 'total_value' number", data)
+                            return False
+                    else:
+                        self.log_test("Stock Valuation Report - Structure", False, f"Response is not an object, got {type(data)}. Frontend expects object with 'rows' array", data)
+                        return False
+                elif response.status == 404:
+                    self.log_test("Stock Valuation Report - Endpoint", False, "❌ CRITICAL: Endpoint /api/stock/valuation/report does not exist (HTTP 404). This is causing frontend runtime errors.")
+                    return False
+                else:
+                    self.log_test("Stock Valuation Report - Endpoint", False, f"❌ CRITICAL: Endpoint returned HTTP {response.status}. Frontend expects 200 with proper JSON structure.")
+                    return False
+        except Exception as e:
+            self.log_test("Stock Valuation Report - Endpoint", False, f"❌ CRITICAL: Connection/parsing error: {str(e)}. This will cause frontend runtime errors.")
+            return False
+
+    async def test_stock_reorder_report(self):
+        """Test GET /api/stock/reorder/report endpoint - CRITICAL for frontend compatibility"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/stock/reorder/report") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check if response has the required structure for frontend compatibility
+                    if isinstance(data, dict):
+                        # Frontend expects an object with 'rows' array
+                        if "rows" in data:
+                            if isinstance(data["rows"], list):
+                                self.log_test("Stock Reorder Report - Structure", True, f"Correct structure: {len(data['rows'])} rows", data)
+                                
+                                # Test row structure if rows exist
+                                if len(data["rows"]) > 0:
+                                    row = data["rows"][0]
+                                    expected_fields = ["item_name", "item_code", "current_stock", "reorder_level", "reorder_qty"]
+                                    if all(field in row for field in expected_fields):
+                                        self.log_test("Stock Reorder Report - Row Structure", True, f"Row structure valid", row)
+                                    else:
+                                        missing = [f for f in expected_fields if f not in row]
+                                        self.log_test("Stock Reorder Report - Row Structure", False, f"Missing row fields: {missing}", row)
+                                        return False
+                                else:
+                                    self.log_test("Stock Reorder Report - Row Structure", True, "Empty rows array (acceptable)", data)
+                                
+                                return True
+                            else:
+                                self.log_test("Stock Reorder Report - Structure", False, f"Invalid data type for rows: {type(data['rows'])}. Frontend expects array", data)
+                                return False
+                        else:
+                            self.log_test("Stock Reorder Report - Structure", False, "Missing required 'rows' field. Frontend expects object with 'rows' array", data)
+                            return False
+                    else:
+                        self.log_test("Stock Reorder Report - Structure", False, f"Response is not an object, got {type(data)}. Frontend expects object with 'rows' array", data)
+                        return False
+                elif response.status == 404:
+                    self.log_test("Stock Reorder Report - Endpoint", False, "❌ CRITICAL: Endpoint /api/stock/reorder/report does not exist (HTTP 404). This is causing frontend runtime errors.")
+                    return False
+                else:
+                    self.log_test("Stock Reorder Report - Endpoint", False, f"❌ CRITICAL: Endpoint returned HTTP {response.status}. Frontend expects 200 with proper JSON structure.")
+                    return False
+        except Exception as e:
+            self.log_test("Stock Reorder Report - Endpoint", False, f"❌ CRITICAL: Connection/parsing error: {str(e)}. This will cause frontend runtime errors.")
+            return False
+
+    async def test_stock_reports_error_handling(self):
+        """Test error handling for stock report endpoints when no data exists"""
+        try:
+            # Test both endpoints to ensure they handle missing data gracefully
+            endpoints = [
+                ("/api/stock/valuation/report", "Stock Valuation Report"),
+                ("/api/stock/reorder/report", "Stock Reorder Report")
+            ]
+            
+            for endpoint, name in endpoints:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        # Should return empty structure, not error
+                        if isinstance(data, dict) and "rows" in data:
+                            if isinstance(data["rows"], list):
+                                self.log_test(f"{name} - Error Handling", True, f"Handles missing data gracefully with empty rows array", data)
+                            else:
+                                self.log_test(f"{name} - Error Handling", False, f"Invalid rows type when handling missing data: {type(data['rows'])}", data)
+                                return False
+                        else:
+                            self.log_test(f"{name} - Error Handling", False, f"Invalid structure when handling missing data", data)
+                            return False
+                    elif response.status == 404:
+                        self.log_test(f"{name} - Error Handling", False, f"❌ CRITICAL: Endpoint does not exist. Cannot test error handling.")
+                        return False
+                    elif response.status in [500, 422, 400]:
+                        # Check if it returns proper error structure
+                        try:
+                            data = await response.json()
+                            self.log_test(f"{name} - Error Handling", False, f"Returns HTTP {response.status} instead of empty structure: {data}")
+                            return False
+                        except:
+                            self.log_test(f"{name} - Error Handling", False, f"Returns HTTP {response.status} with non-JSON response")
+                            return False
+                    else:
+                        self.log_test(f"{name} - Error Handling", False, f"Unexpected HTTP status: {response.status}")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Stock Reports Error Handling", False, f"Error testing error handling: {str(e)}")
+            return False
+
     async def test_invoices_list_endpoint(self):
         """Test GET /api/invoices/?limit=20 endpoint"""
         try:
