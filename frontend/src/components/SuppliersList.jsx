@@ -535,10 +535,11 @@ const SuppliersList = ({ onBack }) => {
                       onChange={e => updateForm('payment_terms', e.target.value)}
                       className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                     >
-                      {(settings?.payment_terms || ['Net 30']).map(term => (
+                      {(settings?.payment_terms || ['Net 0', 'Net 15', 'Net 30', 'Net 45']).map(term => (
                         <option key={term} value={term}>{term}</option>
                       ))}
                     </select>
+                    {!settings && <div className="text-xs text-gray-500 mt-1">Loading payment terms...</div>}
                   </div>
 
                   <div>
