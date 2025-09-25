@@ -31,10 +31,17 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
     try {
       const searchParams = { limit: 50 };
       if (debounced) searchParams.search = debounced;
+      // Add cache-busting timestamp to ensure fresh data
+      searchParams._t = Date.now();
 
       const [listRes, statsRes] = await Promise.all([
         api.get('/buying/debit-notes', { params: searchParams }),
-        api.get('/buying/debit-notes/stats/overview', { params: debounced ? { search: debounced } : {} })
+        api.get('/buying/debit-notes/stats/overview', { 
+          params: { 
+            ...(debounced ? { search: debounced } : {}),
+            _t: Date.now()
+          } 
+        })
       ]);
       
       setRows(Array.isArray(listRes.data) ? listRes.data : []);
