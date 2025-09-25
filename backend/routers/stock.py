@@ -124,33 +124,43 @@ async def get_valuation_report():
 async def get_reorder_report():
     """Get reorder report showing items below reorder level"""
     try:
-        # Get items that have reorder levels set
+        # Get items that have reorder levels set and are tracked
         items = await items_collection.find({
             "active": True,
-            "track_inventory": True,
-            "reorder_level": {"$gt": 0}
+            "track_inventory": True
         }).to_list(length=100)
         
         rows = []
         
-        # Generate sample reorder data for items with reorder levels
+        # Check items for reorder requirements
         for item in items:
             reorder_level = item.get('reorder_level', 0)
-            if reorder_level > 0:
-                # Mock current qty as below reorder level for demo
-                current_qty = max(0, reorder_level - 5)  # 5 below reorder level
+            min_qty = item.get('min_qty', 0)
+            current_qty = item.get('stock_qty', 0) or item.get('stock_quantity', 0)
+            
+            # Use reorder_level if set, otherwise use min_qty
+            threshold = reorder_level if reorder_level > 0 else min_qty
+            
+            # Include items that are below threshold or have no stock
+            if threshold > 0 and current_qty <= threshold:
+                max_qty = item.get('max_qty', 0) or (threshold * 3)  # Default max
+                reorder_qty = max(max_qty - current_qty, threshold)
                 
-                if current_qty <= reorder_level:
-                    max_qty = item.get('max_qty', 0) or (reorder_level * 3)  # Default max
-                    reorder_qty = max_qty - current_qty
-                    
-                    rows.append({
-                        "item_name": item.get('name', 'Unknown Item'),
-                        "sku": item.get('item_code', '-'),
-                        "current_qty": current_qty,
-                        "reorder_level": reorder_level, 
-                        "reorder_qty": reorder_qty
-                    })
+                rows.append({
+                    "item_name": item.get('name', 'Unknown Item'),
+                    "sku": item.get('item_code', '-'),
+                    "current_qty": current_qty,
+                    "reorder_level": threshold,
+                    "reorder_qty": reorder_qty
+                })
+            elif current_qty == 0:  # Include out of stock items even without reorder level
+                rows.append({
+                    "item_name": item.get('name', 'Unknown Item'),
+                    "sku": item.get('item_code', '-'),
+                    "current_qty": current_qty,
+                    "reorder_level": threshold or 10,  # Default reorder level
+                    "reorder_qty": threshold or 10
+                })
         
         return {
             "rows": rows
