@@ -4731,7 +4731,7 @@ class BackendTester:
         success_rate = (passed / total * 100) if total > 0 else 0
         
         print("=" * 80)
-        print("🏁 ITEMS CRUD & SALES ORDER DETAIL API TESTING COMPLETE")
+        print("🏁 STOCK REPORTS API TESTING COMPLETE")
         print(f"✅ Passed: {passed}")
         print(f"❌ Failed: {failed}")
         print(f"📊 Success Rate: {success_rate:.1f}%")
