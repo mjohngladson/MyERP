@@ -76,6 +76,15 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
     const newItems = [...form.items];
     newItems[index] = { ...newItems[index], [field]: value };
     
+    // If selecting an item from dropdown, auto-populate rate
+    if (field === 'item_name' && value) {
+      const selectedItem = masterItems.find(item => item.name === value);
+      if (selectedItem) {
+        newItems[index].rate = selectedItem.unit_price || 0;
+        newItems[index].amount = newItems[index].quantity * (selectedItem.unit_price || 0);
+      }
+    }
+    
     // Auto-calculate amount
     if (field === 'quantity' || field === 'rate') {
       const quantity = field === 'quantity' ? parseFloat(value) || 0 : newItems[index].quantity;
@@ -84,6 +93,19 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
     }
     
     setForm(prev => ({ ...prev, items: newItems }));
+  };
+
+  const selectCustomer = (customerName) => {
+    const customer = customers.find(c => c.name === customerName);
+    if (customer) {
+      setForm(prev => ({
+        ...prev,
+        customer_name: customer.name,
+        customer_email: customer.email || '',
+        customer_phone: customer.phone || customer.mobile || '',
+        customer_address: customer.billing_address || ''
+      }));
+    }
   };
 
   const addItem = () => {
