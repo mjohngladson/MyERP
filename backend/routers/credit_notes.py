@@ -131,8 +131,8 @@ async def get_credit_note(credit_note_id: str):
 @router.put("/credit-notes/{credit_note_id}")
 async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
     """Update credit note"""
-    # Calculate totals if items are provided
-    if "items" in body:
+    # Calculate totals if items are provided or discount/tax fields are changed
+    if "items" in body or "discount_amount" in body or "tax_rate" in body:
         items = body.get("items", [])
         subtotal = sum(float(item.get("amount", 0)) for item in items)
         discount_amount = float(body.get("discount_amount", 0))
@@ -144,6 +144,8 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
         
         body.update({
             "subtotal": subtotal,
+            "discount_amount": discount_amount,  # Ensure discount_amount is included
+            "tax_rate": tax_rate,  # Ensure tax_rate is included
             "tax_amount": tax_amount,
             "total_amount": total_amount
         })
