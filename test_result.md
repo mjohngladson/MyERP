@@ -1094,6 +1094,150 @@ backend:
           comment: "✅ RAILWAY DATABASE TESTING COMPLETED - APPLICATION FUNCTIONALITY VERIFIED: Conducted comprehensive Railway database connection testing as requested. CRITICAL FINDINGS: (1) ✅ APPLICATION CODE WORKING PERFECTLY: Successfully created Railway Public Test Transaction (RAILWAY-PUBLIC-TEST-001) with exact specifications - ₹150 subtotal + ₹27 tax = ₹177 total for 'Railway Public Test Customer' (2) ✅ SALES INVOICE CREATION CONFIRMED: Transaction processed successfully and created sales invoice SINV-20250922-0044 with correct ₹177.0 total amount and proper PoS metadata preservation (3) ✅ DATABASE OPERATIONS VERIFIED: All CRUD operations, collections access, and business logic working correctly when database connectivity is available (4) ❌ RAILWAY CONNECTIVITY ISSUE CONFIRMED: Backend cannot connect to Railway MongoDB (mongodb-production-666b.up.railway.app:27017) from this environment - returns 'connection closed' and 'Name or service not known' errors. CONCLUSION: The application is fully functional and ready for production. The only issue is network connectivity to Railway database from this testing environment. When Railway database connection is restored, users will immediately see all sales invoices including the test transaction in their Railway database dashboard."
 
 backend:
+  - task: "Credit Notes API - GET /api/sales/credit-notes"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES LIST API VERIFIED: GET /api/sales/credit-notes returns 200 status with array response. Supports search, pagination, status filtering, and date range filtering. Pagination metadata (_meta.total_count) included on first element. All required fields present in response structure."
+
+  - task: "Credit Notes API - POST /api/sales/credit-notes"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES CREATE API VERIFIED: POST /api/sales/credit-notes successfully creates credit notes with proper CN-YYYYMMDD-XXXX number format. Totals calculation working correctly: subtotal 350 - discount 25 = 325, tax 18% = 58.5, total = 383.5. Returns success:true with complete credit_note object containing UUID string id."
+
+  - task: "Credit Notes API - GET /api/sales/credit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES GET SINGLE API VERIFIED: GET /api/sales/credit-notes/{id} successfully retrieves individual credit notes by ID. Returns complete credit note object with all fields including customer details, items, totals, and metadata. Proper 404 handling for non-existent IDs."
+
+  - task: "Credit Notes API - PUT /api/sales/credit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES UPDATE API VERIFIED: PUT /api/sales/credit-notes/{id} successfully updates credit notes with automatic totals recalculation when items are provided. Verified recalculation: subtotal 350 - discount 50 = 300, tax 18% = 54, total = 354. Status updates working correctly. Proper 404 handling for non-existent IDs."
+
+  - task: "Credit Notes API - DELETE /api/sales/credit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES DELETE API VERIFIED: DELETE /api/sales/credit-notes/{id} successfully deletes credit notes and returns success:true. Proper deletion verified by subsequent 404 response when attempting to retrieve deleted credit note. Proper 404 handling for non-existent IDs."
+
+  - task: "Credit Notes API - GET /api/sales/credit-notes/stats/overview"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTES STATS API VERIFIED: GET /api/sales/credit-notes/stats/overview returns complete statistics with all required fields (total_notes, total_amount, draft_count, issued_count, applied_count). Aggregation pipeline working correctly with proper status-based counting. Real-time stats reflect created/updated credit notes accurately."
+
+  - task: "Debit Notes API - GET /api/buying/debit-notes"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES LIST API VERIFIED: GET /api/buying/debit-notes returns 200 status with array response. Supports search, pagination, status filtering, and date range filtering. Pagination metadata (_meta.total_count) included on first element. All required fields present in response structure."
+
+  - task: "Debit Notes API - POST /api/buying/debit-notes"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES CREATE API VERIFIED: POST /api/buying/debit-notes successfully creates debit notes with proper DN-YYYYMMDD-XXXX number format. Totals calculation working correctly: subtotal 480 - discount 30 = 450, tax 18% = 81, total = 531. Returns success:true with complete debit_note object containing UUID string id."
+
+  - task: "Debit Notes API - GET /api/buying/debit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES GET SINGLE API VERIFIED: GET /api/buying/debit-notes/{id} successfully retrieves individual debit notes by ID. Returns complete debit note object with all fields including supplier details, items, totals, and metadata. Proper 404 handling for non-existent IDs."
+
+  - task: "Debit Notes API - PUT /api/buying/debit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES UPDATE API VERIFIED: PUT /api/buying/debit-notes/{id} successfully updates debit notes with automatic totals recalculation when items are provided. Verified recalculation: subtotal 480 - discount 60 = 420, tax 18% = 75.6, total = 495.6. Status updates working correctly. Proper 404 handling for non-existent IDs."
+
+  - task: "Debit Notes API - DELETE /api/buying/debit-notes/{id}"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES DELETE API VERIFIED: DELETE /api/buying/debit-notes/{id} successfully deletes debit notes and returns success:true. Proper deletion verified by subsequent 404 response when attempting to retrieve deleted debit note. Proper 404 handling for non-existent IDs."
+
+  - task: "Debit Notes API - GET /api/buying/debit-notes/stats/overview"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DEBIT NOTES STATS API VERIFIED: GET /api/buying/debit-notes/stats/overview returns complete statistics with all required fields (total_notes, total_amount, draft_count, issued_count, accepted_count). Aggregation pipeline working correctly with proper status-based counting. Real-time stats reflect created/updated debit notes accurately."
+
   - task: "Basic Health Check API"
     implemented: true
     working: true
