@@ -7898,6 +7898,7 @@ class BackendTester:
         # Tests to run (CRITICAL FIXES as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
+            self.test_uniform_sms_email_status_tracking,    # CRITICAL: Test uniform SMS/email status tracking across ALL 6 modules
             self.test_sales_invoice_send_fixes,             # CRITICAL: Sales Invoice Send Button Fix + Individual Status Tracking
             self.test_credit_debit_notes_uniform_status,    # CRITICAL: Uniform Status Tracking for Credit/Debit Notes
             self.test_sendgrid_email_delivery,              # CRITICAL: Email Delivery Issue - Test actual SendGrid
