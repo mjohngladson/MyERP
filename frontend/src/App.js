@@ -21,6 +21,8 @@ import CreditNotesList from './components/CreditNotesList';
 import CreditNoteForm from './components/CreditNoteForm';
 import DebitNotesList from './components/DebitNotesList';
 import DebitNoteForm from './components/DebitNoteForm';
+import CreditNoteView from './components/CreditNoteView';
+import DebitNoteView from './components/DebitNoteView';
 import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
