@@ -5382,24 +5382,403 @@ class BackendTester:
             self.log_test("Debit Notes Enhanced API", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_send_functionality(self):
+        """Test Credit Notes send functionality with bug fixes"""
+        try:
+            # First, create a test credit note
+            credit_note_data = {
+                "customer_name": "Test Customer for Credit Note",
+                "customer_email": "test.customer@example.com",
+                "customer_phone": "+1234567890",
+                "credit_note_date": "2024-01-15",
+                "reference_invoice": "INV-2024-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Product A",
+                        "quantity": 2,
+                        "rate": 100.0,
+                        "amount": 200.0
+                    }
+                ],
+                "discount_amount": 10.0,
+                "tax_rate": 18.0,
+                "notes": "Test credit note for send functionality"
+            }
+            
+            # Create credit note
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=credit_note_data) as response:
+                if response.status != 200:
+                    self.log_test("Credit Notes Send - Create Test Note", False, f"Failed to create test credit note: HTTP {response.status}")
+                    return False
+                
+                create_data = await response.json()
+                if not create_data.get("success"):
+                    self.log_test("Credit Notes Send - Create Test Note", False, "Credit note creation failed")
+                    return False
+                
+                credit_note_id = create_data["credit_note"]["id"]
+                self.log_test("Credit Notes Send - Create Test Note", True, f"Created test credit note: {credit_note_id}")
+            
+            # Test 1: Send via email with PDF attachment
+            email_payload = {
+                "method": "email",
+                "email": "test.customer@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=email_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if (data["success"] and 
+                            data["method"] == "email" and 
+                            data["pdf_attached"] == True and
+                            "PDF attachment" in data["message"]):
+                            self.log_test("Credit Notes Send - Email with PDF", True, f"Email send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Credit Notes Send - Email with PDF", False, f"Invalid response structure or values", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Credit Notes Send - Email with PDF", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes Send - Email with PDF", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Send via SMS (should indicate demo mode)
+            sms_payload = {
+                "method": "sms",
+                "phone": "+1234567890"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=sms_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if (data["success"] and 
+                        data["method"] == "sms" and 
+                        data["pdf_attached"] == False and
+                        "Demo mode" in data["message"]):
+                        self.log_test("Credit Notes Send - SMS Demo Mode", True, f"SMS demo mode working: {data['message']}", data)
+                    else:
+                        self.log_test("Credit Notes Send - SMS Demo Mode", False, f"SMS demo mode not indicated properly", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes Send - SMS Demo Mode", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Verify send tracking fields are updated
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    tracking_fields = ["last_sent_at", "last_send_attempt_at", "sent_to", "send_method"]
+                    
+                    if all(field in data for field in tracking_fields):
+                        self.log_test("Credit Notes Send - Tracking Fields", True, f"Send tracking fields updated correctly", {
+                            "last_sent_at": data.get("last_sent_at"),
+                            "send_method": data.get("send_method"),
+                            "sent_to": data.get("sent_to")
+                        })
+                    else:
+                        missing = [f for f in tracking_fields if f not in data]
+                        self.log_test("Credit Notes Send - Tracking Fields", False, f"Missing tracking fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes Send - Tracking Fields", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Error handling for invalid credit note ID
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/invalid-id/send", json=email_payload) as response:
+                if response.status == 404:
+                    self.log_test("Credit Notes Send - Error Handling", True, "404 returned for invalid credit note ID")
+                else:
+                    self.log_test("Credit Notes Send - Error Handling", False, f"Expected 404, got {response.status}")
+                    return False
+            
+            # Cleanup: Delete test credit note
+            async with self.session.delete(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as response:
+                if response.status == 200:
+                    self.log_test("Credit Notes Send - Cleanup", True, "Test credit note deleted successfully")
+                else:
+                    self.log_test("Credit Notes Send - Cleanup", False, f"Failed to delete test credit note: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Credit Notes Send Functionality", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_send_functionality(self):
+        """Test Debit Notes send functionality with bug fixes"""
+        try:
+            # First, create a test debit note
+            debit_note_data = {
+                "supplier_name": "Test Supplier for Debit Note",
+                "supplier_email": "test.supplier@example.com",
+                "supplier_phone": "+1234567890",
+                "debit_note_date": "2024-01-15",
+                "reference_invoice": "PINV-2024-001",
+                "reason": "Quality Issue",
+                "items": [
+                    {
+                        "item_name": "Test Product B",
+                        "quantity": 1,
+                        "rate": 150.0,
+                        "amount": 150.0
+                    }
+                ],
+                "discount_amount": 5.0,
+                "tax_rate": 18.0,
+                "notes": "Test debit note for send functionality"
+            }
+            
+            # Create debit note
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=debit_note_data) as response:
+                if response.status != 200:
+                    self.log_test("Debit Notes Send - Create Test Note", False, f"Failed to create test debit note: HTTP {response.status}")
+                    return False
+                
+                create_data = await response.json()
+                if not create_data.get("success"):
+                    self.log_test("Debit Notes Send - Create Test Note", False, "Debit note creation failed")
+                    return False
+                
+                debit_note_id = create_data["debit_note"]["id"]
+                self.log_test("Debit Notes Send - Create Test Note", True, f"Created test debit note: {debit_note_id}")
+            
+            # Test 1: Send via email with PDF attachment
+            email_payload = {
+                "method": "email",
+                "email": "test.supplier@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", json=email_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if (data["success"] and 
+                            data["method"] == "email" and 
+                            data["pdf_attached"] == True and
+                            "PDF attachment" in data["message"]):
+                            self.log_test("Debit Notes Send - Email with PDF", True, f"Email send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Debit Notes Send - Email with PDF", False, f"Invalid response structure or values", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Debit Notes Send - Email with PDF", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes Send - Email with PDF", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Send via SMS (should indicate demo mode)
+            sms_payload = {
+                "method": "sms",
+                "phone": "+1234567890"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", json=sms_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    if (data["success"] and 
+                        data["method"] == "sms" and 
+                        data["pdf_attached"] == False and
+                        "Demo mode" in data["message"]):
+                        self.log_test("Debit Notes Send - SMS Demo Mode", True, f"SMS demo mode working: {data['message']}", data)
+                    else:
+                        self.log_test("Debit Notes Send - SMS Demo Mode", False, f"SMS demo mode not indicated properly", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes Send - SMS Demo Mode", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Verify send tracking fields are updated
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    tracking_fields = ["last_sent_at", "last_send_attempt_at", "sent_to", "send_method"]
+                    
+                    if all(field in data for field in tracking_fields):
+                        self.log_test("Debit Notes Send - Tracking Fields", True, f"Send tracking fields updated correctly", {
+                            "last_sent_at": data.get("last_sent_at"),
+                            "send_method": data.get("send_method"),
+                            "sent_to": data.get("sent_to")
+                        })
+                    else:
+                        missing = [f for f in tracking_fields if f not in data]
+                        self.log_test("Debit Notes Send - Tracking Fields", False, f"Missing tracking fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes Send - Tracking Fields", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Error handling for invalid debit note ID
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/invalid-id/send", json=email_payload) as response:
+                if response.status == 404:
+                    self.log_test("Debit Notes Send - Error Handling", True, "404 returned for invalid debit note ID")
+                else:
+                    self.log_test("Debit Notes Send - Error Handling", False, f"Expected 404, got {response.status}")
+                    return False
+            
+            # Cleanup: Delete test debit note
+            async with self.session.delete(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}") as response:
+                if response.status == 200:
+                    self.log_test("Debit Notes Send - Cleanup", True, "Test debit note deleted successfully")
+                else:
+                    self.log_test("Debit Notes Send - Cleanup", False, f"Failed to delete test debit note: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Debit Notes Send Functionality", False, f"Error: {str(e)}")
+            return False
+
+    async def test_master_data_integration(self):
+        """Test master data integration for Credit/Debit Notes forms"""
+        try:
+            # Test 1: GET /api/stock/items - Verify items are available
+            async with self.session.get(f"{self.base_url}/api/stock/items?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            item = data[0]
+                            required_fields = ["id", "name", "item_code", "unit_price"]
+                            if all(field in item for field in required_fields):
+                                self.log_test("Master Data - Items", True, f"Retrieved {len(data)} items for form population", {"count": len(data), "sample": item})
+                            else:
+                                missing = [f for f in required_fields if f not in item]
+                                self.log_test("Master Data - Items", False, f"Missing item fields: {missing}", item)
+                                return False
+                        else:
+                            self.log_test("Master Data - Items", True, "Empty items list (acceptable)", data)
+                    else:
+                        self.log_test("Master Data - Items", False, "Items response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Master Data - Items", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: GET /api/master/customers - Verify customers are available
+            async with self.session.get(f"{self.base_url}/api/master/customers?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            customer = data[0]
+                            required_fields = ["id", "name", "email"]
+                            if all(field in customer for field in required_fields):
+                                self.log_test("Master Data - Customers", True, f"Retrieved {len(data)} customers for credit note forms", {"count": len(data), "sample": customer})
+                            else:
+                                missing = [f for f in required_fields if f not in customer]
+                                self.log_test("Master Data - Customers", False, f"Missing customer fields: {missing}", customer)
+                                return False
+                        else:
+                            self.log_test("Master Data - Customers", True, "Empty customers list (acceptable)", data)
+                    else:
+                        self.log_test("Master Data - Customers", False, "Customers response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Master Data - Customers", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: GET /api/master/suppliers - Verify suppliers are available
+            async with self.session.get(f"{self.base_url}/api/master/suppliers?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            supplier = data[0]
+                            required_fields = ["id", "name", "email"]
+                            if all(field in supplier for field in required_fields):
+                                self.log_test("Master Data - Suppliers", True, f"Retrieved {len(data)} suppliers for debit note forms", {"count": len(data), "sample": supplier})
+                            else:
+                                missing = [f for f in required_fields if f not in supplier]
+                                self.log_test("Master Data - Suppliers", False, f"Missing supplier fields: {missing}", supplier)
+                                return False
+                        else:
+                            self.log_test("Master Data - Suppliers", True, "Empty suppliers list (acceptable)", data)
+                    else:
+                        self.log_test("Master Data - Suppliers", False, "Suppliers response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Master Data - Suppliers", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Master Data Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_api_endpoint_registration(self):
+        """Test that credit_notes and debit_notes routers are properly registered"""
+        try:
+            # Test Credit Notes endpoints are accessible
+            credit_note_endpoints = [
+                "/api/sales/credit-notes",
+                "/api/sales/credit-notes/stats/overview"
+            ]
+            
+            for endpoint in credit_note_endpoints:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status in [200, 422]:  # 200 OK or 422 validation error (both indicate endpoint exists)
+                        self.log_test(f"API Registration - {endpoint}", True, f"Endpoint accessible (HTTP {response.status})")
+                    elif response.status == 404:
+                        self.log_test(f"API Registration - {endpoint}", False, f"Endpoint not found (HTTP 404) - router not registered")
+                        return False
+                    else:
+                        self.log_test(f"API Registration - {endpoint}", True, f"Endpoint exists but returned HTTP {response.status}")
+            
+            # Test Debit Notes endpoints are accessible
+            debit_note_endpoints = [
+                "/api/buying/debit-notes",
+                "/api/buying/debit-notes/stats/overview"
+            ]
+            
+            for endpoint in debit_note_endpoints:
+                async with self.session.get(f"{self.base_url}{endpoint}") as response:
+                    if response.status in [200, 422]:  # 200 OK or 422 validation error (both indicate endpoint exists)
+                        self.log_test(f"API Registration - {endpoint}", True, f"Endpoint accessible (HTTP {response.status})")
+                    elif response.status == 404:
+                        self.log_test(f"API Registration - {endpoint}", False, f"Endpoint not found (HTTP 404) - router not registered")
+                        return False
+                    else:
+                        self.log_test(f"API Registration - {endpoint}", True, f"Endpoint exists but returned HTTP {response.status}")
+            
+            # Test that routers are included in server.py by checking if endpoints respond
+            self.log_test("API Registration - Router Inclusion", True, "All credit_notes and debit_notes endpoints are properly registered and accessible")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("API Endpoint Registration", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Credit Notes and Debit Notes API endpoints"""
-        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT & DEBIT NOTES API TESTING")
+        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT & DEBIT NOTES SEND FUNCTIONALITY TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Credit Notes and Debit Notes API endpoints")
-        print("🎯 Testing: /api/sales/credit-notes and /api/buying/debit-notes")
+        print("📊 Focus: Credit Notes and Debit Notes Send Functionality with Bug Fixes")
+        print("🎯 Testing: /api/sales/credit-notes/{id}/send and /api/buying/debit-notes/{id}/send")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
-            self.test_health_check,              # Basic API health check
-            self.test_credit_notes_api,          # Credit Notes API comprehensive testing
-            self.test_debit_notes_api,           # Debit Notes API comprehensive testing
-            self.test_credit_notes_enhanced_api, # Credit Notes Enhanced API with search filters and send functionality
-            self.test_debit_notes_enhanced_api,  # Debit Notes Enhanced API with search filters and send functionality
-            self.test_stock_valuation_report,    # Stock Valuation Report API
-            self.test_stock_reorder_report,      # Stock Reorder Report API  
-            self.test_stock_reports_error_handling,  # Error handling tests
+            self.test_health_check,                    # Basic API health check
+            self.test_credit_notes_send_functionality, # Credit Notes Send Functionality Testing
+            self.test_debit_notes_send_functionality,  # Debit Notes Send Functionality Testing
+            self.test_master_data_integration,         # Master Data Integration Testing
+            self.test_api_endpoint_registration,       # API Endpoint Registration Testing
         ]
         
         passed = 0
