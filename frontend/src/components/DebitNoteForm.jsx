@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
+import AutocompleteSearch from './ui/AutocompleteSearch';
 
 const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
   const [loading, setLoading] = React.useState(!!debitNoteId);
