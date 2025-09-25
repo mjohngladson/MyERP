@@ -15,7 +15,8 @@ import {
   Info,
   RefreshCw,
   BarChart3,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
