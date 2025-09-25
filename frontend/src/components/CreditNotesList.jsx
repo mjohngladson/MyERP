@@ -93,11 +93,16 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
 
       const response = await api.post(`/sales/credit-notes/${sendingNote.id}/send`, payload);
       setShowSendModal(false);
-      load(); // Refresh to show updated send status
       
       // Show appropriate message based on response
       const message = response.data?.message || 'Credit note sent successfully!';
       alert(message);
+      
+      // Force reload after a short delay to ensure backend update is complete
+      setTimeout(() => {
+        load();
+      }, 500);
+      
     } catch (e) {
       alert(e?.response?.data?.detail || 'Failed to send credit note');
     }
