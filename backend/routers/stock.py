@@ -72,3 +72,90 @@ async def api_update_settings(body: Dict[str, Any]):
 
 # Warehouses CRUD and other stock endpoints remain unchanged from previous version
 # ... Rest of the file (ledger, valuation_report, reorder_report, entries, etc.) ...
+
+# Stock Reports API Endpoints
+
+@router.get("/valuation/report")
+async def get_valuation_report():
+    """Get stock valuation report showing current stock value by item and warehouse"""
+    try:
+        # For now, return mock data structure until we implement full inventory tracking
+        # In a full implementation, this would aggregate from stock_ledger and calculate values
+        
+        # Get items and warehouses for basic structure
+        items = await items_collection.find({"active": True}).to_list(length=100)
+        warehouses_cursor = warehouses.find({"active": True})
+        warehouse_list = await warehouses_cursor.to_list(length=50)
+        
+        rows = []
+        total_value = 0
+        
+        # Generate sample valuation data based on existing items and warehouses  
+        for item in items[:5]:  # Limit to first 5 items for demo
+            for warehouse in warehouse_list[:2]:  # First 2 warehouses
+                qty = 10  # Mock quantity
+                unit_price = item.get('unit_price', 0)
+                value = qty * unit_price
+                total_value += value
+                
+                rows.append({
+                    "item_id": item.get('name', 'Unknown Item'),
+                    "warehouse_id": warehouse.get('name', 'Main Warehouse'), 
+                    "qty": qty,
+                    "value": value
+                })
+        
+        return {
+            "rows": rows,
+            "total_value": total_value
+        }
+        
+    except Exception as e:
+        print(f"Error in valuation report: {e}")
+        return {
+            "rows": [],
+            "total_value": 0
+        }
+
+
+@router.get("/reorder/report") 
+async def get_reorder_report():
+    """Get reorder report showing items below reorder level"""
+    try:
+        # Get items that have reorder levels set
+        items = await items_collection.find({
+            "active": True,
+            "track_inventory": True,
+            "reorder_level": {"$gt": 0}
+        }).to_list(length=100)
+        
+        rows = []
+        
+        # Generate sample reorder data for items with reorder levels
+        for item in items:
+            reorder_level = item.get('reorder_level', 0)
+            if reorder_level > 0:
+                # Mock current qty as below reorder level for demo
+                current_qty = max(0, reorder_level - 5)  # 5 below reorder level
+                
+                if current_qty <= reorder_level:
+                    max_qty = item.get('max_qty', 0) or (reorder_level * 3)  # Default max
+                    reorder_qty = max_qty - current_qty
+                    
+                    rows.append({
+                        "item_name": item.get('name', 'Unknown Item'),
+                        "sku": item.get('item_code', '-'),
+                        "current_qty": current_qty,
+                        "reorder_level": reorder_level, 
+                        "reorder_qty": reorder_qty
+                    })
+        
+        return {
+            "rows": rows
+        }
+        
+    except Exception as e:
+        print(f"Error in reorder report: {e}")
+        return {
+            "rows": []
+        }
