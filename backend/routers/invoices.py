@@ -351,19 +351,34 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
                 err = f"{err} - Twilio trial can send only to verified numbers or upgrade your account."
             errors["sms"] = err
 
-        # Always save last send attempt result
-        sent_at_iso = None
+        # Always save last send attempt result with individual tracking
+        current_time_iso = datetime.now(timezone.utc).isoformat()
         update_fields = {
             "last_send_result": results,
             "last_send_errors": errors,
-            "last_send_attempt_at": datetime.now(timezone.utc).isoformat(),
+            "last_send_attempt_at": current_time_iso,
         }
+        
+        # Track individual email/SMS success with separate timestamps
+        if results.get("email") and results["email"].get("success"):
+            update_fields["email_sent_at"] = current_time_iso
+            update_fields["email_status"] = "sent"
+        elif results.get("email") and not results["email"].get("success"):
+            update_fields["email_status"] = "failed"
+            
+        if results.get("sms") and results["sms"].get("success"):
+            update_fields["sms_sent_at"] = current_time_iso
+            update_fields["sms_status"] = "sent"
+        elif results.get("sms") and not results["sms"].get("success"):
+            update_fields["sms_status"] = "failed"
+        
+        # Keep legacy sent_at for backward compatibility
         if overall_success:
-            sent_at_iso = datetime.now(timezone.utc).isoformat()
             update_fields.update({
-                "sent_at": sent_at_iso,
+                "sent_at": current_time_iso,
                 "sent_via": sent_via,
             })
+            
         await sales_invoices_collection.update_one({"_id": inv["_id"]}, {"$set": update_fields})
 
         message = f"Invoice sent via {', '.join(sent_via)}" if overall_success else "Sending failed"
