@@ -270,7 +270,7 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-800">Recent Transactions</h2>
               <button 
-                onClick={onViewAllTransactions}
+                onClick={handleViewAllTransactions}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 View All
