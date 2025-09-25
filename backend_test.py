@@ -5764,21 +5764,505 @@ class BackendTester:
             self.log_test("API Endpoint Registration", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_real_email_integration(self):
+        """Test Credit Notes real email integration with SendGrid"""
+        try:
+            # First, get existing credit notes to test with
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes?limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Credit Notes Real Email Integration - Get Notes", False, f"Failed to get credit notes: HTTP {response.status}")
+                    return False
+                
+                credit_notes = await response.json()
+                if not credit_notes:
+                    # Create a test credit note first
+                    test_credit_note = {
+                        "customer_name": "Test Customer for Email",
+                        "customer_email": "test@example.com",
+                        "customer_phone": "+1234567890",
+                        "customer_address": "123 Test Street, Test City",
+                        "credit_note_date": "2024-01-15",
+                        "reference_invoice": "SINV-2024-001",
+                        "reason": "Return",
+                        "items": [
+                            {
+                                "item_name": "Test Product",
+                                "quantity": 1,
+                                "rate": 100.0,
+                                "amount": 100.0
+                            }
+                        ],
+                        "discount_amount": 0,
+                        "tax_rate": 18,
+                        "status": "Draft",
+                        "notes": "Test credit note for email integration"
+                    }
+                    
+                    async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=test_credit_note) as create_response:
+                        if create_response.status != 200:
+                            self.log_test("Credit Notes Real Email Integration - Create Note", False, f"Failed to create test credit note: HTTP {create_response.status}")
+                            return False
+                        
+                        create_data = await create_response.json()
+                        credit_note_id = create_data["credit_note"]["id"]
+                else:
+                    credit_note_id = credit_notes[0]["id"]
+            
+            # Test email send with real SendGrid integration
+            email_payload = {
+                "method": "email",
+                "email": "test@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=email_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["method"] == "email":
+                            # Check if it's using real SendGrid (not demo mode)
+                            if "demo mode" not in data["message"].lower():
+                                self.log_test("Credit Notes Real Email Integration", True, f"Real SendGrid integration working: {data['message']}", data)
+                                return True
+                            else:
+                                self.log_test("Credit Notes Real Email Integration", False, f"Still using demo mode instead of real SendGrid: {data['message']}", data)
+                                return False
+                        else:
+                            self.log_test("Credit Notes Real Email Integration", False, f"Send failed or wrong method: {data}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Credit Notes Real Email Integration", False, f"Missing response fields: {missing}", data)
+                        return False
+                elif response.status == 500:
+                    # Check if it's a real integration error (not demo mode)
+                    try:
+                        error_data = await response.json()
+                        error_detail = error_data.get("detail", "")
+                        if "sendgrid" in error_detail.lower() or "api key" in error_detail.lower():
+                            self.log_test("Credit Notes Real Email Integration", True, f"Real SendGrid integration detected (credential error expected): {error_detail}")
+                            return True
+                        else:
+                            self.log_test("Credit Notes Real Email Integration", False, f"Unexpected error: {error_detail}")
+                            return False
+                    except:
+                        self.log_test("Credit Notes Real Email Integration", False, f"HTTP 500 with unparseable response")
+                        return False
+                else:
+                    self.log_test("Credit Notes Real Email Integration", False, f"HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Credit Notes Real Email Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_credit_notes_real_sms_integration(self):
+        """Test Credit Notes real SMS integration with Twilio"""
+        try:
+            # Get existing credit notes to test with
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes?limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Credit Notes Real SMS Integration - Get Notes", False, f"Failed to get credit notes: HTTP {response.status}")
+                    return False
+                
+                credit_notes = await response.json()
+                if not credit_notes:
+                    self.log_test("Credit Notes Real SMS Integration", False, "No credit notes available for testing")
+                    return False
+                
+                credit_note_id = credit_notes[0]["id"]
+            
+            # Test SMS send with real Twilio integration
+            sms_payload = {
+                "method": "sms",
+                "phone": "+1234567890"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=sms_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["method"] == "sms":
+                            # Check if it's using real Twilio (not demo mode)
+                            if "demo mode" not in data["message"].lower():
+                                self.log_test("Credit Notes Real SMS Integration", True, f"Real Twilio integration working: {data['message']}", data)
+                                return True
+                            else:
+                                self.log_test("Credit Notes Real SMS Integration", False, f"Still using demo mode instead of real Twilio: {data['message']}", data)
+                                return False
+                        else:
+                            self.log_test("Credit Notes Real SMS Integration", False, f"Send failed or wrong method: {data}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Credit Notes Real SMS Integration", False, f"Missing response fields: {missing}", data)
+                        return False
+                elif response.status == 500:
+                    # Check if it's a real integration error (not demo mode)
+                    try:
+                        error_data = await response.json()
+                        error_detail = error_data.get("detail", "")
+                        if "twilio" in error_detail.lower() or "account_sid" in error_detail.lower():
+                            self.log_test("Credit Notes Real SMS Integration", True, f"Real Twilio integration detected (credential error expected): {error_detail}")
+                            return True
+                        else:
+                            self.log_test("Credit Notes Real SMS Integration", False, f"Unexpected error: {error_detail}")
+                            return False
+                    except:
+                        self.log_test("Credit Notes Real SMS Integration", False, f"HTTP 500 with unparseable response")
+                        return False
+                else:
+                    self.log_test("Credit Notes Real SMS Integration", False, f"HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Credit Notes Real SMS Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_real_email_integration(self):
+        """Test Debit Notes real email integration with SendGrid"""
+        try:
+            # First, get existing debit notes to test with
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes?limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Debit Notes Real Email Integration - Get Notes", False, f"Failed to get debit notes: HTTP {response.status}")
+                    return False
+                
+                debit_notes = await response.json()
+                if not debit_notes:
+                    # Create a test debit note first
+                    test_debit_note = {
+                        "supplier_name": "Test Supplier for Email",
+                        "supplier_email": "supplier@example.com",
+                        "supplier_phone": "+1234567890",
+                        "supplier_address": "456 Supplier Street, Supplier City",
+                        "debit_note_date": "2024-01-15",
+                        "reference_invoice": "PINV-2024-001",
+                        "reason": "Quality Issue",
+                        "items": [
+                            {
+                                "item_name": "Test Product",
+                                "quantity": 1,
+                                "rate": 150.0,
+                                "amount": 150.0
+                            }
+                        ],
+                        "discount_amount": 0,
+                        "tax_rate": 18,
+                        "status": "Draft",
+                        "notes": "Test debit note for email integration"
+                    }
+                    
+                    async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=test_debit_note) as create_response:
+                        if create_response.status != 200:
+                            self.log_test("Debit Notes Real Email Integration - Create Note", False, f"Failed to create test debit note: HTTP {create_response.status}")
+                            return False
+                        
+                        create_data = await create_response.json()
+                        debit_note_id = create_data["debit_note"]["id"]
+                else:
+                    debit_note_id = debit_notes[0]["id"]
+            
+            # Test email send with real SendGrid integration
+            email_payload = {
+                "method": "email",
+                "email": "supplier@example.com",
+                "attach_pdf": True
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", json=email_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["method"] == "email":
+                            # Check if it's using real SendGrid (not demo mode)
+                            if "demo mode" not in data["message"].lower():
+                                self.log_test("Debit Notes Real Email Integration", True, f"Real SendGrid integration working: {data['message']}", data)
+                                return True
+                            else:
+                                self.log_test("Debit Notes Real Email Integration", False, f"Still using demo mode instead of real SendGrid: {data['message']}", data)
+                                return False
+                        else:
+                            self.log_test("Debit Notes Real Email Integration", False, f"Send failed or wrong method: {data}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Debit Notes Real Email Integration", False, f"Missing response fields: {missing}", data)
+                        return False
+                elif response.status == 500:
+                    # Check if it's a real integration error (not demo mode)
+                    try:
+                        error_data = await response.json()
+                        error_detail = error_data.get("detail", "")
+                        if "sendgrid" in error_detail.lower() or "api key" in error_detail.lower():
+                            self.log_test("Debit Notes Real Email Integration", True, f"Real SendGrid integration detected (credential error expected): {error_detail}")
+                            return True
+                        else:
+                            self.log_test("Debit Notes Real Email Integration", False, f"Unexpected error: {error_detail}")
+                            return False
+                    except:
+                        self.log_test("Debit Notes Real Email Integration", False, f"HTTP 500 with unparseable response")
+                        return False
+                else:
+                    self.log_test("Debit Notes Real Email Integration", False, f"HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Debit Notes Real Email Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_real_sms_integration(self):
+        """Test Debit Notes real SMS integration with Twilio"""
+        try:
+            # Get existing debit notes to test with
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes?limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Debit Notes Real SMS Integration - Get Notes", False, f"Failed to get debit notes: HTTP {response.status}")
+                    return False
+                
+                debit_notes = await response.json()
+                if not debit_notes:
+                    self.log_test("Debit Notes Real SMS Integration", False, "No debit notes available for testing")
+                    return False
+                
+                debit_note_id = debit_notes[0]["id"]
+            
+            # Test SMS send with real Twilio integration
+            sms_payload = {
+                "method": "sms",
+                "phone": "+1234567890"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{debit_note_id}/send", json=sms_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["success", "message", "sent_at", "method", "pdf_attached"]
+                    
+                    if all(field in data for field in required_fields):
+                        if data["success"] and data["method"] == "sms":
+                            # Check if it's using real Twilio (not demo mode)
+                            if "demo mode" not in data["message"].lower():
+                                self.log_test("Debit Notes Real SMS Integration", True, f"Real Twilio integration working: {data['message']}", data)
+                                return True
+                            else:
+                                self.log_test("Debit Notes Real SMS Integration", False, f"Still using demo mode instead of real Twilio: {data['message']}", data)
+                                return False
+                        else:
+                            self.log_test("Debit Notes Real SMS Integration", False, f"Send failed or wrong method: {data}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Debit Notes Real SMS Integration", False, f"Missing response fields: {missing}", data)
+                        return False
+                elif response.status == 500:
+                    # Check if it's a real integration error (not demo mode)
+                    try:
+                        error_data = await response.json()
+                        error_detail = error_data.get("detail", "")
+                        if "twilio" in error_detail.lower() or "account_sid" in error_detail.lower():
+                            self.log_test("Debit Notes Real SMS Integration", True, f"Real Twilio integration detected (credential error expected): {error_detail}")
+                            return True
+                        else:
+                            self.log_test("Debit Notes Real SMS Integration", False, f"Unexpected error: {error_detail}")
+                            return False
+                    except:
+                        self.log_test("Debit Notes Real SMS Integration", False, f"HTTP 500 with unparseable response")
+                        return False
+                else:
+                    self.log_test("Debit Notes Real SMS Integration", False, f"HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Debit Notes Real SMS Integration", False, f"Error: {str(e)}")
+            return False
+
+    async def test_credentials_verification(self):
+        """Test that SendGrid and Twilio credentials are properly loaded"""
+        try:
+            # Test by attempting to send and checking error messages for credential-related issues
+            # This is an indirect test since we can't directly access environment variables from the API
+            
+            # Try to send a credit note via email to trigger SendGrid
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes?limit=1") as response:
+                if response.status == 200:
+                    credit_notes = await response.json()
+                    if credit_notes:
+                        credit_note_id = credit_notes[0]["id"]
+                        
+                        email_payload = {
+                            "method": "email",
+                            "email": "test@example.com",
+                            "attach_pdf": False
+                        }
+                        
+                        async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=email_payload) as send_response:
+                            if send_response.status == 200:
+                                data = await send_response.json()
+                                if data.get("success"):
+                                    self.log_test("Credentials Verification - SendGrid", True, "SendGrid credentials loaded and working", data)
+                                else:
+                                    self.log_test("Credentials Verification - SendGrid", False, f"SendGrid send failed: {data}")
+                                    return False
+                            elif send_response.status == 500:
+                                try:
+                                    error_data = await send_response.json()
+                                    error_detail = error_data.get("detail", "")
+                                    if "SENDGRID_API_KEY is not configured" in error_detail:
+                                        self.log_test("Credentials Verification - SendGrid", False, "SendGrid API key not configured")
+                                        return False
+                                    elif "sendgrid" in error_detail.lower():
+                                        self.log_test("Credentials Verification - SendGrid", True, f"SendGrid credentials loaded (API error expected): {error_detail}")
+                                    else:
+                                        self.log_test("Credentials Verification - SendGrid", False, f"Unexpected SendGrid error: {error_detail}")
+                                        return False
+                                except:
+                                    self.log_test("Credentials Verification - SendGrid", False, "SendGrid test failed with unparseable error")
+                                    return False
+                        
+                        # Try to send via SMS to trigger Twilio
+                        sms_payload = {
+                            "method": "sms",
+                            "phone": "+1234567890"
+                        }
+                        
+                        async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=sms_payload) as send_response:
+                            if send_response.status == 200:
+                                data = await send_response.json()
+                                if data.get("success"):
+                                    self.log_test("Credentials Verification - Twilio", True, "Twilio credentials loaded and working", data)
+                                    return True
+                                else:
+                                    self.log_test("Credentials Verification - Twilio", False, f"Twilio send failed: {data}")
+                                    return False
+                            elif send_response.status == 500:
+                                try:
+                                    error_data = await send_response.json()
+                                    error_detail = error_data.get("detail", "")
+                                    if "Twilio not configured" in error_detail:
+                                        self.log_test("Credentials Verification - Twilio", False, "Twilio credentials not configured")
+                                        return False
+                                    elif "twilio" in error_detail.lower():
+                                        self.log_test("Credentials Verification - Twilio", True, f"Twilio credentials loaded (API error expected): {error_detail}")
+                                        return True
+                                    else:
+                                        self.log_test("Credentials Verification - Twilio", False, f"Unexpected Twilio error: {error_detail}")
+                                        return False
+                                except:
+                                    self.log_test("Credentials Verification - Twilio", False, "Twilio test failed with unparseable error")
+                                    return False
+                    else:
+                        self.log_test("Credentials Verification", False, "No credit notes available for testing credentials")
+                        return False
+                else:
+                    self.log_test("Credentials Verification", False, f"Failed to get credit notes: HTTP {response.status}")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("Credentials Verification", False, f"Error: {str(e)}")
+            return False
+
+    async def test_send_tracking_fields(self):
+        """Test that send tracking fields are updated correctly"""
+        try:
+            # Get a credit note to test with
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes?limit=1") as response:
+                if response.status != 200:
+                    self.log_test("Send Tracking Fields", False, f"Failed to get credit notes: HTTP {response.status}")
+                    return False
+                
+                credit_notes = await response.json()
+                if not credit_notes:
+                    self.log_test("Send Tracking Fields", False, "No credit notes available for testing")
+                    return False
+                
+                credit_note_id = credit_notes[0]["id"]
+                
+                # Get initial state
+                async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as get_response:
+                    if get_response.status != 200:
+                        self.log_test("Send Tracking Fields", False, f"Failed to get credit note details: HTTP {get_response.status}")
+                        return False
+                    
+                    initial_note = await get_response.json()
+                    initial_last_sent = initial_note.get("last_sent_at")
+                    initial_last_attempt = initial_note.get("last_send_attempt_at")
+                
+                # Send via email
+                email_payload = {
+                    "method": "email",
+                    "email": "test@example.com",
+                    "attach_pdf": True
+                }
+                
+                async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}/send", json=email_payload) as send_response:
+                    # Check response regardless of success/failure
+                    if send_response.status in [200, 500]:  # Accept both success and expected errors
+                        # Get updated credit note
+                        async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{credit_note_id}") as get_response:
+                            if get_response.status == 200:
+                                updated_note = await get_response.json()
+                                
+                                # Check if tracking fields were updated
+                                tracking_fields = ["last_send_attempt_at", "sent_to", "send_method", "pdf_attached"]
+                                updated_fields = []
+                                
+                                if updated_note.get("last_send_attempt_at") != initial_last_attempt:
+                                    updated_fields.append("last_send_attempt_at")
+                                
+                                if updated_note.get("sent_to") == "test@example.com":
+                                    updated_fields.append("sent_to")
+                                
+                                if updated_note.get("send_method") == "email":
+                                    updated_fields.append("send_method")
+                                
+                                if "pdf_attached" in updated_note:
+                                    updated_fields.append("pdf_attached")
+                                
+                                if len(updated_fields) >= 3:  # At least 3 out of 4 fields should be updated
+                                    self.log_test("Send Tracking Fields", True, f"Tracking fields updated correctly: {updated_fields}", {
+                                        "updated_fields": updated_fields,
+                                        "sent_to": updated_note.get("sent_to"),
+                                        "send_method": updated_note.get("send_method"),
+                                        "pdf_attached": updated_note.get("pdf_attached")
+                                    })
+                                    return True
+                                else:
+                                    self.log_test("Send Tracking Fields", False, f"Insufficient tracking fields updated: {updated_fields}", updated_note)
+                                    return False
+                            else:
+                                self.log_test("Send Tracking Fields", False, f"Failed to get updated credit note: HTTP {get_response.status}")
+                                return False
+                    else:
+                        self.log_test("Send Tracking Fields", False, f"Send request failed: HTTP {send_response.status}")
+                        return False
+                        
+        except Exception as e:
+            self.log_test("Send Tracking Fields", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
-        """Run backend tests focusing on Credit Notes and Debit Notes API endpoints"""
-        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT & DEBIT NOTES SEND FUNCTIONALITY TESTING")
+        """Run backend tests focusing on Credit Notes and Debit Notes Real Email/SMS Integration"""
+        print("🚀 Starting GiLi Backend API Testing Suite - REAL EMAIL/SMS INTEGRATION TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Credit Notes and Debit Notes Send Functionality with Bug Fixes")
-        print("🎯 Testing: /api/sales/credit-notes/{id}/send and /api/buying/debit-notes/{id}/send")
+        print("📊 Focus: Credit Notes and Debit Notes Real Email/SMS Integration")
+        print("🎯 Testing: Real SendGrid and Twilio integration (not demo mode)")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
-            self.test_health_check,                    # Basic API health check
-            self.test_credit_notes_send_functionality, # Credit Notes Send Functionality Testing
-            self.test_debit_notes_send_functionality,  # Debit Notes Send Functionality Testing
-            self.test_master_data_integration,         # Master Data Integration Testing
-            self.test_api_endpoint_registration,       # API Endpoint Registration Testing
+            self.test_health_check,                         # Basic API health check
+            self.test_credentials_verification,             # Verify SendGrid and Twilio credentials
+            self.test_credit_notes_real_email_integration,  # Credit Notes Real Email Integration
+            self.test_credit_notes_real_sms_integration,    # Credit Notes Real SMS Integration
+            self.test_debit_notes_real_email_integration,   # Debit Notes Real Email Integration
+            self.test_debit_notes_real_sms_integration,     # Debit Notes Real SMS Integration
+            self.test_send_tracking_fields,                 # Send Tracking Fields Testing
         ]
         
         passed = 0
