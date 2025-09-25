@@ -215,23 +215,33 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
               <div key={order.id} className="px-6 py-4 hover:bg-gray-50">
                 <div className="grid grid-cols-12 gap-4 items-center">
                   <div className="col-span-3">
-                    <div className="font-medium text-gray-800 flex items-center space-x-2">
-                      <span>{order.order_number}</span>
-                      {(order.sent_at || order.last_send_attempt_at) && (
-                        <span className="inline-flex items-center text-[11px] text-gray-500" title={`Last sent: ${order.sent_at ? new Date(order.sent_at).toLocaleString() : '—'}${order.last_send_attempt_at ? ` • Last attempt: ${new Date(order.last_send_attempt_at).toLocaleString()}`:''}`}>
-                          <Info size={12} className="mr-1"/> {rel(order.sent_at || order.last_send_attempt_at)}
-                        </span>
+                    <div className="font-medium text-gray-800">{order.order_number}</div>
+                    <div className="flex flex-col space-y-1 mt-1">
+                      {/* Email Status */}
+                      {(order.email_sent_at || (order.last_send_errors && order.last_send_errors.email)) && (
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          order.email_sent_at ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`} title={order.email_sent_at ? `Email sent: ${rel(order.email_sent_at)}` : `Email failed: ${order.last_send_errors?.email || 'Unknown error'}`}>
+                          📧 {order.email_sent_at ? rel(order.email_sent_at) : 'Failed'}
+                        </div>
+                      )}
+                      
+                      {/* SMS Status */}
+                      {(order.sms_sent_at || (order.last_send_errors && order.last_send_errors.sms)) && (
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          order.sms_sent_at ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                        }`} title={order.sms_sent_at ? `SMS sent: ${rel(order.sms_sent_at)}` : `SMS failed: ${order.last_send_errors?.sms || 'Unknown error'}`}>
+                          📱 {order.sms_sent_at ? rel(order.sms_sent_at) : 'Failed'}
+                        </div>
+                      )}
+                      
+                      {/* Fallback for legacy sent_at field */}
+                      {order.sent_at && !order.email_sent_at && !order.sms_sent_at && (
+                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title={`Sent: ${rel(order.sent_at)}`}>
+                          Sent {order.sent_via ? `via ${Array.isArray(order.sent_via) ? order.sent_via.join(', ') : order.sent_via}` : ''}
+                        </div>
                       )}
                     </div>
-                    {order.sent_at && (
-                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title={`Sent at ${new Date(order.sent_at).toLocaleString()}`}
-                      >
-                        Sent {order.sent_via ? `via ${Array.isArray(order.sent_via) ? order.sent_via.join(', ') : order.sent_via}` : ''}
-                      </div>
-                    )}
-                    {order.last_send_errors && (order.last_send_errors.email || order.last_send_errors.sms) && (
-                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title={(order.last_send_errors.email||'') + ' ' + (order.last_send_errors.sms||'')}>Send failed</div>
-                    )}
                   </div>
                   <div className="col-span-3">
                     <div className="flex items-center space-x-2"><div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"><User className="text-blue-600" size={16}/></div><div><div className="font-medium text-gray-800">{order.supplier_name}</div><div className="text-xs text-gray-500">Supplier</div></div></div>
