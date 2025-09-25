@@ -309,15 +309,35 @@ async def send_purchase_order(order_id: str, body: dict):
                 if sms_resp.get("success"):
                     sent_via.append("sms")
 
-        # Save result on document
-        sent_at_iso = None
+        # Save result with individual email/SMS tracking
+        current_time_iso = datetime.now(timezone.utc).isoformat()
         update_fields = {
             "last_send_result": results,
-            "last_send_attempt_at": datetime.now(timezone.utc).isoformat()
+            "last_send_attempt_at": current_time_iso
         }
+        
+        # Track individual email/SMS success with separate timestamps
+        if results.get("email") and results["email"].get("success"):
+            update_fields["email_sent_at"] = current_time_iso
+            update_fields["email_status"] = "sent"
+        elif results.get("email") and not results["email"].get("success"):
+            update_fields["email_status"] = "failed"
+            if "last_send_errors" not in update_fields:
+                update_fields["last_send_errors"] = {}
+            update_fields["last_send_errors"]["email"] = results["email"].get("error", "Unknown error")
+            
+        if results.get("sms") and results["sms"].get("success"):
+            update_fields["sms_sent_at"] = current_time_iso
+            update_fields["sms_status"] = "sent"
+        elif results.get("sms") and not results["sms"].get("success"):
+            update_fields["sms_status"] = "failed"
+            if "last_send_errors" not in update_fields:
+                update_fields["last_send_errors"] = {}
+            update_fields["last_send_errors"]["sms"] = results["sms"].get("error", results["sms"].get("message", "Unknown error"))
+        
+        # Keep legacy sent_at for backward compatibility
         if sent_via:
-            sent_at_iso = datetime.now(timezone.utc).isoformat()
-            update_fields.update({"sent_at": sent_at_iso, "sent_via": sent_via})
+            update_fields.update({"sent_at": current_time_iso, "sent_via": sent_via})
         await purchase_orders_collection.update_one({"_id": order["_id"]}, {"$set": update_fields})
 
         return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": sent_at_iso}
