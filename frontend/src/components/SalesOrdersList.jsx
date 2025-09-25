@@ -186,11 +186,32 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
                 <div className="grid grid-cols-12 gap-4 items-center">
                   <div className="col-span-3">
                     <div className="font-medium text-gray-800">{order.order_number}</div>
-                    {order.sent_at && (
-                      <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Sent {order.sent_via ? `via ${Array.isArray(order.sent_via) ? order.sent_via.join(', ') : order.sent_via}` : ''}
-                      </div>
-                    )}
+                    <div className="flex flex-col space-y-1 mt-1">
+                      {/* Email Status */}
+                      {(order.email_sent_at || (order.last_send_errors && order.last_send_errors.email)) && (
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          order.email_sent_at ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`} title={order.email_sent_at ? `Email sent: ${formatRelativeTime(order.email_sent_at)}` : `Email failed: ${order.last_send_errors?.email || 'Unknown error'}`}>
+                          📧 {order.email_sent_at ? formatRelativeTime(order.email_sent_at) : 'Failed'}
+                        </div>
+                      )}
+                      
+                      {/* SMS Status */}
+                      {(order.sms_sent_at || (order.last_send_errors && order.last_send_errors.sms)) && (
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          order.sms_sent_at ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                        }`} title={order.sms_sent_at ? `SMS sent: ${formatRelativeTime(order.sms_sent_at)}` : `SMS failed: ${order.last_send_errors?.sms || 'Unknown error'}`}>
+                          📱 {order.sms_sent_at ? formatRelativeTime(order.sms_sent_at) : 'Failed'}
+                        </div>
+                      )}
+                      
+                      {/* Fallback for legacy sent_at field */}
+                      {order.sent_at && !order.email_sent_at && !order.sms_sent_at && (
+                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title={`Sent: ${formatRelativeTime(order.sent_at)}`}>
+                          Sent {order.sent_via ? `via ${Array.isArray(order.sent_via) ? order.sent_via.join(', ') : order.sent_via}` : ''}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="col-span-3">
                     <div className="flex items-center space-x-2"><div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"><User className="text-blue-600" size={16}/></div><div><div className="font-medium text-gray-800">{order.customer_name}</div><div className="text-xs text-gray-500">Customer</div></div></div>
