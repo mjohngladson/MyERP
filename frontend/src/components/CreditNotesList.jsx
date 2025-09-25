@@ -19,6 +19,7 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
   const [sendingNote, setSendingNote] = React.useState(null);
   const [sendMethod, setSendMethod] = React.useState('email');
   const [sendContact, setSendContact] = React.useState('');
+  const [attachPdf, setAttachPdf] = React.useState(true);
 
   React.useEffect(() => { 
     const t = setTimeout(() => setDebounced(search), 500); 
