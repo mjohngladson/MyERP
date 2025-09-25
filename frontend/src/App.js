@@ -48,6 +48,10 @@ function AppContent() {
     purchaseOrderEdit: null,
     purchaseInvoiceView: null,
     purchaseInvoiceEdit: null,
+    creditNoteView: null,
+    creditNoteEdit: null,
+    debitNoteView: null,
+    debitNoteEdit: null,
   });
 
   const renderContent = () => {
