@@ -77,15 +77,36 @@ async def get_recent_transactions(limit: int = 10, days_back: int = 2):
         }).sort("created_at", -1).to_list(50)
         
         for invoice in sales_invoices:
+            # Handle date fields properly
+            invoice_date = invoice.get("invoice_date") or invoice.get("created_at") or datetime.utcnow()
+            if isinstance(invoice_date, str) and invoice_date.strip() == "":
+                invoice_date = datetime.utcnow()
+            elif isinstance(invoice_date, str):
+                try:
+                    from dateutil.parser import parse
+                    invoice_date = parse(invoice_date)
+                except:
+                    invoice_date = datetime.utcnow()
+            
+            created_at = invoice.get("created_at") or datetime.utcnow()
+            if isinstance(created_at, str) and created_at.strip() == "":
+                created_at = datetime.utcnow()
+            elif isinstance(created_at, str):
+                try:
+                    from dateutil.parser import parse
+                    created_at = parse(created_at)
+                except:
+                    created_at = datetime.utcnow()
+            
             all_transactions.append({
                 "id": invoice.get("id", str(invoice.get("_id"))),
                 "type": "sales_invoice",
                 "reference_number": invoice.get("invoice_number", "N/A"),
                 "party_name": invoice.get("customer_name", "Unknown Customer"),
                 "amount": invoice.get("total_amount", 0),
-                "date": invoice.get("invoice_date", invoice.get("created_at")),
+                "date": invoice_date,
                 "status": invoice.get("status", "draft"),
-                "created_at": invoice.get("created_at", datetime.utcnow().isoformat())
+                "created_at": created_at
             })
         
         # Fetch Purchase Invoices
