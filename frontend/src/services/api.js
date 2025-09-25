@@ -209,7 +209,11 @@ export const api = {
     },
   },
 
-  // Generic API call helper
+  // General Settings
+  settings: {
+    getGeneral: () => makeRequest(() => apiClient.get('/settings/general')),
+    updateGeneral: (data) => makeRequest(() => apiClient.put('/settings/general', data)),
+  },
   get: (endpoint, config = {}) => makeRequest(() => apiClient.get(endpoint, config)),
   post: (endpoint, data, config = {}) => makeRequest(() => apiClient.post(endpoint, data, config)),
   put: (endpoint, data, config = {}) => makeRequest(() => apiClient.put(endpoint, data, config)),
