@@ -4480,6 +4480,76 @@ class BackendTester:
             self.log_test("Basic API Health Checks", False, f"Error: {str(e)}")
             return False
 
+    async def test_general_settings_api(self):
+        """Test General Settings API to verify data structure with uoms and payment_terms arrays"""
+        try:
+            # Test GET /api/settings/general
+            async with self.session.get(f"{self.base_url}/api/settings/general") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check required fields
+                    required_fields = ["id", "tax_country", "gst_enabled", "default_gst_percent", "enable_variants", "uoms", "payment_terms", "stock"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify uoms array
+                        if isinstance(data["uoms"], list) and len(data["uoms"]) > 0:
+                            expected_uoms = ["NOS", "PCS", "PCK", "KG", "G", "L", "ML"]
+                            uoms_match = all(uom in data["uoms"] for uom in expected_uoms)
+                            
+                            if uoms_match:
+                                self.log_test("General Settings - UOMs Array", True, f"UOMs array contains expected values: {data['uoms']}", {"uoms": data["uoms"]})
+                            else:
+                                self.log_test("General Settings - UOMs Array", False, f"UOMs array missing expected values. Got: {data['uoms']}, Expected: {expected_uoms}", data)
+                                return False
+                        else:
+                            self.log_test("General Settings - UOMs Array", False, "UOMs field is not a valid array or is empty", data)
+                            return False
+                        
+                        # Verify payment_terms array
+                        if isinstance(data["payment_terms"], list) and len(data["payment_terms"]) > 0:
+                            expected_terms = ["Net 0", "Net 15", "Net 30", "Net 45"]
+                            terms_match = all(term in data["payment_terms"] for term in expected_terms)
+                            
+                            if terms_match:
+                                self.log_test("General Settings - Payment Terms Array", True, f"Payment terms array contains expected values: {data['payment_terms']}", {"payment_terms": data["payment_terms"]})
+                            else:
+                                self.log_test("General Settings - Payment Terms Array", False, f"Payment terms array missing expected values. Got: {data['payment_terms']}, Expected: {expected_terms}", data)
+                                return False
+                        else:
+                            self.log_test("General Settings - Payment Terms Array", False, "Payment terms field is not a valid array or is empty", data)
+                            return False
+                        
+                        # Verify other field types
+                        if (isinstance(data["tax_country"], str) and
+                            isinstance(data["gst_enabled"], bool) and
+                            isinstance(data["default_gst_percent"], (int, float)) and
+                            isinstance(data["enable_variants"], bool) and
+                            isinstance(data["stock"], dict)):
+                            
+                            # Verify stock object structure
+                            stock_fields = ["valuation_method", "allow_negative_stock", "enable_batches", "enable_serials"]
+                            if all(field in data["stock"] for field in stock_fields):
+                                self.log_test("General Settings API", True, f"Complete settings object retrieved successfully. Tax Country: {data['tax_country']}, GST: {data['gst_enabled']}", data)
+                                return True
+                            else:
+                                missing_stock = [f for f in stock_fields if f not in data["stock"]]
+                                self.log_test("General Settings API", False, f"Missing stock fields: {missing_stock}", data)
+                                return False
+                        else:
+                            self.log_test("General Settings API", False, "Invalid data types in settings fields", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("General Settings API", False, f"Missing required fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("General Settings API", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("General Settings API", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Items CRUD API and Sales Order Detail API"""
         print("🚀 Starting GiLi Backend API Testing Suite - ITEMS CRUD & SALES ORDER DETAIL API TEST")
