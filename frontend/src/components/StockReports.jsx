@@ -70,7 +70,7 @@ const StockReports = ({ onBack, embed = false }) => {
         <div className="bg-white rounded-xl p-4 shadow-sm border">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm text-gray-600">Total Stock Value</div>
-            <div className="text-lg font-semibold">₹ {Math.round(valuation.total_value).toLocaleString('en-IN')}</div>
+            <div className="text-lg font-semibold">₹ {Math.round(valuation?.total_value || 0).toLocaleString('en-IN')}</div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-[700px] w-full">
