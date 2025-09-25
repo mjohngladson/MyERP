@@ -5,6 +5,8 @@ import { api } from '../services/api';
 const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
   const [loading, setLoading] = React.useState(!!debitNoteId);
   const [saving, setSaving] = React.useState(false);
+  const [masterItems, setMasterItems] = React.useState([]);
+  const [suppliers, setSuppliers] = React.useState([]);
   const [form, setForm] = React.useState({
     supplier_name: '',
     supplier_email: '',
