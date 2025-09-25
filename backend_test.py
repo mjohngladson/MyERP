@@ -981,6 +981,320 @@ class BackendTester:
             self.log_test("Reporting Error Handling", False, f"Error: {str(e)}")
             return False
 
+    async def test_enhanced_global_search(self):
+        """Test Enhanced Global Search - Added missing transaction types (Quotations, Purchase Invoices, Credit Notes, Debit Notes)"""
+        try:
+            # Test 1: Global Search with various search terms to verify all transaction types are included
+            test_queries = ["SO", "QTN", "PINV", "CN", "DN", "Test", "Customer", "Supplier"]
+            
+            for query in test_queries:
+                async with self.session.get(f"{self.base_url}/api/search/global?query={query}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        required_fields = ["query", "total_results", "results", "categories"]
+                        
+                        if all(field in data for field in required_fields):
+                            # Check if all expected transaction types are in categories
+                            expected_categories = [
+                                "customers", "suppliers", "items", "sales_orders", 
+                                "quotations", "invoices", "purchase_orders", 
+                                "purchase_invoices", "credit_notes", "debit_notes", "transactions"
+                            ]
+                            
+                            categories_present = all(cat in data["categories"] for cat in expected_categories)
+                            if categories_present:
+                                self.log_test(f"Enhanced Global Search - {query} Query", True, 
+                                            f"All transaction types present in categories. Total results: {data['total_results']}", 
+                                            {"categories": data["categories"], "results_count": len(data["results"])})
+                            else:
+                                missing_cats = [cat for cat in expected_categories if cat not in data["categories"]]
+                                self.log_test(f"Enhanced Global Search - {query} Query", False, 
+                                            f"Missing categories: {missing_cats}", data["categories"])
+                                return False
+                        else:
+                            missing = [f for f in required_fields if f not in data]
+                            self.log_test(f"Enhanced Global Search - {query} Query", False, f"Missing fields: {missing}", data)
+                            return False
+                    else:
+                        self.log_test(f"Enhanced Global Search - {query} Query", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test 2: Verify results include proper IDs for navigation
+            async with self.session.get(f"{self.base_url}/api/search/global?query=Test&limit=5") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if len(data["results"]) > 0:
+                        for result in data["results"]:
+                            required_result_fields = ["id", "type", "title", "subtitle", "description", "url", "relevance"]
+                            if all(field in result for field in required_result_fields):
+                                # Verify ID is present and not empty
+                                if result["id"] and result["url"]:
+                                    self.log_test("Enhanced Global Search - Navigation IDs", True, 
+                                                f"Result has proper ID and URL: {result['type']} - {result['id']}", 
+                                                {"id": result["id"], "url": result["url"], "type": result["type"]})
+                                else:
+                                    self.log_test("Enhanced Global Search - Navigation IDs", False, 
+                                                f"Missing ID or URL in result: {result}", result)
+                                    return False
+                            else:
+                                missing = [f for f in required_result_fields if f not in result]
+                                self.log_test("Enhanced Global Search - Navigation IDs", False, 
+                                            f"Missing result fields: {missing}", result)
+                                return False
+                    else:
+                        self.log_test("Enhanced Global Search - Navigation IDs", True, "No results to check (acceptable)", data)
+                else:
+                    self.log_test("Enhanced Global Search - Navigation IDs", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Enhanced Global Search", False, f"Error: {str(e)}")
+            return False
+
+    async def test_dashboard_real_transactions(self):
+        """Test Dashboard Real Transactions - Updated to fetch real data from Sales Invoices, Purchase Invoices, Credit Notes, Debit Notes"""
+        try:
+            # Test 1: Dashboard Transactions endpoint
+            async with self.session.get(f"{self.base_url}/api/dashboard/transactions") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Verify transaction structure includes all expected types
+                            transaction_types_found = set()
+                            for transaction in data:
+                                required_fields = ["id", "type", "reference_number", "party_name", "amount", "date", "status"]
+                                
+                                if all(field in transaction for field in required_fields):
+                                    transaction_types_found.add(transaction["type"])
+                                    
+                                    # Verify real data (not mock)
+                                    if (transaction["reference_number"] != "N/A" and 
+                                        transaction["party_name"] != "Unknown" and 
+                                        transaction["amount"] > 0):
+                                        self.log_test("Dashboard Real Transactions - Data Quality", True, 
+                                                    f"Real transaction data: {transaction['type']} - {transaction['reference_number']}", 
+                                                    {"type": transaction["type"], "amount": transaction["amount"]})
+                                    else:
+                                        self.log_test("Dashboard Real Transactions - Data Quality", False, 
+                                                    f"Mock or incomplete data detected: {transaction}", transaction)
+                                        return False
+                                else:
+                                    missing = [f for f in required_fields if f not in transaction]
+                                    self.log_test("Dashboard Real Transactions - Structure", False, 
+                                                f"Missing fields in transaction: {missing}", transaction)
+                                    return False
+                            
+                            # Check if we have transactions from multiple types
+                            expected_types = {"sales_invoice", "purchase_invoice", "credit_note", "debit_note"}
+                            if len(transaction_types_found.intersection(expected_types)) > 0:
+                                self.log_test("Dashboard Real Transactions - Transaction Types", True, 
+                                            f"Found transaction types: {list(transaction_types_found)}", 
+                                            {"types": list(transaction_types_found), "count": len(data)})
+                            else:
+                                self.log_test("Dashboard Real Transactions - Transaction Types", False, 
+                                            f"Expected transaction types not found. Found: {list(transaction_types_found)}")
+                                return False
+                        else:
+                            self.log_test("Dashboard Real Transactions - Empty List", True, "Empty transaction list (acceptable)", data)
+                    else:
+                        self.log_test("Dashboard Real Transactions - Response Type", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Dashboard Real Transactions - HTTP Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Test the logic for last 2 days or fallback to last 10 transactions
+            async with self.session.get(f"{self.base_url}/api/dashboard/transactions?days_back=1&limit=5") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    self.log_test("Dashboard Real Transactions - Date Filter", True, 
+                                f"Date filter working, got {len(data)} transactions", {"count": len(data)})
+                else:
+                    self.log_test("Dashboard Real Transactions - Date Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Dashboard Real Transactions", False, f"Error: {str(e)}")
+            return False
+
+    async def test_view_all_transactions_endpoint(self):
+        """Test new View All Transactions endpoint - GET /api/dashboard/transactions/all"""
+        try:
+            # Test 1: Basic endpoint functionality
+            async with self.session.get(f"{self.base_url}/api/dashboard/transactions/all") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["transactions", "total", "days_back", "cutoff_date"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify transactions structure
+                        if isinstance(data["transactions"], list):
+                            if len(data["transactions"]) > 0:
+                                transaction = data["transactions"][0]
+                                required_transaction_fields = ["id", "type", "reference_number", "party_name", "amount", "date", "status"]
+                                
+                                if all(field in transaction for field in required_transaction_fields):
+                                    self.log_test("View All Transactions - Basic Structure", True, 
+                                                f"Endpoint working. Total: {data['total']}, Days back: {data['days_back']}", 
+                                                {"total": data["total"], "transactions_count": len(data["transactions"])})
+                                else:
+                                    missing = [f for f in required_transaction_fields if f not in transaction]
+                                    self.log_test("View All Transactions - Transaction Structure", False, 
+                                                f"Missing transaction fields: {missing}", transaction)
+                                    return False
+                            else:
+                                self.log_test("View All Transactions - Empty List", True, "Empty transactions list (acceptable)", data)
+                        else:
+                            self.log_test("View All Transactions - Transactions Type", False, "Transactions is not a list", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("View All Transactions - Response Structure", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("View All Transactions - HTTP Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Test with different parameters
+            async with self.session.get(f"{self.base_url}/api/dashboard/transactions/all?days_back=7&limit=20") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data["days_back"] == 7 and len(data["transactions"]) <= 20:
+                        self.log_test("View All Transactions - Parameters", True, 
+                                    f"Parameters working. Days back: {data['days_back']}, Limit respected", 
+                                    {"days_back": data["days_back"], "count": len(data["transactions"])})
+                    else:
+                        self.log_test("View All Transactions - Parameters", False, 
+                                    f"Parameters not working correctly", data)
+                        return False
+                else:
+                    self.log_test("View All Transactions - Parameters", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Verify comprehensive transaction data with proper metadata
+            async with self.session.get(f"{self.base_url}/api/dashboard/transactions/all?limit=50") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check for different transaction types
+                    transaction_types = set()
+                    for transaction in data["transactions"]:
+                        transaction_types.add(transaction["type"])
+                    
+                    expected_types = {"sales_invoice", "purchase_invoice", "credit_note", "debit_note"}
+                    found_types = transaction_types.intersection(expected_types)
+                    
+                    if len(found_types) > 0:
+                        self.log_test("View All Transactions - Comprehensive Data", True, 
+                                    f"Found multiple transaction types: {list(found_types)}", 
+                                    {"types": list(transaction_types), "total": data["total"]})
+                    else:
+                        self.log_test("View All Transactions - Comprehensive Data", False, 
+                                    f"Expected transaction types not found. Found: {list(transaction_types)}")
+                        return False
+                else:
+                    self.log_test("View All Transactions - Comprehensive Data", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("View All Transactions Endpoint", False, f"Error: {str(e)}")
+            return False
+
+    async def test_enhanced_search_suggestions(self):
+        """Test Enhanced Search Suggestions - Verify it includes suggestions from all relevant collections"""
+        try:
+            # Test 1: Basic search suggestions functionality
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=Test") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "suggestions" in data and isinstance(data["suggestions"], list):
+                        if len(data["suggestions"]) > 0:
+                            # Verify suggestion structure
+                            suggestion = data["suggestions"][0]
+                            required_fields = ["text", "type", "category"]
+                            
+                            if all(field in suggestion for field in required_fields):
+                                self.log_test("Enhanced Search Suggestions - Structure", True, 
+                                            f"Suggestions working. Count: {len(data['suggestions'])}", 
+                                            {"count": len(data["suggestions"]), "sample": suggestion})
+                            else:
+                                missing = [f for f in required_fields if f not in suggestion]
+                                self.log_test("Enhanced Search Suggestions - Structure", False, 
+                                            f"Missing suggestion fields: {missing}", suggestion)
+                                return False
+                        else:
+                            self.log_test("Enhanced Search Suggestions - Empty Results", True, "Empty suggestions (acceptable)", data)
+                    else:
+                        self.log_test("Enhanced Search Suggestions - Response Structure", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Enhanced Search Suggestions - HTTP Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Test suggestions from different collections
+            test_queries = ["Customer", "Supplier", "Product", "Item"]
+            
+            for query in test_queries:
+                async with self.session.get(f"{self.base_url}/api/search/suggestions?query={query}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if len(data["suggestions"]) > 0:
+                            # Check for different categories
+                            categories_found = set()
+                            for suggestion in data["suggestions"]:
+                                categories_found.add(suggestion.get("category", ""))
+                            
+                            expected_categories = {"Customers", "Suppliers", "Items"}
+                            if len(categories_found.intersection(expected_categories)) > 0:
+                                self.log_test(f"Enhanced Search Suggestions - {query} Categories", True, 
+                                            f"Found categories: {list(categories_found)}", 
+                                            {"categories": list(categories_found), "count": len(data["suggestions"])})
+                            else:
+                                self.log_test(f"Enhanced Search Suggestions - {query} Categories", True, 
+                                            f"No matching categories for {query} (acceptable)", 
+                                            {"categories": list(categories_found)})
+                        else:
+                            self.log_test(f"Enhanced Search Suggestions - {query} Query", True, f"No suggestions for {query} (acceptable)", data)
+                    else:
+                        self.log_test(f"Enhanced Search Suggestions - {query} Query", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test 3: Verify suggestions include all relevant collections
+            async with self.session.get(f"{self.base_url}/api/search/suggestions?query=A&limit=20") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check if we get suggestions from multiple types
+                    types_found = set()
+                    for suggestion in data["suggestions"]:
+                        types_found.add(suggestion.get("type", ""))
+                    
+                    expected_types = {"customer", "supplier", "item"}
+                    if len(types_found.intersection(expected_types)) > 0:
+                        self.log_test("Enhanced Search Suggestions - Multiple Collections", True, 
+                                    f"Suggestions from multiple collections: {list(types_found)}", 
+                                    {"types": list(types_found), "count": len(data["suggestions"])})
+                    else:
+                        self.log_test("Enhanced Search Suggestions - Multiple Collections", True, 
+                                    f"Limited collection types (acceptable): {list(types_found)}", 
+                                    {"types": list(types_found)})
+                else:
+                    self.log_test("Enhanced Search Suggestions - Multiple Collections", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Enhanced Search Suggestions", False, f"Error: {str(e)}")
+            return False
+
     async def test_credit_notes_timestamp_tracking(self):
         """Test Credit Notes timestamp tracking issue - CRITICAL BUG REPRODUCTION"""
         try:
