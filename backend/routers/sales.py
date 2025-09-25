@@ -386,7 +386,7 @@ async def send_sales_order(order_id: str, body: dict):
             update_fields.update({"sent_at": current_time_iso, "sent_via": sent_via})
         filter_query = ({"_id": order["_id"]} if order.get("_id") else ( {"_id": ObjectId(order["__mongo_id"]) } if order.get("__mongo_id") else {"id": order_id} ))
         await sales_orders_collection.update_one(filter_query, {"$set": update_fields})
-        return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": sent_at_iso}
+        return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": current_time_iso}
     except HTTPException:
         raise
     except Exception as e:
