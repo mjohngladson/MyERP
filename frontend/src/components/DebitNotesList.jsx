@@ -256,13 +256,34 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                   </div>
                   <div>
                     <div className="font-medium text-gray-800">{note.debit_note_number}</div>
-                    <div className="text-xs text-gray-500 flex items-center space-x-2">
-                      <span>{note.reason || 'Return'}</span>
-                      {note.last_sent_at && (
-                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded" title={`Last sent: ${formatRelativeTime(note.last_sent_at)}`}>
-                          Sent {formatRelativeTime(note.last_sent_at)}
-                        </span>
-                      )}
+                    <div className="text-xs text-gray-500">
+                      <div className="mb-1">{note.reason || 'Return'}</div>
+                      <div className="flex flex-col space-y-1">
+                        {/* Email Status */}
+                        {(note.email_sent_at || (note.last_send_errors && note.last_send_errors.email)) && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            note.email_sent_at ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`} title={note.email_sent_at ? `Email sent: ${formatRelativeTime(note.email_sent_at)}` : `Email failed: ${note.last_send_errors?.email || 'Unknown error'}`}>
+                            📧 {note.email_sent_at ? formatRelativeTime(note.email_sent_at) : 'Failed'}
+                          </span>
+                        )}
+                        
+                        {/* SMS Status */}
+                        {(note.sms_sent_at || (note.last_send_errors && note.last_send_errors.sms)) && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            note.sms_sent_at ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                          }`} title={note.sms_sent_at ? `SMS sent: ${formatRelativeTime(note.sms_sent_at)}` : `SMS failed: ${note.last_send_errors?.sms || 'Unknown error'}`}>
+                            📱 {note.sms_sent_at ? formatRelativeTime(note.sms_sent_at) : 'Failed'}
+                          </span>
+                        )}
+                        
+                        {/* Fallback for legacy sent_at field */}
+                        {note.last_sent_at && !note.email_sent_at && !note.sms_sent_at && (
+                          <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded" title={`Last sent: ${formatRelativeTime(note.last_sent_at)}`}>
+                            Sent {formatRelativeTime(note.last_sent_at)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
