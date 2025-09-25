@@ -23,6 +23,21 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
   });
 
   React.useEffect(() => {
+    // Load master data
+    const loadMasterData = async () => {
+      try {
+        const [itemsRes, customersRes] = await Promise.all([
+          api.items.list('', 100),
+          api.master.customers.list('', 100)
+        ]);
+        setMasterItems(itemsRes.data || []);
+        setCustomers(customersRes.data || []);
+      } catch (e) {
+        console.error('Failed to load master data:', e);
+      }
+    };
+    loadMasterData();
+
     if (creditNoteId) {
       const load = async () => {
         try {
