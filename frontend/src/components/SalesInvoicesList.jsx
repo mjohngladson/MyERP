@@ -304,14 +304,28 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{formatCurrency(invoice.total_amount)}</div>
                       <div className="flex flex-col space-y-1 mt-1">
-                        {invoice.sent_at && (
-                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Sent {invoice.sent_via ? `via ${Array.isArray(invoice.sent_via) ? invoice.sent_via.join(', ') : invoice.sent_via}` : ''}
+                        {/* Email Status */}
+                        {(invoice.email_sent_at || (invoice.last_send_errors && invoice.last_send_errors.email)) && (
+                          <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            invoice.email_sent_at ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`} title={invoice.email_sent_at ? `Email sent: ${invoice.email_sent_at}` : `Email failed: ${invoice.last_send_errors?.email || 'Unknown error'}`}>
+                            📧 {invoice.email_sent_at ? 'Sent' : 'Failed'}
                           </div>
                         )}
-                        {invoice.last_send_errors && (invoice.last_send_errors.email || invoice.last_send_errors.sms) && (
-                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" title={(invoice.last_send_errors.email || '') + ' ' + (invoice.last_send_errors.sms || '')}>
-                            Send failed
+                        
+                        {/* SMS Status */}
+                        {(invoice.sms_sent_at || (invoice.last_send_errors && invoice.last_send_errors.sms)) && (
+                          <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            invoice.sms_sent_at ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'
+                          }`} title={invoice.sms_sent_at ? `SMS sent: ${invoice.sms_sent_at}` : `SMS failed: ${invoice.last_send_errors?.sms || 'Unknown error'}`}>
+                            📱 {invoice.sms_sent_at ? 'Sent' : 'Failed'}
+                          </div>
+                        )}
+                        
+                        {/* Fallback for legacy sent_at field */}
+                        {invoice.sent_at && !invoice.email_sent_at && !invoice.sms_sent_at && (
+                          <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800" title={`Sent: ${invoice.sent_at}`}>
+                            Sent {invoice.sent_via ? `via ${Array.isArray(invoice.sent_via) ? invoice.sent_via.join(', ') : invoice.sent_via}` : ''}
                           </div>
                         )}
                       </div>
