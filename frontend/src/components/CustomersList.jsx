@@ -55,6 +55,7 @@ const CustomersList = ({ onBack }) => {
   const loadSettings = async () => {
     try {
       const { data } = await api.settings.getGeneral();
+      console.log('Loaded settings:', data); // Debug log
       setSettings(data);
     } catch (e) {
       console.error('Failed to load settings:', e);
