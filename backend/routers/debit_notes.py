@@ -172,9 +172,36 @@ async def delete_debit_note(debit_note_id: str):
 
 
 @router.get("/debit-notes/stats/overview")
-async def get_debit_notes_stats():
-    """Get debit notes statistics for dashboard"""
+async def get_debit_notes_stats(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+):
+    """Get debit notes statistics for dashboard - honors same filters as list"""
+    query = {}
+    
+    # Apply same filters as list endpoint
+    if search:
+        query["$or"] = [
+            {"debit_note_number": {"$regex": search, "$options": "i"}},
+            {"supplier_name": {"$regex": search, "$options": "i"}},
+            {"reference_invoice": {"$regex": search, "$options": "i"}},
+        ]
+    
+    if status:
+        query["status"] = status
+    
+    if from_date or to_date:
+        date_query = {}
+        if from_date:
+            date_query["$gte"] = from_date
+        if to_date:
+            date_query["$lte"] = to_date
+        query["debit_note_date"] = date_query
+    
     pipeline = [
+        {"$match": query} if query else {"$match": {}},
         {
             "$group": {
                 "_id": None,
