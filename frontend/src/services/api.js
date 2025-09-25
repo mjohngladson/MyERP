@@ -136,6 +136,29 @@ export const api = {
     createOrder: (orderData) => makeRequest(() => apiClient.post('/sales/orders', orderData)),
     getCustomers: (limit = 50) => makeRequest(() => apiClient.get(`/sales/customers`, { params: { limit } })),
     createCustomer: (customerData) => makeRequest(() => apiClient.post('/sales/customers', customerData)),
+    
+    // Credit Notes
+    creditNotes: {
+      list: (params = {}) => makeRequest(() => apiClient.get('/sales/credit-notes', { params })),
+      create: (data) => makeRequest(() => apiClient.post('/sales/credit-notes', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/sales/credit-notes/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/sales/credit-notes/${id}`, data)),
+      delete: (id) => makeRequest(() => apiClient.delete(`/sales/credit-notes/${id}`)),
+      stats: () => makeRequest(() => apiClient.get('/sales/credit-notes/stats/overview')),
+    },
+  },
+
+  // Buying
+  buying: {
+    // Debit Notes
+    debitNotes: {
+      list: (params = {}) => makeRequest(() => apiClient.get('/buying/debit-notes', { params })),
+      create: (data) => makeRequest(() => apiClient.post('/buying/debit-notes', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/buying/debit-notes/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/buying/debit-notes/${id}`, data)),
+      delete: (id) => makeRequest(() => apiClient.delete(`/buying/debit-notes/${id}`)),
+      stats: () => makeRequest(() => apiClient.get('/buying/debit-notes/stats/overview')),
+    },
   },
 
   // Search
