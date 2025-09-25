@@ -5068,6 +5068,320 @@ class BackendTester:
             self.log_test("Debit Notes API", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_enhanced_api(self):
+        """Test enhanced Credit Notes API with search filters and send functionality"""
+        try:
+            # First, create test credit notes for filtering tests
+            test_credit_notes = []
+            
+            # Create credit note with "test" in customer name
+            test_cn_1 = {
+                "customer_name": "Test Customer Corp",
+                "customer_email": "test@example.com",
+                "reference_invoice": "INV-TEST-001",
+                "reason": "Return",
+                "items": [{"description": "Test Item", "amount": 100}],
+                "discount_amount": 10,
+                "tax_rate": 18,
+                "status": "Draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=test_cn_1) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    test_credit_notes.append(data["credit_note"]["id"])
+                    self.log_test("Credit Notes Enhanced - Create Test CN 1", True, f"Created test credit note: {data['credit_note']['credit_note_number']}")
+                else:
+                    self.log_test("Credit Notes Enhanced - Create Test CN 1", False, f"HTTP {response.status}")
+                    return False
+            
+            # Create credit note without "test" in customer name
+            test_cn_2 = {
+                "customer_name": "Regular Customer Ltd",
+                "customer_email": "regular@example.com",
+                "reference_invoice": "INV-REG-001",
+                "reason": "Allowance",
+                "items": [{"description": "Regular Item", "amount": 200}],
+                "discount_amount": 20,
+                "tax_rate": 18,
+                "status": "Issued"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=test_cn_2) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    test_credit_notes.append(data["credit_note"]["id"])
+                    self.log_test("Credit Notes Enhanced - Create Test CN 2", True, f"Created regular credit note: {data['credit_note']['credit_note_number']}")
+                else:
+                    self.log_test("Credit Notes Enhanced - Create Test CN 2", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1: Stats without search filter (should show all)
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/stats/overview") as response:
+                if response.status == 200:
+                    all_stats = await response.json()
+                    all_count = all_stats.get("total_notes", 0)
+                    self.log_test("Credit Notes Enhanced - Stats All", True, f"Stats without filter: {all_count} total notes", all_stats)
+                else:
+                    self.log_test("Credit Notes Enhanced - Stats All", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Stats with search filter (should show filtered results)
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/stats/overview?search=test") as response:
+                if response.status == 200:
+                    filtered_stats = await response.json()
+                    filtered_count = filtered_stats.get("total_notes", 0)
+                    
+                    # Verify that filtered count is different from all count
+                    if filtered_count != all_count:
+                        self.log_test("Credit Notes Enhanced - Stats Search Filter", True, f"Stats with search filter: {filtered_count} notes (filtered from {all_count})", filtered_stats)
+                    else:
+                        self.log_test("Credit Notes Enhanced - Stats Search Filter", False, f"Search filter not working - same count: {filtered_count}")
+                        return False
+                else:
+                    self.log_test("Credit Notes Enhanced - Stats Search Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Send functionality - Email
+            if test_credit_notes:
+                send_payload = {
+                    "method": "email",
+                    "email": "test@example.com",
+                    "subject": "Credit Note",
+                    "message": "Please find attached credit note"
+                }
+                
+                async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{test_credit_notes[0]}/send", json=send_payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success") and "sent_at" in data:
+                            self.log_test("Credit Notes Enhanced - Send Email", True, f"Email send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Credit Notes Enhanced - Send Email", False, "Invalid send response structure", data)
+                            return False
+                    else:
+                        self.log_test("Credit Notes Enhanced - Send Email", False, f"HTTP {response.status}")
+                        return False
+                
+                # Test 4: Send functionality - SMS
+                send_sms_payload = {
+                    "method": "sms",
+                    "phone": "+1234567890",
+                    "message": "Credit note has been issued"
+                }
+                
+                async with self.session.post(f"{self.base_url}/api/sales/credit-notes/{test_credit_notes[0]}/send", json=send_sms_payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success") and "sent_at" in data:
+                            self.log_test("Credit Notes Enhanced - Send SMS", True, f"SMS send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Credit Notes Enhanced - Send SMS", False, "Invalid send response structure", data)
+                            return False
+                    else:
+                        self.log_test("Credit Notes Enhanced - Send SMS", False, f"HTTP {response.status}")
+                        return False
+                
+                # Test 5: Verify send tracking fields are updated
+                async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{test_credit_notes[0]}") as response:
+                    if response.status == 200:
+                        credit_note = await response.json()
+                        if "last_sent_at" in credit_note and "last_send_attempt_at" in credit_note:
+                            self.log_test("Credit Notes Enhanced - Send Tracking", True, f"Send tracking fields updated: last_sent_at, last_send_attempt_at", {
+                                "last_sent_at": credit_note.get("last_sent_at"),
+                                "sent_to": credit_note.get("sent_to"),
+                                "send_method": credit_note.get("send_method")
+                            })
+                        else:
+                            self.log_test("Credit Notes Enhanced - Send Tracking", False, "Send tracking fields not updated", credit_note)
+                            return False
+                    else:
+                        self.log_test("Credit Notes Enhanced - Send Tracking", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test 6: Error handling for invalid send requests
+            invalid_send_payload = {
+                "method": "invalid_method"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes/invalid-id/send", json=invalid_send_payload) as response:
+                if response.status == 404:
+                    self.log_test("Credit Notes Enhanced - Send Error Handling", True, "Invalid credit note ID handled correctly (404)")
+                else:
+                    self.log_test("Credit Notes Enhanced - Send Error Handling", False, f"Expected 404 for invalid ID, got {response.status}")
+                    return False
+            
+            # Cleanup: Delete test credit notes
+            for cn_id in test_credit_notes:
+                async with self.session.delete(f"{self.base_url}/api/sales/credit-notes/{cn_id}") as response:
+                    if response.status == 200:
+                        self.log_test(f"Credit Notes Enhanced - Cleanup {cn_id[:8]}", True, "Test credit note deleted")
+                    else:
+                        self.log_test(f"Credit Notes Enhanced - Cleanup {cn_id[:8]}", False, f"Cleanup failed: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Credit Notes Enhanced API", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_enhanced_api(self):
+        """Test enhanced Debit Notes API with search filters and send functionality"""
+        try:
+            # First, create test debit notes for filtering tests
+            test_debit_notes = []
+            
+            # Create debit note with "test" in supplier name
+            test_dn_1 = {
+                "supplier_name": "Test Supplier Inc",
+                "supplier_email": "test@supplier.com",
+                "reference_invoice": "PINV-TEST-001",
+                "reason": "Quality Issue",
+                "items": [{"description": "Test Item", "amount": 150}],
+                "discount_amount": 15,
+                "tax_rate": 18,
+                "status": "Draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=test_dn_1) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    test_debit_notes.append(data["debit_note"]["id"])
+                    self.log_test("Debit Notes Enhanced - Create Test DN 1", True, f"Created test debit note: {data['debit_note']['debit_note_number']}")
+                else:
+                    self.log_test("Debit Notes Enhanced - Create Test DN 1", False, f"HTTP {response.status}")
+                    return False
+            
+            # Create debit note without "test" in supplier name
+            test_dn_2 = {
+                "supplier_name": "Regular Supplier Ltd",
+                "supplier_email": "regular@supplier.com",
+                "reference_invoice": "PINV-REG-001",
+                "reason": "Price Difference",
+                "items": [{"description": "Regular Item", "amount": 300}],
+                "discount_amount": 30,
+                "tax_rate": 18,
+                "status": "Issued"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=test_dn_2) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    test_debit_notes.append(data["debit_note"]["id"])
+                    self.log_test("Debit Notes Enhanced - Create Test DN 2", True, f"Created regular debit note: {data['debit_note']['debit_note_number']}")
+                else:
+                    self.log_test("Debit Notes Enhanced - Create Test DN 2", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1: Stats without search filter (should show all)
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/stats/overview") as response:
+                if response.status == 200:
+                    all_stats = await response.json()
+                    all_count = all_stats.get("total_notes", 0)
+                    self.log_test("Debit Notes Enhanced - Stats All", True, f"Stats without filter: {all_count} total notes", all_stats)
+                else:
+                    self.log_test("Debit Notes Enhanced - Stats All", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Stats with search filter (should show filtered results)
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/stats/overview?search=test") as response:
+                if response.status == 200:
+                    filtered_stats = await response.json()
+                    filtered_count = filtered_stats.get("total_notes", 0)
+                    
+                    # Verify that filtered count is different from all count
+                    if filtered_count != all_count:
+                        self.log_test("Debit Notes Enhanced - Stats Search Filter", True, f"Stats with search filter: {filtered_count} notes (filtered from {all_count})", filtered_stats)
+                    else:
+                        self.log_test("Debit Notes Enhanced - Stats Search Filter", False, f"Search filter not working - same count: {filtered_count}")
+                        return False
+                else:
+                    self.log_test("Debit Notes Enhanced - Stats Search Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Send functionality - Email
+            if test_debit_notes:
+                send_payload = {
+                    "method": "email",
+                    "email": "test@supplier.com",
+                    "subject": "Debit Note",
+                    "message": "Please find attached debit note"
+                }
+                
+                async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{test_debit_notes[0]}/send", json=send_payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success") and "sent_at" in data:
+                            self.log_test("Debit Notes Enhanced - Send Email", True, f"Email send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Debit Notes Enhanced - Send Email", False, "Invalid send response structure", data)
+                            return False
+                    else:
+                        self.log_test("Debit Notes Enhanced - Send Email", False, f"HTTP {response.status}")
+                        return False
+                
+                # Test 4: Send functionality - SMS
+                send_sms_payload = {
+                    "method": "sms",
+                    "phone": "+1234567890",
+                    "message": "Debit note has been issued"
+                }
+                
+                async with self.session.post(f"{self.base_url}/api/buying/debit-notes/{test_debit_notes[0]}/send", json=send_sms_payload) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get("success") and "sent_at" in data:
+                            self.log_test("Debit Notes Enhanced - Send SMS", True, f"SMS send successful: {data['message']}", data)
+                        else:
+                            self.log_test("Debit Notes Enhanced - Send SMS", False, "Invalid send response structure", data)
+                            return False
+                    else:
+                        self.log_test("Debit Notes Enhanced - Send SMS", False, f"HTTP {response.status}")
+                        return False
+                
+                # Test 5: Verify send tracking fields are updated
+                async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{test_debit_notes[0]}") as response:
+                    if response.status == 200:
+                        debit_note = await response.json()
+                        if "last_sent_at" in debit_note and "last_send_attempt_at" in debit_note:
+                            self.log_test("Debit Notes Enhanced - Send Tracking", True, f"Send tracking fields updated: last_sent_at, last_send_attempt_at", {
+                                "last_sent_at": debit_note.get("last_sent_at"),
+                                "sent_to": debit_note.get("sent_to"),
+                                "send_method": debit_note.get("send_method")
+                            })
+                        else:
+                            self.log_test("Debit Notes Enhanced - Send Tracking", False, "Send tracking fields not updated", debit_note)
+                            return False
+                    else:
+                        self.log_test("Debit Notes Enhanced - Send Tracking", False, f"HTTP {response.status}")
+                        return False
+            
+            # Test 6: Error handling for invalid send requests
+            invalid_send_payload = {
+                "method": "invalid_method"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes/invalid-id/send", json=invalid_send_payload) as response:
+                if response.status == 404:
+                    self.log_test("Debit Notes Enhanced - Send Error Handling", True, "Invalid debit note ID handled correctly (404)")
+                else:
+                    self.log_test("Debit Notes Enhanced - Send Error Handling", False, f"Expected 404 for invalid ID, got {response.status}")
+                    return False
+            
+            # Cleanup: Delete test debit notes
+            for dn_id in test_debit_notes:
+                async with self.session.delete(f"{self.base_url}/api/buying/debit-notes/{dn_id}") as response:
+                    if response.status == 200:
+                        self.log_test(f"Debit Notes Enhanced - Cleanup {dn_id[:8]}", True, "Test debit note deleted")
+                    else:
+                        self.log_test(f"Debit Notes Enhanced - Cleanup {dn_id[:8]}", False, f"Cleanup failed: HTTP {response.status}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Debit Notes Enhanced API", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Credit Notes and Debit Notes API endpoints"""
         print("🚀 Starting GiLi Backend API Testing Suite - CREDIT & DEBIT NOTES API TESTING")
