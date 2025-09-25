@@ -97,7 +97,7 @@ const StockReports = ({ onBack, embed = false }) => {
         </div>
       ) : (
         <div className="bg-white rounded-xl p-4 shadow-sm border">
-          {reorder.rows.length === 0 ? (
+          {(reorder?.rows || []).length === 0 ? (
             <div className="p-8 text-center text-gray-500">No items below reorder level</div>
           ) : (
             <div className="overflow-x-auto">
@@ -112,13 +112,13 @@ const StockReports = ({ onBack, embed = false }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {reorder.rows.map((r, idx) => (
+                  {(reorder?.rows || []).map((r, idx) => (
                     <tr key={idx}>
-                      <td className="px-4 py-2">{r.item_name}</td>
-                      <td className="px-4 py-2">{r.sku}</td>
-                      <td className="px-4 py-2 text-right">{r.current_qty}</td>
-                      <td className="px-4 py-2 text-right">{r.reorder_level}</td>
-                      <td className="px-4 py-2 text-right">{r.reorder_qty}</td>
+                      <td className="px-4 py-2">{r?.item_name || '-'}</td>
+                      <td className="px-4 py-2">{r?.sku || '-'}</td>
+                      <td className="px-4 py-2 text-right">{r?.current_qty || 0}</td>
+                      <td className="px-4 py-2 text-right">{r?.reorder_level || 0}</td>
+                      <td className="px-4 py-2 text-right">{r?.reorder_qty || 0}</td>
                     </tr>
                   ))}
                 </tbody>
