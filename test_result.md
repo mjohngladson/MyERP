@@ -205,8 +205,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "General Settings API Testing - COMPLETED ✅"
-  stuck_tasks: []
+    - "Stock Valuation Report API - GET /api/stock/valuation/report"
+    - "Stock Reorder Report API - GET /api/stock/reorder/report"
+  stuck_tasks:
+    - "Stock Valuation Report API - GET /api/stock/valuation/report"
+    - "Stock Reorder Report API - GET /api/stock/reorder/report"
+    - "Stock Reports Error Handling"
   test_all: false
   test_priority: "high_first"
   completed_tests:
