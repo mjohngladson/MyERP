@@ -4694,6 +4694,352 @@ class BackendTester:
             self.log_test("General Settings API", False, f"Error: {str(e)}")
             return False
 
+    async def test_credit_notes_api(self):
+        """Test Credit Notes API endpoints - COMPREHENSIVE TESTING"""
+        try:
+            # Test 1: GET /api/sales/credit-notes - List credit notes
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Credit Notes - List", True, f"Retrieved {len(data)} credit notes", {"count": len(data)})
+                        initial_count = len(data)
+                    else:
+                        self.log_test("Credit Notes - List", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - List", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: POST /api/sales/credit-notes - Create new credit note
+            test_credit_note = {
+                "customer_name": "Test Customer for Credit Note",
+                "customer_email": "test@creditnote.com",
+                "customer_phone": "+91-9876543210",
+                "customer_address": "123 Test Street, Test City",
+                "credit_note_date": "2024-01-15",
+                "reference_invoice": "SINV-20240115-001",
+                "reason": "Return",
+                "items": [
+                    {
+                        "item_name": "Test Product A",
+                        "quantity": 2,
+                        "rate": 100.0,
+                        "amount": 200.0
+                    },
+                    {
+                        "item_name": "Test Product B", 
+                        "quantity": 1,
+                        "rate": 150.0,
+                        "amount": 150.0
+                    }
+                ],
+                "discount_amount": 25.0,
+                "tax_rate": 18.0,
+                "status": "Draft",
+                "notes": "Test credit note for API testing"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=test_credit_note) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "credit_note" in data:
+                        credit_note = data["credit_note"]
+                        # Verify CN- number format
+                        if credit_note.get("credit_note_number", "").startswith("CN-"):
+                            # Verify totals calculation: subtotal 350 - discount 25 = 325, tax 18% = 58.5, total = 383.5
+                            expected_total = 383.5
+                            actual_total = credit_note.get("total_amount", 0)
+                            if abs(actual_total - expected_total) < 0.01:
+                                self.log_test("Credit Notes - Create", True, f"Created credit note {credit_note['credit_note_number']} with correct totals (₹{actual_total})", credit_note)
+                                created_credit_note_id = credit_note["id"]
+                            else:
+                                self.log_test("Credit Notes - Create", False, f"Totals calculation incorrect: expected ₹{expected_total}, got ₹{actual_total}", credit_note)
+                                return False
+                        else:
+                            self.log_test("Credit Notes - Create", False, f"Credit note number format incorrect: {credit_note.get('credit_note_number')}", credit_note)
+                            return False
+                    else:
+                        self.log_test("Credit Notes - Create", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Create", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: GET /api/sales/credit-notes/{id} - Get single credit note
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{created_credit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("id") == created_credit_note_id and data.get("customer_name") == "Test Customer for Credit Note":
+                        self.log_test("Credit Notes - Get Single", True, f"Retrieved credit note {data['credit_note_number']}", {"id": data["id"], "total": data["total_amount"]})
+                    else:
+                        self.log_test("Credit Notes - Get Single", False, "Credit note data mismatch", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Get Single", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: PUT /api/sales/credit-notes/{id} - Update credit note
+            update_data = {
+                "status": "Issued",
+                "discount_amount": 50.0,  # Change discount to test recalculation
+                "notes": "Updated credit note for testing"
+            }
+            
+            async with self.session.put(f"{self.base_url}/api/sales/credit-notes/{created_credit_note_id}", json=update_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    # Verify recalculation: subtotal 350 - discount 50 = 300, tax 18% = 54, total = 354
+                    expected_total = 354.0
+                    actual_total = data.get("total_amount", 0)
+                    if abs(actual_total - expected_total) < 0.01 and data.get("status") == "Issued":
+                        self.log_test("Credit Notes - Update", True, f"Updated credit note with recalculated totals (₹{actual_total})", {"status": data["status"], "total": actual_total})
+                    else:
+                        self.log_test("Credit Notes - Update", False, f"Update failed or totals incorrect: expected ₹{expected_total}, got ₹{actual_total}", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Update", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 5: GET /api/sales/credit-notes/stats/overview - Get credit notes statistics
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes/stats/overview") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["total_notes", "total_amount", "draft_count", "issued_count", "applied_count"]
+                    if all(field in data for field in required_fields):
+                        # Should have at least 1 note (our test note)
+                        if data["total_notes"] >= 1 and data["issued_count"] >= 1:
+                            self.log_test("Credit Notes - Stats", True, f"Stats working: {data['total_notes']} notes, ₹{data['total_amount']} total", data)
+                        else:
+                            self.log_test("Credit Notes - Stats", False, f"Stats don't reflect created credit note", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Credit Notes - Stats", False, f"Missing stats fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Stats", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 6: Test search and pagination
+            async with self.session.get(f"{self.base_url}/api/sales/credit-notes?search=Test Customer&limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list) and len(data) > 0:
+                        # Should find our test credit note
+                        found_test_note = any(note.get("customer_name") == "Test Customer for Credit Note" for note in data)
+                        if found_test_note and data[0].get("_meta", {}).get("total_count") is not None:
+                            self.log_test("Credit Notes - Search & Pagination", True, f"Search found test note, pagination metadata present", {"results": len(data), "total_count": data[0]["_meta"]["total_count"]})
+                        else:
+                            self.log_test("Credit Notes - Search & Pagination", False, "Search or pagination not working correctly", data)
+                            return False
+                    else:
+                        self.log_test("Credit Notes - Search & Pagination", False, "Search returned no results", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Search & Pagination", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 7: DELETE /api/sales/credit-notes/{id} - Delete credit note
+            async with self.session.delete(f"{self.base_url}/api/sales/credit-notes/{created_credit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_test("Credit Notes - Delete", True, f"Successfully deleted credit note", data)
+                        
+                        # Verify deletion by trying to get the deleted note
+                        async with self.session.get(f"{self.base_url}/api/sales/credit-notes/{created_credit_note_id}") as verify_response:
+                            if verify_response.status == 404:
+                                self.log_test("Credit Notes - Delete Verification", True, "Credit note properly deleted (404 on get)", {})
+                            else:
+                                self.log_test("Credit Notes - Delete Verification", False, f"Credit note still exists after deletion (HTTP {verify_response.status})", {})
+                                return False
+                    else:
+                        self.log_test("Credit Notes - Delete", False, "Delete response invalid", data)
+                        return False
+                else:
+                    self.log_test("Credit Notes - Delete", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Credit Notes API", False, f"Error: {str(e)}")
+            return False
+
+    async def test_debit_notes_api(self):
+        """Test Debit Notes API endpoints - COMPREHENSIVE TESTING"""
+        try:
+            # Test 1: GET /api/buying/debit-notes - List debit notes
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("Debit Notes - List", True, f"Retrieved {len(data)} debit notes", {"count": len(data)})
+                        initial_count = len(data)
+                    else:
+                        self.log_test("Debit Notes - List", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - List", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: POST /api/buying/debit-notes - Create new debit note
+            test_debit_note = {
+                "supplier_name": "Test Supplier for Debit Note",
+                "supplier_email": "supplier@debitnote.com",
+                "supplier_phone": "+91-9876543211",
+                "supplier_address": "456 Supplier Street, Supplier City",
+                "debit_note_date": "2024-01-16",
+                "reference_invoice": "PINV-20240116-001",
+                "reason": "Quality Issue",
+                "items": [
+                    {
+                        "item_name": "Defective Product A",
+                        "quantity": 3,
+                        "rate": 80.0,
+                        "amount": 240.0
+                    },
+                    {
+                        "item_name": "Defective Product B",
+                        "quantity": 2,
+                        "rate": 120.0,
+                        "amount": 240.0
+                    }
+                ],
+                "discount_amount": 30.0,
+                "tax_rate": 18.0,
+                "status": "Draft",
+                "notes": "Test debit note for API testing"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=test_debit_note) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "debit_note" in data:
+                        debit_note = data["debit_note"]
+                        # Verify DN- number format
+                        if debit_note.get("debit_note_number", "").startswith("DN-"):
+                            # Verify totals calculation: subtotal 480 - discount 30 = 450, tax 18% = 81, total = 531
+                            expected_total = 531.0
+                            actual_total = debit_note.get("total_amount", 0)
+                            if abs(actual_total - expected_total) < 0.01:
+                                self.log_test("Debit Notes - Create", True, f"Created debit note {debit_note['debit_note_number']} with correct totals (₹{actual_total})", debit_note)
+                                created_debit_note_id = debit_note["id"]
+                            else:
+                                self.log_test("Debit Notes - Create", False, f"Totals calculation incorrect: expected ₹{expected_total}, got ₹{actual_total}", debit_note)
+                                return False
+                        else:
+                            self.log_test("Debit Notes - Create", False, f"Debit note number format incorrect: {debit_note.get('debit_note_number')}", debit_note)
+                            return False
+                    else:
+                        self.log_test("Debit Notes - Create", False, "Invalid response structure", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Create", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: GET /api/buying/debit-notes/{id} - Get single debit note
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{created_debit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("id") == created_debit_note_id and data.get("supplier_name") == "Test Supplier for Debit Note":
+                        self.log_test("Debit Notes - Get Single", True, f"Retrieved debit note {data['debit_note_number']}", {"id": data["id"], "total": data["total_amount"]})
+                    else:
+                        self.log_test("Debit Notes - Get Single", False, "Debit note data mismatch", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Get Single", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: PUT /api/buying/debit-notes/{id} - Update debit note
+            update_data = {
+                "status": "Issued",
+                "discount_amount": 60.0,  # Change discount to test recalculation
+                "notes": "Updated debit note for testing"
+            }
+            
+            async with self.session.put(f"{self.base_url}/api/buying/debit-notes/{created_debit_note_id}", json=update_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    # Verify recalculation: subtotal 480 - discount 60 = 420, tax 18% = 75.6, total = 495.6
+                    expected_total = 495.6
+                    actual_total = data.get("total_amount", 0)
+                    if abs(actual_total - expected_total) < 0.01 and data.get("status") == "Issued":
+                        self.log_test("Debit Notes - Update", True, f"Updated debit note with recalculated totals (₹{actual_total})", {"status": data["status"], "total": actual_total})
+                    else:
+                        self.log_test("Debit Notes - Update", False, f"Update failed or totals incorrect: expected ₹{expected_total}, got ₹{actual_total}", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Update", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 5: GET /api/buying/debit-notes/stats/overview - Get debit notes statistics
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes/stats/overview") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["total_notes", "total_amount", "draft_count", "issued_count", "accepted_count"]
+                    if all(field in data for field in required_fields):
+                        # Should have at least 1 note (our test note)
+                        if data["total_notes"] >= 1 and data["issued_count"] >= 1:
+                            self.log_test("Debit Notes - Stats", True, f"Stats working: {data['total_notes']} notes, ₹{data['total_amount']} total", data)
+                        else:
+                            self.log_test("Debit Notes - Stats", False, f"Stats don't reflect created debit note", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Debit Notes - Stats", False, f"Missing stats fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Stats", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 6: Test search and pagination
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes?search=Test Supplier&limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list) and len(data) > 0:
+                        # Should find our test debit note
+                        found_test_note = any(note.get("supplier_name") == "Test Supplier for Debit Note" for note in data)
+                        if found_test_note and data[0].get("_meta", {}).get("total_count") is not None:
+                            self.log_test("Debit Notes - Search & Pagination", True, f"Search found test note, pagination metadata present", {"results": len(data), "total_count": data[0]["_meta"]["total_count"]})
+                        else:
+                            self.log_test("Debit Notes - Search & Pagination", False, "Search or pagination not working correctly", data)
+                            return False
+                    else:
+                        self.log_test("Debit Notes - Search & Pagination", False, "Search returned no results", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Search & Pagination", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 7: DELETE /api/buying/debit-notes/{id} - Delete debit note
+            async with self.session.delete(f"{self.base_url}/api/buying/debit-notes/{created_debit_note_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_test("Debit Notes - Delete", True, f"Successfully deleted debit note", data)
+                        
+                        # Verify deletion by trying to get the deleted note
+                        async with self.session.get(f"{self.base_url}/api/buying/debit-notes/{created_debit_note_id}") as verify_response:
+                            if verify_response.status == 404:
+                                self.log_test("Debit Notes - Delete Verification", True, "Debit note properly deleted (404 on get)", {})
+                            else:
+                                self.log_test("Debit Notes - Delete Verification", False, f"Debit note still exists after deletion (HTTP {verify_response.status})", {})
+                                return False
+                    else:
+                        self.log_test("Debit Notes - Delete", False, "Delete response invalid", data)
+                        return False
+                else:
+                    self.log_test("Debit Notes - Delete", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Debit Notes API", False, f"Error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on Credit Notes and Debit Notes API endpoints"""
         print("🚀 Starting GiLi Backend API Testing Suite - CREDIT & DEBIT NOTES API TESTING")
