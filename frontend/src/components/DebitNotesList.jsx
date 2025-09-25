@@ -91,10 +91,13 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
         attach_pdf: attachPdf
       };
 
-      await api.post(`/buying/debit-notes/${sendingNote.id}/send`, payload);
+      const response = await api.post(`/buying/debit-notes/${sendingNote.id}/send`, payload);
       setShowSendModal(false);
       load(); // Refresh to show updated send status
-      alert('Debit note sent successfully!');
+      
+      // Show appropriate message based on response
+      const message = response.data?.message || 'Debit note sent successfully!';
+      alert(message);
     } catch (e) {
       alert(e?.response?.data?.detail || 'Failed to send debit note');
     }
