@@ -205,8 +205,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Items CRUD API Testing - COMPLETED ✅"
-    - "Sales Order Detail API Testing - COMPLETED ✅"
+    - "General Settings API Testing - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -221,6 +220,7 @@ test_plan:
     - "Items CRUD API Testing - COMPLETED ✅"
     - "Sales Order Detail API Testing - COMPLETED ✅"
     - "Basic API Health Checks - COMPLETED ✅"
+    - "General Settings API Testing - COMPLETED ✅"
   critical_issues_found: []
   resolved_issues:
     - "Sidebar navigation system fixed - users can now access Quotations and Purchase Orders pages"
@@ -230,6 +230,7 @@ test_plan:
     - "Items CRUD API endpoints fully functional - all CRUD operations working correctly"
     - "Sales Order Detail API returning complete order information with proper structure"
     - "Global Search API suggestions endpoint working correctly"
+    - "General Settings API database initialization issue fixed - complete data structure now returned"
 backend:
   - task: "Purchase Orders API - Send endpoint and totals enrichment"
     implemented: true
