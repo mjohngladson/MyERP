@@ -22,6 +22,8 @@ import { api } from '../services/api';
 
 const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [allTransactions, setAllTransactions] = useState([]);
   
   // API hooks for dashboard data
   const { data: stats, loading: statsLoading, error: statsError, refetch: refetchStats } = 
