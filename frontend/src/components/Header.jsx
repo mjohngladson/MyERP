@@ -177,20 +177,13 @@ const Header = ({ toggleSidebar, onProfileClick = () => {}, onSettingsClick = ()
           
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-              <div className="py-2">
+            <div className="py-2">
                 <button 
                   onClick={handleProfileClick}
                   className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User size={16} />
                   <span>Profile</span>
-                </button>
-                <button 
-                  onClick={handleSettingsClick}
-                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Settings size={16} />
-                  <span>Settings</span>
                 </button>
                 <hr className="my-2" />
                 <button 
