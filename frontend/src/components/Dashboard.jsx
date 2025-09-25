@@ -412,10 +412,15 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
                       {/* Sales bar */}
                       <div className="flex flex-col items-center">
                         <div 
-                          className="w-6 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                          className="w-6 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t shadow-sm hover:shadow-md transition-shadow cursor-pointer relative group" 
                           style={{ height: `${salesHeight}px` }}
-                          title={`Sales: ${formatCurrency(data.sales || 0)}`}
-                        ></div>
+                        >
+                          {/* Enhanced Tooltip */}
+                          <div className="invisible group-hover:visible absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg whitespace-nowrap z-10">
+                            Sales: {formatCurrency(data.sales || 0)}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
                         <span className="text-xs text-blue-600 mt-1 font-medium">S</span>
                       </div>
                       
