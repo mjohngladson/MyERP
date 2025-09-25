@@ -98,6 +98,17 @@ const Dashboard = ({ onViewAllTransactions, onAdvancedReporting }) => {
     ]);
   };
 
+  const handleViewAllTransactions = async () => {
+    try {
+      const response = await api.get('/dashboard/transactions/all');
+      setAllTransactions(response.data.transactions || []);
+      setShowAllTransactions(true);
+    } catch (error) {
+      console.error('Error fetching all transactions:', error);
+      alert('Failed to load transactions');
+    }
+  };
+
   if (statsLoading && !stats) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
