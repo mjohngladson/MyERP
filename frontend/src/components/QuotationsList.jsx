@@ -45,6 +45,21 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
   const formatCurrency = (a) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(a || 0);
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
   const getStatusColor = (s) => ({ draft:'bg-gray-100 text-gray-800', submitted:'bg-blue-100 text-blue-800', won:'bg-green-100 text-green-800', lost:'bg-red-100 text-red-800', cancelled:'bg-red-100 text-red-800'})[s] || 'bg-gray-100 text-gray-800';
+  
+  const formatRelativeTime = (date) => {
+    if (!date) return '';
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now - past;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    if (diffMinutes > 0) return `${diffMinutes}m ago`;
+    return 'Just now';
+  };
 
   const openSend = (q) => { setSendTarget(q); setSendEmail(q.customer_email||''); setSendPhone(q.customer_phone||''); setIncludePdf(false); setSendOpen(true); };
   const closeSend = () => { setSendOpen(false); setSending(false); };
