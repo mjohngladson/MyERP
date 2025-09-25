@@ -355,15 +355,35 @@ async def send_sales_order(order_id: str, body: dict):
                 results["sms"] = sms_resp
                 if sms_resp.get("success"):
                     sent_via.append("sms")
-        # save attempt on the same document (prefer object id if present)
-        sent_at_iso = None
+        # save attempt with individual email/SMS tracking
+        current_time_iso = datetime.now(timezone.utc).isoformat()
         update_fields = {
             "last_send_result": results,
-            "last_send_attempt_at": datetime.now(timezone.utc).isoformat()
+            "last_send_attempt_at": current_time_iso
         }
+        
+        # Track individual email/SMS success with separate timestamps
+        if results.get("email") and results["email"].get("success"):
+            update_fields["email_sent_at"] = current_time_iso
+            update_fields["email_status"] = "sent"
+        elif results.get("email") and not results["email"].get("success"):
+            update_fields["email_status"] = "failed"
+            if "last_send_errors" not in update_fields:
+                update_fields["last_send_errors"] = {}
+            update_fields["last_send_errors"]["email"] = results["email"].get("error", "Unknown error")
+            
+        if results.get("sms") and results["sms"].get("success"):
+            update_fields["sms_sent_at"] = current_time_iso
+            update_fields["sms_status"] = "sent"
+        elif results.get("sms") and not results["sms"].get("success"):
+            update_fields["sms_status"] = "failed"
+            if "last_send_errors" not in update_fields:
+                update_fields["last_send_errors"] = {}
+            update_fields["last_send_errors"]["sms"] = results["sms"].get("error", results["sms"].get("message", "Unknown error"))
+        
+        # Keep legacy sent_at for backward compatibility
         if sent_via:
-            sent_at_iso = datetime.now(timezone.utc).isoformat()
-            update_fields.update({"sent_at": sent_at_iso, "sent_via": sent_via})
+            update_fields.update({"sent_at": current_time_iso, "sent_via": sent_via})
         filter_query = ({"_id": order["_id"]} if order.get("_id") else ( {"_id": ObjectId(order["__mongo_id"]) } if order.get("__mongo_id") else {"id": order_id} ))
         await sales_orders_collection.update_one(filter_query, {"$set": update_fields})
         return {"success": bool(sent_via), "sent_via": sent_via, "result": results, "sent_at": sent_at_iso}
