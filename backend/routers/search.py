@@ -152,6 +152,27 @@ async def global_search(
             })
             categories["invoices"] += 1
 
+    # Search quotations
+    if not category or category == "quotations":
+        quotation_cursor = db.quotations.find({
+            "$or": [
+                {"quotation_number": {"$regex": pattern}},
+                {"customer_name": {"$regex": pattern}}
+            ]
+        }).limit(limit // 10 if not category else limit)
+        
+        async for quotation in quotation_cursor:
+            results.append({
+                "id": quotation.get("id") or str(quotation.get("_id")),
+                "type": "quotation",
+                "title": f"Quotation {quotation.get('quotation_number','')}",
+                "subtitle": quotation.get("customer_name", ""),
+                "description": f"₹{quotation.get('total_amount', 0)} - {quotation.get('status', 'draft')}",
+                "url": f"/sales/quotations/{quotation.get('id')}",
+                "relevance": calculate_relevance(search_term, quotation.get("quotation_number", ""))
+            })
+            categories["quotations"] = categories.get("quotations", 0) + 1
+
     # Search purchase orders
     if not category or category == "purchase_orders":
         purchase_order_cursor = db.purchase_orders.find({
@@ -159,7 +180,7 @@ async def global_search(
                 {"order_number": {"$regex": pattern}},
                 {"supplier_name": {"$regex": pattern}}
             ]
-        }).limit(limit // 6 if not category else limit)
+        }).limit(limit // 10 if not category else limit)
         
         async for order in purchase_order_cursor:
             results.append({
@@ -172,6 +193,69 @@ async def global_search(
                 "relevance": calculate_relevance(search_term, order["order_number"])
             })
             categories["purchase_orders"] += 1
+    
+    # Search purchase invoices
+    if not category or category == "purchase_invoices":
+        purchase_invoice_cursor = db.purchase_invoices.find({
+            "$or": [
+                {"invoice_number": {"$regex": pattern}},
+                {"supplier_name": {"$regex": pattern}}
+            ]
+        }).limit(limit // 10 if not category else limit)
+        
+        async for invoice in purchase_invoice_cursor:
+            results.append({
+                "id": invoice.get("id") or str(invoice.get("_id")),
+                "type": "purchase_invoice",
+                "title": f"Purchase Invoice {invoice.get('invoice_number','')}",
+                "subtitle": invoice.get("supplier_name", ""),
+                "description": f"₹{invoice.get('total_amount', 0)} - {invoice.get('status', 'draft')}",
+                "url": f"/buying/purchase-invoices/{invoice.get('id')}",
+                "relevance": calculate_relevance(search_term, invoice.get("invoice_number", ""))
+            })
+            categories["purchase_invoices"] = categories.get("purchase_invoices", 0) + 1
+
+    # Search credit notes
+    if not category or category == "credit_notes":
+        credit_note_cursor = db.credit_notes.find({
+            "$or": [
+                {"credit_note_number": {"$regex": pattern}},
+                {"customer_name": {"$regex": pattern}}
+            ]
+        }).limit(limit // 10 if not category else limit)
+        
+        async for note in credit_note_cursor:
+            results.append({
+                "id": note.get("id") or str(note.get("_id")),
+                "type": "credit_note",
+                "title": f"Credit Note {note.get('credit_note_number','')}",
+                "subtitle": note.get("customer_name", ""),
+                "description": f"₹{note.get('total_amount', 0)} - {note.get('reason', 'Return')}",
+                "url": f"/sales/credit-notes/{note.get('id')}",
+                "relevance": calculate_relevance(search_term, note.get("credit_note_number", ""))
+            })
+            categories["credit_notes"] = categories.get("credit_notes", 0) + 1
+
+    # Search debit notes
+    if not category or category == "debit_notes":
+        debit_note_cursor = db.debit_notes.find({
+            "$or": [
+                {"debit_note_number": {"$regex": pattern}},
+                {"supplier_name": {"$regex": pattern}}
+            ]
+        }).limit(limit // 10 if not category else limit)
+        
+        async for note in debit_note_cursor:
+            results.append({
+                "id": note.get("id") or str(note.get("_id")),
+                "type": "debit_note",
+                "title": f"Debit Note {note.get('debit_note_number','')}",
+                "subtitle": note.get("supplier_name", ""),
+                "description": f"₹{note.get('total_amount', 0)} - {note.get('reason', 'Return')}",
+                "url": f"/buying/debit-notes/{note.get('id')}",
+                "relevance": calculate_relevance(search_term, note.get("debit_note_number", ""))
+            })
+            categories["debit_notes"] = categories.get("debit_notes", 0) + 1
     
     # Search transactions
     if not category or category == "transactions":
