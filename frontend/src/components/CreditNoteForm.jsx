@@ -315,12 +315,26 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
                   {form.items.map((item, index) => (
                     <tr key={index}>
                       <td className="px-3 py-2">
-                        <input
+                        <select
                           value={item.item_name}
                           onChange={e => updateItem(index, 'item_name', e.target.value)}
                           className="w-full px-2 py-1 border rounded text-sm"
-                          placeholder="Item name"
-                        />
+                        >
+                          <option value="">Select Item</option>
+                          {masterItems.map(masterItem => (
+                            <option key={masterItem.id} value={masterItem.name}>
+                              {masterItem.name} - {new Intl.NumberFormat('en-IN', {style:'currency',currency:'INR'}).format(masterItem.unit_price || 0)}
+                            </option>
+                          ))}
+                        </select>
+                        {item.item_name && !masterItems.find(mi => mi.name === item.item_name) && (
+                          <input
+                            value={item.item_name}
+                            onChange={e => updateItem(index, 'item_name', e.target.value)}
+                            className="w-full px-2 py-1 border rounded text-sm mt-1"
+                            placeholder="Or enter custom item name"
+                          />
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         <input
