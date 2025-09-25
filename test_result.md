@@ -1645,6 +1645,29 @@ backend:
         agent: "main"
         comment: "Endpoint updated to accept filters and use aggregation with normalized date handling."
 
+  - task: "Credit Notes Calculation Fix - Tax on Discounted Amount"
+    implemented: true
+    working: true
+    file: "backend/routers/credit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ CREDIT NOTES CALCULATION FIX VERIFIED SUCCESSFULLY: Conducted comprehensive testing of Credit Notes calculation fix as requested in review. RESULTS: (1) ✅ CREATE Operation: Subtotal=₹350, Discount=₹50, Tax=₹54.00 (calculated on discounted amount ₹300), Total=₹354.00 - EXACT MATCH with expected values from review request (2) ✅ UPDATE Operation: Changed discount from ₹50 to ₹30, Tax=₹57.6 (calculated on discounted amount ₹320), Total=₹377.6 - Proper recalculation verified (3) ✅ Tax Calculation Logic: Tax is correctly calculated on (subtotal - discount_amount) not on original subtotal, following the correct order: subtotal - discount = discounted_total, then tax on discounted_total (4) ✅ All calculation scenarios tested successfully with 100% accuracy. The bug where tax was calculated on original subtotal instead of discounted amount has been fixed."
+
+  - task: "Debit Notes Calculation Fix - Tax on Discounted Amount"
+    implemented: true
+    working: true
+    file: "backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ DEBIT NOTES CALCULATION FIX VERIFIED SUCCESSFULLY: Conducted comprehensive testing of Debit Notes calculation fix as requested in review. RESULTS: (1) ✅ CREATE Operation: Subtotal=₹350, Discount=₹50, Tax=₹54.00 (calculated on discounted amount ₹300), Total=₹354.00 - EXACT MATCH with expected values from review request (2) ✅ UPDATE Operation: Changed discount from ₹50 to ₹25, Tax=₹58.5 (calculated on discounted amount ₹325), Total=₹383.5 - Proper recalculation verified (3) ✅ Tax Calculation Logic: Tax is correctly calculated on (subtotal - discount_amount) not on original subtotal, following the correct order: subtotal - discount = discounted_total, then tax on discounted_total (4) ✅ All calculation scenarios tested successfully with 100% accuracy. The bug where tax was calculated on original subtotal instead of discounted amount has been fixed."
 frontend:
   - task: "Sales Invoices List - Align layout with other modules"
     implemented: true
