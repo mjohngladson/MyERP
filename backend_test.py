@@ -6472,22 +6472,18 @@ class BackendTester:
             self.log_test("Debit Notes Calculation Fix", False, f"Error: {str(e)}")
             return False
     async def run_all_tests(self):
-        """Run backend tests focusing on Credit Notes and Debit Notes Real Email/SMS Integration"""
-        print("🚀 Starting GiLi Backend API Testing Suite - REAL EMAIL/SMS INTEGRATION TESTING")
+        """Run backend tests focusing on Credit Notes and Debit Notes Calculation Fix"""
+        print("🚀 Starting GiLi Backend API Testing Suite - CREDIT/DEBIT NOTES CALCULATION FIX TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Credit Notes and Debit Notes Real Email/SMS Integration")
-        print("🎯 Testing: Real SendGrid and Twilio integration (not demo mode)")
+        print("📊 Focus: Credit Notes and Debit Notes Calculation Fix")
+        print("🎯 Testing: Tax calculation on discounted amount (not original subtotal)")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_credentials_verification,             # Verify SendGrid and Twilio credentials
-            self.test_credit_notes_real_email_integration,  # Credit Notes Real Email Integration
-            self.test_credit_notes_real_sms_integration,    # Credit Notes Real SMS Integration
-            self.test_debit_notes_real_email_integration,   # Debit Notes Real Email Integration
-            self.test_debit_notes_real_sms_integration,     # Debit Notes Real SMS Integration
-            self.test_send_tracking_fields,                 # Send Tracking Fields Testing
+            self.test_credit_notes_calculation_fix,         # Credit Notes Calculation Fix Testing
+            self.test_debit_notes_calculation_fix,          # Debit Notes Calculation Fix Testing
         ]
         
         passed = 0
