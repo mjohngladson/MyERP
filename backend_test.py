@@ -7551,6 +7551,339 @@ class BackendTester:
             self.log_test("SendGrid Email Delivery", False, f"Error: {str(e)}")
             return False
 
+    async def test_uniform_sms_email_status_tracking(self):
+        """Test uniform SMS and email status tracking across ALL modules as requested by user"""
+        print("\n🧾 TESTING UNIFORM SMS/EMAIL STATUS TRACKING ACROSS ALL MODULES")
+        print("=" * 80)
+        
+        # Define all 6 modules to test
+        modules = [
+            {
+                "name": "Sales Invoices",
+                "create_endpoint": "/api/invoices/",
+                "send_endpoint": "/api/invoices/{id}/send",
+                "get_endpoint": "/api/invoices/{id}",
+                "collection_name": "sales_invoices",
+                "number_field": "invoice_number",
+                "create_payload": {
+                    "customer_name": "Test Customer for Uniform Tracking",
+                    "customer_email": "uniform.test@example.com",
+                    "customer_phone": "+919876543210",
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "status": "draft"
+                }
+            },
+            {
+                "name": "Sales Orders", 
+                "create_endpoint": "/api/sales/orders",
+                "send_endpoint": "/api/sales/orders/{id}/send",
+                "get_endpoint": "/api/sales/orders/{id}",
+                "collection_name": "sales_orders",
+                "number_field": "order_number",
+                "create_payload": {
+                    "customer_name": "Test Customer for Uniform Tracking",
+                    "customer_email": "uniform.test@example.com", 
+                    "customer_phone": "+919876543210",
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "status": "draft"
+                }
+            },
+            {
+                "name": "Purchase Orders",
+                "create_endpoint": "/api/purchase/orders",
+                "send_endpoint": "/api/purchase/orders/{id}/send", 
+                "get_endpoint": "/api/purchase/orders/{id}",
+                "collection_name": "purchase_orders",
+                "number_field": "order_number",
+                "create_payload": {
+                    "supplier_name": "Test Supplier for Uniform Tracking",
+                    "supplier_email": "uniform.test@example.com",
+                    "supplier_phone": "+919876543210", 
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "status": "draft"
+                }
+            },
+            {
+                "name": "Credit Notes",
+                "create_endpoint": "/api/sales/credit-notes",
+                "send_endpoint": "/api/sales/credit-notes/{id}/send",
+                "get_endpoint": "/api/sales/credit-notes/{id}",
+                "collection_name": "credit_notes", 
+                "number_field": "credit_note_number",
+                "create_payload": {
+                    "customer_name": "Test Customer for Uniform Tracking",
+                    "customer_email": "uniform.test@example.com",
+                    "customer_phone": "+919876543210",
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "reason": "Return"
+                }
+            },
+            {
+                "name": "Debit Notes",
+                "create_endpoint": "/api/buying/debit-notes", 
+                "send_endpoint": "/api/buying/debit-notes/{id}/send",
+                "get_endpoint": "/api/buying/debit-notes/{id}",
+                "collection_name": "debit_notes",
+                "number_field": "debit_note_number", 
+                "create_payload": {
+                    "supplier_name": "Test Supplier for Uniform Tracking",
+                    "supplier_email": "uniform.test@example.com",
+                    "supplier_phone": "+919876543210",
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "reason": "Return"
+                }
+            },
+            {
+                "name": "Quotations",
+                "create_endpoint": "/api/quotations",
+                "send_endpoint": "/api/quotations/{id}/send",
+                "get_endpoint": "/api/quotations/{id}",
+                "collection_name": "quotations",
+                "number_field": "quotation_number",
+                "create_payload": {
+                    "customer_name": "Test Customer for Uniform Tracking", 
+                    "customer_email": "uniform.test@example.com",
+                    "customer_phone": "+919876543210",
+                    "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100, "amount": 100}],
+                    "status": "draft"
+                }
+            }
+        ]
+        
+        # Expected uniform field structure
+        expected_fields = [
+            "email_sent_at",      # ISO timestamp when email was successfully sent
+            "sms_sent_at",        # ISO timestamp when SMS was successfully sent  
+            "email_status",       # "sent" or "failed"
+            "sms_status",         # "sent" or "failed"
+            "last_send_errors",   # { "email": "error message", "sms": "error message" }
+            "last_send_attempt_at", # ISO timestamp of last send attempt
+            "last_send_result"    # Full result object from send operations
+        ]
+        
+        created_documents = []
+        test_results = {}
+        
+        try:
+            # Test each module
+            for module in modules:
+                module_name = module["name"]
+                print(f"\n📋 Testing {module_name}...")
+                
+                # Step 1: Create test document
+                try:
+                    async with self.session.post(f"{self.base_url}{module['create_endpoint']}", json=module["create_payload"]) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("success"):
+                                doc_data = data.get(module["collection_name"].rstrip('s'), data.get("invoice", data.get("order", data.get("quotation", data.get("credit_note", data.get("debit_note"))))))
+                                if not doc_data:
+                                    # Try different response structure
+                                    doc_data = data
+                                doc_id = doc_data.get("id")
+                                if doc_id:
+                                    created_documents.append({"module": module_name, "id": doc_id, "endpoint": module["create_endpoint"]})
+                                    self.log_test(f"{module_name} - Document Creation", True, f"Created document with ID: {doc_id}")
+                                else:
+                                    self.log_test(f"{module_name} - Document Creation", False, "No ID returned in response")
+                                    continue
+                            else:
+                                self.log_test(f"{module_name} - Document Creation", False, f"Creation failed: {data}")
+                                continue
+                        else:
+                            self.log_test(f"{module_name} - Document Creation", False, f"HTTP {response.status}")
+                            continue
+                except Exception as e:
+                    self.log_test(f"{module_name} - Document Creation", False, f"Error: {str(e)}")
+                    continue
+                
+                # Step 2: Test email send and verify uniform field structure
+                try:
+                    send_payload = {
+                        "email": "uniform.tracking.test@example.com",
+                        "method": "email",
+                        "include_pdf": False
+                    }
+                    
+                    send_url = f"{self.base_url}{module['send_endpoint'].replace('{id}', doc_id)}"
+                    async with self.session.post(send_url, json=send_payload) as response:
+                        if response.status == 200:
+                            send_data = await response.json()
+                            self.log_test(f"{module_name} - Email Send", True, f"Email send response: {send_data.get('success', False)}")
+                        else:
+                            self.log_test(f"{module_name} - Email Send", False, f"HTTP {response.status}")
+                except Exception as e:
+                    self.log_test(f"{module_name} - Email Send", False, f"Error: {str(e)}")
+                
+                # Step 3: Test SMS send and verify uniform field structure  
+                try:
+                    send_payload = {
+                        "phone": "+919876543210",
+                        "method": "sms"
+                    }
+                    
+                    send_url = f"{self.base_url}{module['send_endpoint'].replace('{id}', doc_id)}"
+                    async with self.session.post(send_url, json=send_payload) as response:
+                        if response.status == 200:
+                            send_data = await response.json()
+                            self.log_test(f"{module_name} - SMS Send", True, f"SMS send response: {send_data.get('success', False)}")
+                        else:
+                            self.log_test(f"{module_name} - SMS Send", False, f"HTTP {response.status}")
+                except Exception as e:
+                    self.log_test(f"{module_name} - SMS Send", False, f"Error: {str(e)}")
+                
+                # Step 4: Verify uniform field structure by getting the document
+                try:
+                    get_url = f"{self.base_url}{module['get_endpoint'].replace('{id}', doc_id)}"
+                    async with self.session.get(get_url) as response:
+                        if response.status == 200:
+                            doc_data = await response.json()
+                            
+                            # Check for uniform field structure
+                            missing_fields = []
+                            present_fields = []
+                            field_types = {}
+                            
+                            for field in expected_fields:
+                                if field in doc_data:
+                                    present_fields.append(field)
+                                    field_types[field] = type(doc_data[field]).__name__
+                                else:
+                                    missing_fields.append(field)
+                            
+                            # Verify field data types and structure
+                            structure_issues = []
+                            
+                            # Check email_sent_at and sms_sent_at are ISO timestamps or None
+                            for timestamp_field in ["email_sent_at", "sms_sent_at"]:
+                                if timestamp_field in doc_data:
+                                    value = doc_data[timestamp_field]
+                                    if value is not None and not isinstance(value, str):
+                                        structure_issues.append(f"{timestamp_field} should be ISO string or None, got {type(value)}")
+                            
+                            # Check email_status and sms_status are "sent" or "failed" or None
+                            for status_field in ["email_status", "sms_status"]:
+                                if status_field in doc_data:
+                                    value = doc_data[status_field]
+                                    if value is not None and value not in ["sent", "failed"]:
+                                        structure_issues.append(f"{status_field} should be 'sent', 'failed', or None, got '{value}'")
+                            
+                            # Check last_send_errors is dict or None
+                            if "last_send_errors" in doc_data:
+                                value = doc_data["last_send_errors"]
+                                if value is not None and not isinstance(value, dict):
+                                    structure_issues.append(f"last_send_errors should be dict or None, got {type(value)}")
+                            
+                            # Check last_send_result is dict or None
+                            if "last_send_result" in doc_data:
+                                value = doc_data["last_send_result"]
+                                if value is not None and not isinstance(value, dict):
+                                    structure_issues.append(f"last_send_result should be dict or None, got {type(value)}")
+                            
+                            # Record results for this module
+                            test_results[module_name] = {
+                                "present_fields": present_fields,
+                                "missing_fields": missing_fields,
+                                "field_types": field_types,
+                                "structure_issues": structure_issues,
+                                "document_data": {k: v for k, v in doc_data.items() if k in expected_fields}
+                            }
+                            
+                            if not missing_fields and not structure_issues:
+                                self.log_test(f"{module_name} - Uniform Field Structure", True, 
+                                            f"All {len(expected_fields)} uniform fields present with correct types")
+                            else:
+                                issues = []
+                                if missing_fields:
+                                    issues.append(f"Missing: {missing_fields}")
+                                if structure_issues:
+                                    issues.append(f"Type issues: {structure_issues}")
+                                self.log_test(f"{module_name} - Uniform Field Structure", False, 
+                                            f"Structure issues found: {'; '.join(issues)}")
+                        else:
+                            self.log_test(f"{module_name} - Document Retrieval", False, f"HTTP {response.status}")
+                except Exception as e:
+                    self.log_test(f"{module_name} - Document Retrieval", False, f"Error: {str(e)}")
+            
+            # Step 5: Compare field structures across all modules for uniformity
+            if len(test_results) > 1:
+                print(f"\n🔍 ANALYZING UNIFORMITY ACROSS {len(test_results)} MODULES...")
+                
+                # Get reference structure from first successful module
+                reference_module = None
+                reference_structure = None
+                
+                for module_name, results in test_results.items():
+                    if not results["missing_fields"] and not results["structure_issues"]:
+                        reference_module = module_name
+                        reference_structure = results
+                        break
+                
+                if reference_structure:
+                    uniformity_issues = []
+                    
+                    for module_name, results in test_results.items():
+                        if module_name == reference_module:
+                            continue
+                        
+                        # Compare field presence
+                        if set(results["present_fields"]) != set(reference_structure["present_fields"]):
+                            diff_fields = set(reference_structure["present_fields"]) - set(results["present_fields"])
+                            uniformity_issues.append(f"{module_name} missing fields that {reference_module} has: {diff_fields}")
+                        
+                        # Compare field types for common fields
+                        for field in results["present_fields"]:
+                            if field in reference_structure["field_types"]:
+                                if results["field_types"][field] != reference_structure["field_types"][field]:
+                                    uniformity_issues.append(f"{module_name}.{field} type ({results['field_types'][field]}) != {reference_module}.{field} type ({reference_structure['field_types'][field]})")
+                    
+                    if not uniformity_issues:
+                        self.log_test("Cross-Module Uniformity Check", True, 
+                                    f"All {len(test_results)} modules have identical field structure and types")
+                    else:
+                        self.log_test("Cross-Module Uniformity Check", False, 
+                                    f"Uniformity issues found: {'; '.join(uniformity_issues[:3])}...")  # Show first 3 issues
+                else:
+                    self.log_test("Cross-Module Uniformity Check", False, 
+                                "No reference module found with complete uniform structure")
+            
+            # Step 6: Test backward compatibility with legacy fields
+            print(f"\n🔄 TESTING BACKWARD COMPATIBILITY...")
+            legacy_fields = ["sent_at", "sent_via"]
+            
+            for module_name, results in test_results.items():
+                doc_data = results.get("document_data", {})
+                legacy_present = [field for field in legacy_fields if field in doc_data]
+                
+                if legacy_present:
+                    self.log_test(f"{module_name} - Legacy Field Compatibility", True, 
+                                f"Legacy fields present: {legacy_present}")
+                else:
+                    self.log_test(f"{module_name} - Legacy Field Compatibility", False, 
+                                "No legacy fields (sent_at, sent_via) found for backward compatibility")
+            
+        finally:
+            # Cleanup: Delete created test documents
+            print(f"\n🧹 CLEANING UP {len(created_documents)} TEST DOCUMENTS...")
+            for doc in created_documents:
+                try:
+                    delete_url = f"{self.base_url}{doc['endpoint']}/{doc['id']}"
+                    async with self.session.delete(delete_url) as response:
+                        if response.status == 200:
+                            self.log_test(f"Cleanup - {doc['module']}", True, f"Deleted test document {doc['id']}")
+                        else:
+                            self.log_test(f"Cleanup - {doc['module']}", False, f"Failed to delete {doc['id']}: HTTP {response.status}")
+                except Exception as e:
+                    self.log_test(f"Cleanup - {doc['module']}", False, f"Error deleting {doc['id']}: {str(e)}")
+        
+        # Summary of uniform tracking test
+        print(f"\n📊 UNIFORM TRACKING TEST SUMMARY:")
+        print(f"   Modules Tested: {len(modules)}")
+        print(f"   Expected Fields: {len(expected_fields)}")
+        print(f"   Test Documents Created: {len(created_documents)}")
+        
+        return len(test_results) > 0
+
     async def run_all_tests(self):
         """Run backend tests focusing on CRITICAL FIXES for user-reported issues"""
         print("🚀 Starting GiLi Backend API Testing Suite - CRITICAL FIXES TESTING")
