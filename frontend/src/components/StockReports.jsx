@@ -14,16 +14,34 @@ const StockReports = ({ onBack, embed = false }) => {
     try {
       const res = await fetch(`${base}/api/stock/valuation/report`);
       const data = await res.json();
-      setValuation(data);
-    } catch (e) { console.error(e); } finally { setLoading(false); }
+      // Ensure we always have the expected structure
+      setValuation({
+        rows: Array.isArray(data?.rows) ? data.rows : [],
+        total_value: data?.total_value || 0
+      });
+    } catch (e) { 
+      console.error('Failed to load valuation report:', e); 
+      setValuation({ rows: [], total_value: 0 });
+    } finally { 
+      setLoading(false); 
+    }
   };
+  
   const loadReorder = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${base}/api/stock/reorder/report`);
       const data = await res.json();
-      setReorder(data);
-    } catch (e) { console.error(e); } finally { setLoading(false); }
+      // Ensure we always have the expected structure
+      setReorder({
+        rows: Array.isArray(data?.rows) ? data.rows : []
+      });
+    } catch (e) { 
+      console.error('Failed to load reorder report:', e); 
+      setReorder({ rows: [] });
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   React.useEffect(()=>{
