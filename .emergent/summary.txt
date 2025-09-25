@@ -1,60 +1,63 @@
 <analysis>
-The AI engineer successfully built core ERP modules (Sales, Quotation, Purchase) from an MVP, and then focused on fixing critical bugs and expanding functionality. Initial tasks involved UI alignment, filter-aware statistics, and responsive search. Significant effort went into resolving frontend JSX errors, backend 502/500 errors, and ensuring data loading and API robustness through  retries. Key features developed include a collapsible sidebar with persistence, an accordion style, and comprehensive Create and Global Search features with quick actions and improved navigation. Later, a full Stock module was added, along with CRUD for Master Data (Items, Customers, Suppliers). All new features are driven by a new, consolidated General Settings system. The trajectory shows an iterative process of bug fixing, feature implementation, and extensive communication with the user for clarifications and verification, with a strong emphasis on robust API interaction and UI consistency. The persistent 502 errors, initially thought to be backend, were eventually correlated with ingress issues and frontend retry logic.
+The AI engineer successfully progressed the GiLi ERP application from an MVP to a feature-rich retail solution. Key accomplishments include implementing comprehensive Master Data (Items, Customers, Suppliers) with configurable fields driven by a consolidated General Settings system. The project also saw the addition of full Credit Note and Debit Note modules, complete with CRUD, view pages, collapsible/filter-aware statistics, and a Send functionality. Throughout this, the engineer addressed several critical bugs, such as incorrect dropdown data population, UI stretching in lists, a runtime error in reports caused by missing backend endpoints, and issues with the send modal. The work demonstrates an iterative approach, fixing bugs while expanding core ERP functionality. The current focus is on integrating real-time SMS/email services and enhancing user experience by replacing static dropdowns with dynamic autocomplete search for master data selection.
 </analysis>
 
 <product_requirements>
-The GiLi project aims to be a comprehensive React/FastAPI/MongoDB ERPNext MVP clone, including an offline Electron PoS. Initial requirements covered CRUD APIs, authentication, global search, and advanced reporting. The project expanded to a full-fledged app for retail, starting with a complete Sales Invoice System (pre-Sales Orders, tax calculations). This grew to full CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, and Quotations, with advanced list features (sorting, filtering, debounced search) and manual status changes. Subsequently, Purchase Order and Purchase Invoice modules were implemented similarly, followed by filter-aware statistics for all modules, consistent UI alignment, and 500ms debounced search. Recent user-driven requirements include a collapsible/persistent sidebar, robust Create and Global Search functionality, a complete Stock module (Items, Warehouses, Stock Entries, Ledger, Reports, Batches/Serials), and full CRUD for Items, Customers, and Suppliers with rich, configurable fields based on ERP for retail standards, all managed via a consolidated General Settings system.
+The GiLi project aims to be a comprehensive React/FastAPI/MongoDB ERPNext MVP clone, including an offline Electron PoS, designed for retail. Initial requirements covered CRUD APIs, authentication, global search, and advanced reporting. The application expanded to include a complete Sales Invoice System, which evolved to full CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, and Quotations, alongside advanced list features (sorting, filtering, debounced search) and manual status changes. Subsequently, Purchase Order and Purchase Invoice modules were implemented. Recent user requirements have driven the development of a collapsible/persistent sidebar, robust Create and Global Search features, a complete Stock module (Items, Warehouses, Stock Entries, Ledger, Reports), and full CRUD for Items, Customers, and Suppliers with rich, configurable fields based on ERP for retail standards, all managed via a consolidated General Settings system. Most recently, Credit Note and Debit Note modules were added, and the current focus is on implementing real SMS/Email functionality and dynamic item/customer population.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack Architecture**: React (Frontend), FastAPI (Backend), MongoDB (Database).
--   **Deployment**: Railway, Docker, Supervisor, Kubernetes (Ingress).
--   **Data Management**: Pydantic (UUIDs), Axios (frontend API client with retries/backoff),  (for UI state persistence).
--   **UI/UX**: Tailwind CSS, Shadcn/ui.
--   **Authentication**: JWT, React Context ().
+- **Full-stack Architecture**: React (Frontend), FastAPI (Backend), MongoDB (Database).
+- **Deployment**: Railway, Docker, Supervisor, Kubernetes (Ingress).
+- **Data Management**: Pydantic (UUIDs), Axios (frontend API client with retries/backoff), .
+- **UI/UX**: Tailwind CSS, Shadcn/ui.
+- **Authentication**: JWT, React Context ().
+- **Third-Party Integrations**: Emergentintegrations for Email and Twilio for SMS.
 </key_technical_concepts>
 
 <code_architecture>
 
--   : Defines Pydantic models.  and  were recently restored.
--   : Updated to fetch real-time aggregated data for KPI cards.
--   : **NEW**. Implements CRUD for Warehouses, Stock Entries, Ledger, and reports.
--   : **NEW**. Handles global search suggestions/results with robust matching.
--   : **NEW**. Provides CRUD endpoints for Customers, Suppliers, and Items.
--   : **NEW**. Centralized API endpoint for all application settings;  now proxies to this.
--   : Central routing, updated to include new components and sidebar state handling.
--   : Heavily modified for collapse/expand, persistence (), accordion behavior, and icon updates.
--   : **NEW**. Implements global search modal with debounced suggestions, quick actions, and navigation.
--   : UI fixed for stretching (removed Due Date, adjusted ), converted to use centralized  client.
--   : Updated to use centralized  client; stats fixed to honor filters.
--   : **NEW**. Full CRUD UI for managing warehouses.
--   : **NEW**. Form for stock entries with conditional fields based on .
--   : **NEW**. Consolidated UI for stock valuation and reorder reports.
--   , , : **NEW**. List views for master data. CRUD for Customers/Suppliers implemented; ItemsList CRUD is in progress.
--   : **NEW**. Replaces . Unified settings page with tabs.
--   : Centralized API calls using , refactored with global timeout, retries (exponential backoff), and module-specific methods.
+-   : Modified to include missing  and  endpoints crucial for stock reporting.
+-   : Enhanced to support rich, configurable fields for Items, Customers, and Suppliers, integrating with .
+-    (NEW): Implements the backend API for Credit Note CRUD operations and Send functionality.
+-    (NEW): Implements the backend API for Debit Note CRUD operations and Send functionality.
+-   : Updated to register the new  and  routers.
+-   : Modified to include support for PDF attachments when sending emails.
+-   : Updated to reflect its mocked status and future integration.
+-   : Central routing; updated to integrate new Credit/Debit Note components, views, and associated navigation logic.
+-   : Modified to include new Credit/Debit Note menu items and correct the navigation path for Settings.
+-   : User profile dropdown in the header; modified to remove the redundant Settings link.
+-   : Enhanced to display full order details, including line items.
+-   : Critical bug fix applied by adding robust error handling and default array values for  and  to prevent runtime errors when API data is .
+-   , , : Rewritten/modified to implement full CRUD with rich, conditional fields driven by General Settings, and UI fixes for text truncation in list grids.
+-    (NEW): UI for listing Credit Notes, including collapsible/filter-aware stats and send functionality with PDF attachment support.
+-    (NEW): Form for Credit Note creation/editing, enhanced with dynamic item/customer selection.
+-    (NEW): Component for viewing detailed Credit Note information.
+-    (NEW): UI for listing Debit Notes, with collapsible/filter-aware stats and send functionality with PDF attachment support.
+-    (NEW): Form for Debit Note creation/editing, enhanced with dynamic item/supplier selection.
+-    (NEW): Component for viewing detailed Debit Note information.
+-   : Centralized API client; updated to include new endpoints for General Settings, Credit Notes, and Debit Notes.
 </code_architecture>
 
 <pending_tasks>
--   Finish Items CRUD UI (list + create/edit/delete).
--   Improve Sales Order View to show full details.
--   Enable Sales Invoice view/edit with centralized API client.
--   Wire up Reports navigation fully.
--   Fix Global Search quick action for Stock Entry.
--   Run automated UI tests to verify functionality post-current changes.
+- Finish automated UI tests for the frontend to verify all new features and bug fixes.
+- Resolve the persistent sidebar navigation issues, specifically z-index overlay problems.
+- Implement real SMS functionality using Twilio.
+- Implement real email functionality using Emergentintegrations' Email Service.
+- Replace static dropdowns for item and customer selection with autocomplete search inputs in relevant forms.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was focused on implementing detailed ERP retail-ready fields for Items, Customers, and Suppliers, with their visibility and defaults driven by a new, consolidated General Settings system.
-
-This involves:
-1.  **General Settings**: Backend () is fully implemented with defaults for tax, variants, UoMs, payment terms, and consolidated stock sub-settings. The frontend () provides a new consolidated UI with tabs (Tax, Items, Stock, Payments) replacing the standalone Stock Settings.
-2.  **Master Data CRUD**: Backend endpoints are set up for Customers, Suppliers, and Items. Frontend  and  with full CRUD are implemented.  is in place, and its CRUD UI is being finalized with conditional fields based on  (e.g., GST fields, item variants).
-3.  **Sales Module Enhancements**: The task is to fix  to load by ID and render full details, and to enable  view/edit flows from the list, utilizing the centralized API client.
-4.  **Reports and Search**: Ensuring the top-level Reports link correctly opens the consolidated Valuation/Reorder page, and fixing the Stock Entry quick action in Global Search to navigate to .
-5.  **Overall Stability**: Continued conversion of  calls to the centralized  client with retries and exponential backoff, and ensuring all new forms and UI elements respect the new General Settings for conditional field visibility.
+Immediately prior to this summary, the AI engineer was systematically addressing a list of critical bugs and functionality enhancements for the recently implemented Credit Note and Debit Note modules, as well as general UI/UX issues. These included:
+1.  **Bug Fixes**:
+    *   **Send Modal Contact Field**: Corrected an issue in  and  where email addresses were incorrectly populating the phone field when switching send methods.
+    *   **Amount Calculation**: Verified that the amount calculation in  was already correct.
+    *   **Dynamic Item/Customer/Supplier Population**: Enhanced  and  to load items, customers, and suppliers dynamically from master data, initially using dropdowns, to ensure data consistency.
+    *   **PDF Attachment for Email**: Added support for attaching PDFs to emails in the backend () and integrated this functionality into the frontend Send modals.
+    *   **Feedback Messages**: Improved frontend feedback messages for user actions.
+2.  **Preparations for Advanced UX/Integrations**: Following user feedback, the engineer has started the process to transition from mocked SMS/email to real integrations and replace static dropdowns with autocomplete search inputs. The integration playbooks for  and  (for SMS) have been successfully retrieved.
 </current_work>
 
 <optional_next_step>
-Run automated frontend UI tests to verify navigation, CRUD flows, settings-driven visibility, Sales Order/Invoice views, Reports link, and quick actions.
+Request API keys from the user for the Email Service and Twilio integrations based on the received playbooks.
 </optional_next_step>

@@ -8,7 +8,7 @@ import asyncio
 import aiohttp
 import json
 
-BACKEND_URL = "https://inventrack-34.preview.emergentagent.com"
+BACKEND_URL = "https://crediti-debi.preview.emergentagent.com"
 
 async def investigate_calculation_error():
     """
