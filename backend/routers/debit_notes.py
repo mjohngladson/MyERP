@@ -248,45 +248,26 @@ async def send_debit_note(debit_note_id: str, body: Dict[str, Any]):
         else:
             raise HTTPException(status_code=400, detail="Invalid method. Use 'email' or 'sms'")
         
-        # Update send status based on result with individual tracking (uniform format)
+        # Use uniform send tracking service
+        from services.send_tracking import create_uniform_send_update, get_uniform_send_response
+        
+        # Build send results in expected format
+        send_results = {method: send_result} if send_result else {}
+        
+        # Build errors dict
         errors = {}
         if send_result and not send_result.get("success"):
-            error_msg = send_result.get("error", "Unknown error")
-            if method == "email":
-                errors["email"] = error_msg
-            elif method == "sms":
-                errors["sms"] = error_msg
+            errors[method] = send_result.get("error", "Unknown error")
         
-        update_data = {
-            "last_send_result": {method: send_result} if send_result else {},
-            "last_send_errors": errors,
-            "last_send_attempt_at": now,
-            "sent_to": recipient,
-            "send_method": method,
-            "pdf_attached": attach_pdf if method == "email" else False,
-            "updated_at": now
-        }
+        # Determine sent_via list
+        sent_via = [method] if send_result and send_result.get("success") else []
         
-        if send_result and send_result.get("success"):
-            update_data["last_sent_at"] = now
-            if method == "email":
-                update_data["email_sent_at"] = now
-                update_data["email_status"] = "sent"
-            elif method == "sms":
-                update_data["sms_sent_at"] = now
-                update_data["sms_status"] = "sent"
-        else:
-            if method == "email":
-                update_data["email_status"] = "failed"
-            elif method == "sms":
-                update_data["sms_status"] = "failed"
-        
-        # Keep legacy sent_at for backward compatibility
-        if send_result and send_result.get("success"):
-            update_data.update({
-                "sent_at": now,
-                "sent_via": [method]
-            })
+        update_data = create_uniform_send_update(
+            send_results=send_results,
+            method=method,
+            recipient=recipient,
+            attach_pdf=attach_pdf
+        )
         
         await debit_notes_collection.update_one(
             {"id": debit_note_id}, 
