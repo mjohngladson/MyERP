@@ -4695,18 +4695,19 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on Items CRUD API and Sales Order Detail API"""
-        print("🚀 Starting GiLi Backend API Testing Suite - ITEMS CRUD & SALES ORDER DETAIL API TEST")
+        """Run backend tests focusing on Stock Reports API endpoints"""
+        print("🚀 Starting GiLi Backend API Testing Suite - STOCK REPORTS API TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("📊 Focus: Items CRUD API endpoints and Sales Order Detail API testing")
+        print("📊 Focus: Stock Reports API endpoints causing frontend runtime errors")
+        print("🎯 Testing: /api/stock/valuation/report and /api/stock/reorder/report")
         print("=" * 80)
         
         # Tests to run (as requested in review)
         tests_to_run = [
-            self.test_basic_api_health_checks,  # Basic API health checks
-            self.test_items_crud_operations,    # Items CRUD API testing
-            self.test_sales_order_detail_api,   # Sales Order Detail API testing
-            self.test_general_settings_api,     # General Settings API testing
+            self.test_health_check,              # Basic API health check
+            self.test_stock_valuation_report,    # Stock Valuation Report API
+            self.test_stock_reorder_report,      # Stock Reorder Report API  
+            self.test_stock_reports_error_handling,  # Error handling tests
         ]
         
         passed = 0
