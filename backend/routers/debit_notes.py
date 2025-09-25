@@ -248,7 +248,7 @@ async def send_debit_note(debit_note_id: str, body: Dict[str, Any]):
         else:
             raise HTTPException(status_code=400, detail="Invalid method. Use 'email' or 'sms'")
         
-        # Update send status based on result
+        # Update send status based on result with individual tracking
         update_data = {
             "last_send_attempt_at": now,
             "sent_to": recipient,
@@ -259,9 +259,26 @@ async def send_debit_note(debit_note_id: str, body: Dict[str, Any]):
         
         if send_result and send_result.get("success"):
             update_data["last_sent_at"] = now
+            if method == "email":
+                update_data["email_sent_at"] = now
+                update_data["email_status"] = "sent"
+            elif method == "sms":
+                update_data["sms_sent_at"] = now
+                update_data["sms_status"] = "sent"
             update_data.pop("last_send_error", None)
         else:
-            update_data["last_send_error"] = send_result.get("error", "Unknown error") if send_result else "Unknown error"
+            error_msg = send_result.get("error", "Unknown error") if send_result else "Unknown error"
+            update_data["last_send_error"] = error_msg
+            if method == "email":
+                update_data["email_status"] = "failed"
+                if "last_send_errors" not in update_data:
+                    update_data["last_send_errors"] = {}
+                update_data["last_send_errors"]["email"] = error_msg
+            elif method == "sms":
+                update_data["sms_status"] = "failed"
+                if "last_send_errors" not in update_data:
+                    update_data["last_send_errors"] = {}
+                update_data["last_send_errors"]["sms"] = error_msg
         
         await debit_notes_collection.update_one(
             {"id": debit_note_id}, 
