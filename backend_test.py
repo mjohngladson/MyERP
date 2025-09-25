@@ -5810,16 +5810,16 @@ class BackendTester:
             return 0, 1
 
 async def main():
-    """Main function to run Stability and Intermittency Tests"""
+    """Main function to run Stock Reports API Tests"""
     async with BackendTester() as tester:
-        # Run stability and intermittency tests as requested in review
-        passed, failed = await tester.run_stability_tests_only()
+        # Run stock reports API tests as requested in review
+        passed, total, results = await tester.run_all_tests()
         
-        if passed > 0 and failed == 0:
-            print("🎉 Stability and Intermittency Tests PASSED!")
+        if passed > 0 and passed == total:
+            print("🎉 Stock Reports API Tests PASSED!")
             return 0
         else:
-            print("💥 Stability and Intermittency Tests detected issues!")
+            print("💥 Stock Reports API Tests detected critical issues!")
             return 1
 
 if __name__ == "__main__":
