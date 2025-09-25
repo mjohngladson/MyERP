@@ -144,8 +144,37 @@ async def create_item(body: Dict[str, Any]):
         "name": body.get("name"),
         "item_code": body.get("item_code"),
         "category": body.get("category"),
+        "description": body.get("description"),
         "unit_price": float(body.get("unit_price", 0) or 0),
+        "cost_price": float(body.get("cost_price", 0) or 0),
+        "uom": body.get("uom", "NOS"),
+        
+        # GST/Tax fields
+        "hsn_code": body.get("hsn_code"),
+        "gst_rate": float(body.get("gst_rate", 0) or 0),
+        
+        # Inventory fields
+        "track_inventory": body.get("track_inventory", True),
+        "min_qty": float(body.get("min_qty", 0) or 0),
+        "max_qty": float(body.get("max_qty", 0) or 0),
+        "reorder_level": float(body.get("reorder_level", 0) or 0),
+        
+        # Variant fields
+        "has_variants": body.get("has_variants", False),
+        "variant_attributes": body.get("variant_attributes", []),  # ["Size", "Color"]
+        
+        # Dimensions & Weight
+        "weight": float(body.get("weight", 0) or 0),
+        "length": float(body.get("length", 0) or 0),
+        "width": float(body.get("width", 0) or 0),
+        "height": float(body.get("height", 0) or 0),
+        
+        # Status & Settings
+        "is_service": body.get("is_service", False),
+        "is_purchase": body.get("is_purchase", True),
+        "is_sales": body.get("is_sales", True),
         "active": body.get("active", True),
+        
         "created_at": now_utc(),
         "updated_at": now_utc(),
     }
@@ -161,12 +190,23 @@ async def get_item(iid: str):
 
 @router.put("/stock/items/{iid}")
 async def update_item(iid: str, body: Dict[str, Any]):
-    upd = {k: body.get(k) for k in ["name", "item_code", "category", "unit_price", "active"] if k in body}
-    if "unit_price" in upd:
-        try:
-            upd["unit_price"] = float(upd["unit_price"])
-        except Exception:
-            upd["unit_price"] = 0
+    allowed_fields = [
+        "name", "item_code", "category", "description", "unit_price", "cost_price", 
+        "uom", "hsn_code", "gst_rate", "track_inventory", "min_qty", "max_qty", 
+        "reorder_level", "has_variants", "variant_attributes", "weight", "length", 
+        "width", "height", "is_service", "is_purchase", "is_sales", "active"
+    ]
+    upd = {k: body.get(k) for k in allowed_fields if k in body}
+    
+    # Handle float fields
+    float_fields = ["unit_price", "cost_price", "gst_rate", "min_qty", "max_qty", "reorder_level", "weight", "length", "width", "height"]
+    for field in float_fields:
+        if field in upd:
+            try:
+                upd[field] = float(upd[field] or 0)
+            except Exception:
+                upd[field] = 0
+    
     if not upd:
         return {"success": True}
     upd["updated_at"] = now_utc()
