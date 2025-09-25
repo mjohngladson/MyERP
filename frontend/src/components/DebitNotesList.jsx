@@ -323,7 +323,7 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                 <label className="block text-sm font-medium text-gray-700 mb-2">Send Method</label>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => setSendMethod('email')}
+                    onClick={() => handleSendMethodChange('email')}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
                       sendMethod === 'email' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
                     }`}
@@ -332,7 +332,7 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                     <span>Email</span>
                   </button>
                   <button
-                    onClick={() => setSendMethod('sms')}
+                    onClick={() => handleSendMethodChange('sms')}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md border ${
                       sendMethod === 'sms' ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300'
                     }`}
@@ -355,6 +355,20 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                   placeholder={sendMethod === 'email' ? 'supplier@email.com' : '+91 9876543210'}
                 />
               </div>
+
+              {sendMethod === 'email' && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={attachPdf}
+                    onChange={e => setAttachPdf(e.target.checked)}
+                    id="attach-pdf-debit"
+                  />
+                  <label htmlFor="attach-pdf-debit" className="text-sm text-gray-600">
+                    Attach PDF
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end space-x-2">
