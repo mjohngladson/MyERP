@@ -91,10 +91,13 @@ const CreditNotesList = ({ onBack, onViewCreditNote, onEditCreditNote, onCreateC
         attach_pdf: attachPdf
       };
 
-      await api.post(`/sales/credit-notes/${sendingNote.id}/send`, payload);
+      const response = await api.post(`/sales/credit-notes/${sendingNote.id}/send`, payload);
       setShowSendModal(false);
       load(); // Refresh to show updated send status
-      alert('Credit note sent successfully!');
+      
+      // Show appropriate message based on response
+      const message = response.data?.message || 'Credit note sent successfully!';
+      alert(message);
     } catch (e) {
       alert(e?.response?.data?.detail || 'Failed to send credit note');
     }
