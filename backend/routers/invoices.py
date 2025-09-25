@@ -389,7 +389,7 @@ async def send_invoice_email(invoice_id: str, email_data: dict):
             "result": results,
             "errors": errors,
             "sent_via": sent_via,
-            "sent_at": sent_at_iso,
+            "sent_at": current_time_iso,
         }
 
     except HTTPException:
