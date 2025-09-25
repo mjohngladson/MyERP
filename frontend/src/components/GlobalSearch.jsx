@@ -204,7 +204,43 @@ const GlobalSearch = ({ isOpen, onClose, onNavigate }) => {
     try { localStorage.setItem('gili_recent_searches', JSON.stringify(newRecent)); } catch (e) { /* no-op */ }
     
     if (onNavigate) {
-      const path = result.path || inferPathFromType(result);
+      // Navigate to individual detail pages based on result type and ID
+      let path;
+      switch (result.type) {
+        case 'customer':
+          path = `/sales/customers/${result.id}`;
+          break;
+        case 'supplier':
+          path = `/buying/suppliers/${result.id}`;
+          break;
+        case 'item':
+          path = `/stock/items/${result.id}`;
+          break;
+        case 'sales_order':
+          path = `/sales/orders/${result.id}`;
+          break;
+        case 'sales_invoice':
+        case 'invoice':
+          path = `/sales/invoices/${result.id}`;
+          break;
+        case 'purchase_order':
+          path = `/buying/purchase-orders/${result.id}`;
+          break;
+        case 'purchase_invoice':
+          path = `/buying/purchase-invoices/${result.id}`;
+          break;
+        case 'quotation':
+          path = `/sales/quotations/${result.id}`;
+          break;
+        case 'credit_note':
+          path = `/sales/credit-notes/${result.id}`;
+          break;
+        case 'debit_note':
+          path = `/buying/debit-notes/${result.id}`;
+          break;
+        default:
+          path = result.path || inferPathFromType(result);
+      }
       onNavigate(path);
     }
     onClose();
