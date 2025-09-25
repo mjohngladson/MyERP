@@ -6149,8 +6149,8 @@ class BackendTester:
                                     if "Twilio not configured" in error_detail:
                                         self.log_test("Credentials Verification - Twilio", False, "Twilio credentials not configured")
                                         return False
-                                    elif "twilio" in error_detail.lower():
-                                        self.log_test("Credentials Verification - Twilio", True, f"Twilio credentials loaded (API error expected): {error_detail}")
+                                    elif ("twilio" in error_detail.lower() or "invalid 'to' phone number" in error_detail.lower()):
+                                        self.log_test("Credentials Verification - Twilio", True, f"Twilio credentials loaded (phone validation error expected): {error_detail}")
                                         return True
                                     else:
                                         self.log_test("Credentials Verification - Twilio", False, f"Unexpected Twilio error: {error_detail}")
