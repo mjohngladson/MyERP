@@ -237,6 +237,51 @@ export const api = {
     getGeneral: () => makeRequest(() => apiClient.get('/settings/general')),
     updateGeneral: (data) => makeRequest(() => apiClient.put('/settings/general', data)),
   },
+
+  // Financial Management
+  financial: {
+    // Chart of Accounts
+    accounts: {
+      list: (params = {}) => makeRequest(() => apiClient.get('/financial/accounts', { params })),
+      create: (data) => makeRequest(() => apiClient.post('/financial/accounts', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/financial/accounts/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/financial/accounts/${id}`, data)),
+      delete: (id) => makeRequest(() => apiClient.delete(`/financial/accounts/${id}`)),
+    },
+    
+    // Journal Entries
+    journalEntries: {
+      list: (params = {}) => makeRequest(() => apiClient.get('/financial/journal-entries', { params })),
+      create: (data) => makeRequest(() => apiClient.post('/financial/journal-entries', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/financial/journal-entries/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/financial/journal-entries/${id}`, data)),
+      post: (id) => makeRequest(() => apiClient.post(`/financial/journal-entries/${id}/post`)),
+    },
+    
+    // Payments
+    payments: {
+      list: (params = {}) => makeRequest(() => apiClient.get('/financial/payments', { params })),
+      create: (data) => makeRequest(() => apiClient.post('/financial/payments', data)),
+      get: (id) => makeRequest(() => apiClient.get(`/financial/payments/${id}`)),
+      update: (id, data) => makeRequest(() => apiClient.put(`/financial/payments/${id}`, data)),
+    },
+    
+    // Reports
+    reports: {
+      trialBalance: (params = {}) => makeRequest(() => apiClient.get('/financial/reports/trial-balance', { params })),
+      profitLoss: (params = {}) => makeRequest(() => apiClient.get('/financial/reports/profit-loss', { params })),
+      balanceSheet: (params = {}) => makeRequest(() => apiClient.get('/financial/reports/balance-sheet', { params })),
+    },
+    
+    // Settings
+    settings: {
+      get: () => makeRequest(() => apiClient.get('/financial/settings')),
+      update: (data) => makeRequest(() => apiClient.post('/financial/settings', data)),
+    },
+    
+    // Initialization
+    initialize: () => makeRequest(() => apiClient.post('/financial/initialize')),
+  },
   get: (endpoint, config = {}) => makeRequest(() => apiClient.get(endpoint, config)),
   post: (endpoint, data, config = {}) => makeRequest(() => apiClient.post(endpoint, data, config)),
   put: (endpoint, data, config = {}) => makeRequest(() => apiClient.put(endpoint, data, config)),
