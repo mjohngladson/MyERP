@@ -75,7 +75,7 @@ async def get_general_settings():
 async def update_general_settings(payload: Dict[str, Any]):
     doc = await get_or_create()
     # only allow specific fields
-    allowed_top = ["tax_country", "gst_enabled", "default_gst_percent", "enable_variants", "uoms", "payment_terms", "stock"]
+    allowed_top = ["tax_country", "gst_enabled", "default_gst_percent", "enable_variants", "uoms", "payment_terms", "stock", "financial", "currencies", "accounting_standards"]
     update: Dict[str, Any] = {}
     for k in allowed_top:
         if k in payload:
