@@ -232,6 +232,7 @@ test_plan:
   completed_tests:
     - "Login Functionality Testing - COMPLETED ✅ (USER ISSUE NOT REPRODUCIBLE - BACKEND AUTHENTICATION WORKING PERFECTLY)"
     - "Frontend Login Functionality UI Testing - COMPLETED ✅ (USER ISSUE NOT REPRODUCIBLE - FRONTEND LOGIN WORKING PERFECTLY)"
+    - "AuthContext URL Fix Verification - COMPLETED ✅ (URL ISSUE SUCCESSFULLY RESOLVED - NO MORE .static. SUBDOMAIN IN API CALLS)"
     - "Invoice Backend API Testing - COMPLETED ✅"
     - "Sales Invoices List UI - COMPLETED ✅"
     - "Purchase Orders Backend API - COMPLETED ✅"
