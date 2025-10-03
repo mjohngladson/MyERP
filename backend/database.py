@@ -44,6 +44,16 @@ batches_collection = db.batches
 serials_collection = db.serials
 stock_settings_collection = db.stock_settings
 
+# Financial Management collections
+accounts_collection = db.accounts
+journal_entries_collection = db.journal_entries
+payments_collection = db.payments
+bank_accounts_collection = db.bank_accounts
+bank_transactions_collection = db.bank_transactions
+tax_rates_collection = db.tax_rates
+currencies_collection = db.currencies
+financial_settings_collection = db.financial_settings
+
 async def init_sample_data():
     """Initialize sample data for demonstration"""
     
