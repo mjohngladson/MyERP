@@ -34,6 +34,8 @@ import StockEntryForm from './components/StockEntryForm';
 import StockLedger from './components/StockLedger';
 import StockReports from './components/StockReports';
 import GeneralSettings from './components/GeneralSettings';
+import FinancialDashboard from './components/FinancialDashboard';
+import ChartOfAccounts from './components/ChartOfAccounts';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
