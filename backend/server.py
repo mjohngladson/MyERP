@@ -19,6 +19,7 @@ from routers.general_settings import router as general_settings_router
 from routers.master_data import router as master_data_router
 from routers.credit_notes import router as credit_notes_router
 from routers.debit_notes import router as debit_notes_router
+from routers.financial import get_financial_router
 from database import init_sample_data
 
 ROOT_DIR = Path(__file__).parent
