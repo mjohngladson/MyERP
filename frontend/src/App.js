@@ -210,6 +210,24 @@ function AppContent() {
             // Add account view logic here when component is created
           }
         }} />;
+      case 'financial-journal-entries':
+        return <JournalEntries onNavigate={(path) => {
+          if (path === '/financial') {
+            setActiveModule('financial');
+          }
+        }} />;
+      case 'financial-payments':
+        return <PaymentEntry onNavigate={(path) => {
+          if (path === '/financial') {
+            setActiveModule('financial');
+          }
+        }} />;
+      case 'financial-reports':
+        return <FinancialReports onNavigate={(path) => {
+          if (path === '/financial') {
+            setActiveModule('financial');
+          }
+        }} />;
 
       default:
         return <Dashboard />;
