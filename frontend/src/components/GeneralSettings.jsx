@@ -212,6 +212,251 @@ const GeneralSettings = ({ onBack }) => {
           </div>
         </div>
       )}
+
+      {tab==='financial' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border space-y-6 max-w-4xl">
+          {/* Currency Settings */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Currency Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Base Currency</label>
+                <select 
+                  value={settings.financial.base_currency} 
+                  onChange={e=>setSettings(s=>({...s, financial:{...s.financial, base_currency:e.target.value}}))} 
+                  className="px-3 py-2 border rounded-lg w-48"
+                >
+                  {settings.currencies.map(c => (
+                    <option key={c.code} value={c.code}>{c.name} ({c.symbol})</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Primary currency for all financial transactions</p>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Enable Multi-Currency</div>
+                  <div className="text-xs text-gray-500">Allow transactions in multiple currencies</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.multi_currency_enabled} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, multi_currency_enabled:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.multi_currency_enabled?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.multi_currency_enabled?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Auto Exchange Rate Update</div>
+                  <div className="text-xs text-gray-500">Automatically fetch latest exchange rates</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.auto_exchange_rate_update} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, auto_exchange_rate_update:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.auto_exchange_rate_update?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.auto_exchange_rate_update?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              {settings.currencies.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Available Currencies</label>
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    {settings.currencies.map(c => (
+                      <div key={c.code} className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{c.name} ({c.code})</span>
+                        <span className="text-sm text-gray-600">
+                          {c.symbol} | Rate: {c.rate} {c.is_base && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Base</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Accounting Standards */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Accounting Standards</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Accounting Standard</label>
+                <select 
+                  value={settings.financial.accounting_standard} 
+                  onChange={e=>setSettings(s=>({...s, financial:{...s.financial, accounting_standard:e.target.value}}))} 
+                  className="px-3 py-2 border rounded-lg w-full max-w-md"
+                >
+                  {settings.accounting_standards.map(std => (
+                    <option key={std.code} value={std.name}>{std.name} - {std.country}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Select the accounting standard your company follows</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fiscal Year Start</label>
+                <select 
+                  value={settings.financial.fiscal_year_start} 
+                  onChange={e=>setSettings(s=>({...s, financial:{...s.financial, fiscal_year_start:e.target.value}}))} 
+                  className="px-3 py-2 border rounded-lg w-48"
+                >
+                  <option value="January">January</option>
+                  <option value="April">April</option>
+                  <option value="July">July</option>
+                  <option value="October">October</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Start month of your fiscal year</p>
+              </div>
+            </div>
+          </div>
+
+          {/* GST/Tax Compliance */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">GST & Tax Compliance (India)</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">GSTIN</label>
+                <input 
+                  type="text" 
+                  value={settings.financial.gstin} 
+                  onChange={e=>setSettings(s=>({...s, financial:{...s.financial, gstin:e.target.value}}))} 
+                  placeholder="22AAAAA0000A1Z5"
+                  className="px-3 py-2 border rounded-lg w-full max-w-md"
+                />
+                <p className="text-xs text-gray-500 mt-1">Your company's GST Identification Number</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">GST Categories</label>
+                <div className="flex flex-wrap gap-2">
+                  {settings.financial.gst_categories.map((cat, i) => (
+                    <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{cat}</span>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Available GST categories for items and transactions</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Automation Settings */}
+          <div className="border-b pb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Automation & Controls</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Auto Create Accounts</div>
+                  <div className="text-xs text-gray-500">Automatically create accounts for new items, customers, suppliers</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.auto_create_accounts} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, auto_create_accounts:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.auto_create_accounts?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.auto_create_accounts?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Auto Journal Entries</div>
+                  <div className="text-xs text-gray-500">Automatically create journal entries for invoices and payments</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.enable_auto_journal_entries} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, enable_auto_journal_entries:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.enable_auto_journal_entries?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.enable_auto_journal_entries?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Require Payment Approval</div>
+                  <div className="text-xs text-gray-500">Payments require manager approval before processing</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.require_payment_approval} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, require_payment_approval:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.require_payment_approval?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.require_payment_approval?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Enable Budget Control</div>
+                  <div className="text-xs text-gray-500">Enforce budget limits on expenses and purchases</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={settings.financial.enable_budget_control} 
+                    onChange={e=>setSettings(s=>({...s, financial:{...s.financial, enable_budget_control:e.target.checked}}))}
+                  />
+                  <div className={`w-11 h-6 rounded-full ${settings.financial.enable_budget_control?'bg-blue-600':'bg-gray-200'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${settings.financial.enable_budget_control?'translate-x-5':'translate-x-0'}`}></div>
+                  </div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Default Payment Terms</label>
+                <select 
+                  value={settings.financial.default_payment_terms} 
+                  onChange={e=>setSettings(s=>({...s, financial:{...s.financial, default_payment_terms:e.target.value}}))} 
+                  className="px-3 py-2 border rounded-lg w-48"
+                >
+                  {settings.payment_terms.map(term => (
+                    <option key={term} value={term}>{term}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Default payment terms for new transactions</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex">
+              <DollarSign className="text-blue-600 mr-3 flex-shrink-0" size={20} />
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900 mb-1">Financial Management</h4>
+                <p className="text-xs text-blue-800">
+                  These settings control how your financial transactions are processed and recorded. 
+                  Changes to currency and accounting standards should be made carefully as they affect all financial reporting.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
