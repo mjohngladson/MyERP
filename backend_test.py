@@ -120,6 +120,117 @@ class BackendTester:
             self.log_test("Dashboard Transactions", False, f"Error: {str(e)}")
             return False
     
+    async def test_login_functionality(self):
+        """Test login endpoint POST /api/auth/login - CRITICAL AUTHENTICATION TEST"""
+        try:
+            # Test 1: Valid credentials (admin@gili.com / admin123)
+            login_payload = {
+                "email": "admin@gili.com",
+                "password": "admin123"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=login_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Check expected response structure
+                    required_fields = ["success", "message", "token", "user"]
+                    if all(field in data for field in required_fields):
+                        # Verify response values
+                        if (data["success"] == True and 
+                            "token" in data and data["token"] and
+                            "user" in data and isinstance(data["user"], dict)):
+                            
+                            # Check user data structure
+                            user_fields = ["id", "name", "email", "role"]
+                            if all(field in data["user"] for field in user_fields):
+                                self.log_test("Login - Valid Credentials", True, 
+                                            f"Login successful for {data['user']['email']}, token: {data['token'][:20]}...", 
+                                            {"user": data["user"], "token_prefix": data["token"][:20]})
+                            else:
+                                missing_user = [f for f in user_fields if f not in data["user"]]
+                                self.log_test("Login - Valid Credentials", False, f"Missing user fields: {missing_user}", data)
+                                return False
+                        else:
+                            self.log_test("Login - Valid Credentials", False, f"Invalid response values: success={data.get('success')}, token_present={bool(data.get('token'))}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Login - Valid Credentials", False, f"Missing response fields: {missing}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Login - Valid Credentials", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # Test 2: Invalid credentials (wrong password)
+            invalid_payload = {
+                "email": "admin@gili.com", 
+                "password": "wrongpassword"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=invalid_payload) as response:
+                if response.status == 401:
+                    data = await response.json()
+                    if "detail" in data and "Invalid credentials" in data["detail"]:
+                        self.log_test("Login - Invalid Password", True, "Correctly rejected invalid password", data)
+                    else:
+                        self.log_test("Login - Invalid Password", False, f"Unexpected error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Login - Invalid Password", False, f"Expected HTTP 401, got {response.status}")
+                    return False
+            
+            # Test 3: Invalid email
+            invalid_email_payload = {
+                "email": "nonexistent@example.com",
+                "password": "admin123"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=invalid_email_payload) as response:
+                if response.status == 401:
+                    data = await response.json()
+                    if "detail" in data and "Invalid credentials" in data["detail"]:
+                        self.log_test("Login - Invalid Email", True, "Correctly rejected invalid email", data)
+                    else:
+                        self.log_test("Login - Invalid Email", False, f"Unexpected error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Login - Invalid Email", False, f"Expected HTTP 401, got {response.status}")
+                    return False
+            
+            # Test 4: Missing credentials
+            empty_payload = {}
+            
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=empty_payload) as response:
+                if response.status in [400, 422]:  # Validation error
+                    self.log_test("Login - Missing Credentials", True, f"Correctly rejected empty payload with HTTP {response.status}")
+                else:
+                    self.log_test("Login - Missing Credentials", False, f"Expected HTTP 400/422, got {response.status}")
+                    return False
+            
+            # Test 5: JWT Token format verification
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=login_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    token = data.get("token", "")
+                    
+                    # Check if token starts with expected prefix and has reasonable length
+                    if token.startswith("demo_token_") and len(token) > 20:
+                        self.log_test("Login - JWT Token Format", True, f"Token format valid: {token[:30]}...", {"token_length": len(token)})
+                    else:
+                        self.log_test("Login - JWT Token Format", False, f"Invalid token format: {token}", {"token": token})
+                        return False
+                else:
+                    self.log_test("Login - JWT Token Format", False, f"Failed to get token, HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Login Functionality", False, f"Critical error during login testing: {str(e)}")
+            return False
+
     async def test_auth_me(self):
         """Test authentication me endpoint"""
         try:
