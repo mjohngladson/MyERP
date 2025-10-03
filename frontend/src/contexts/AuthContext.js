@@ -93,14 +93,8 @@ export const AuthProvider = ({ children }) => {
         password: credentials.password,
       });
       
-      const data = await response.json();
+      const data = response.data;
       console.log('🚀 Railway backend response:', data);
-      
-      if (!response.ok) {
-        const errorMessage = data.detail || data.message || 'Login failed';
-        console.error('❌ Login failed:', errorMessage);
-        return { success: false, error: errorMessage };
-      }
       
       if (!data.user || !data.token) {
         console.error('❌ Invalid response format:', data);
