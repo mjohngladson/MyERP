@@ -36,6 +36,9 @@ import StockReports from './components/StockReports';
 import GeneralSettings from './components/GeneralSettings';
 import FinancialDashboard from './components/FinancialDashboard';
 import ChartOfAccounts from './components/ChartOfAccounts';
+import JournalEntries from './components/JournalEntries';
+import PaymentEntry from './components/PaymentEntry';
+import FinancialReports from './components/FinancialReports';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
