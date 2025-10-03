@@ -7995,6 +7995,335 @@ class BackendTester:
         
         return len(test_results) > 0
 
+    async def test_financial_settings(self):
+        """Test financial settings endpoint GET /api/financial/settings"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/settings") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    expected_fields = ["base_currency", "accounting_standard", "fiscal_year_start", "gst_enabled"]
+                    
+                    if all(field in data for field in expected_fields):
+                        # Verify Indian-specific settings
+                        if (data.get("base_currency") == "INR" and 
+                            "Indian" in data.get("accounting_standard", "") and
+                            data.get("gst_enabled") == True):
+                            self.log_test("Financial Settings", True, f"Financial settings configured for Indian business: Currency={data['base_currency']}, GST={data['gst_enabled']}", data)
+                            return True
+                        else:
+                            self.log_test("Financial Settings", False, f"Settings not configured for Indian business", data)
+                            return False
+                    else:
+                        missing = [f for f in expected_fields if f not in data]
+                        self.log_test("Financial Settings", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Financial Settings", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Financial Settings", False, f"Error: {str(e)}")
+            return False
+
+    async def test_financial_initialization(self):
+        """Test Chart of Accounts initialization POST /api/financial/initialize"""
+        try:
+            async with self.session.post(f"{self.base_url}/api/financial/initialize") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") == True:
+                        message = data.get("message", "")
+                        if "initialized" in message.lower():
+                            self.log_test("Financial Initialization", True, f"Chart of accounts initialization: {message}", data)
+                            return True
+                        else:
+                            self.log_test("Financial Initialization", False, f"Unexpected response message: {message}", data)
+                            return False
+                    else:
+                        self.log_test("Financial Initialization", False, f"Initialization failed: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Financial Initialization", False, f"HTTP {response.status}: {response_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Financial Initialization", False, f"Error: {str(e)}")
+            return False
+
+    async def test_chart_of_accounts(self):
+        """Test Chart of Accounts listing GET /api/financial/accounts"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/accounts") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Check first account structure
+                            account = data[0]
+                            required_fields = ["id", "account_code", "account_name", "account_type", "root_type"]
+                            
+                            if all(field in account for field in required_fields):
+                                # Check for Indian standard accounts
+                                account_codes = [acc.get("account_code", "") for acc in data]
+                                indian_accounts = ["1001", "1002", "2002", "4001"]  # Cash, Bank, GST Payable, Sales Revenue
+                                found_indian = any(code in account_codes for code in indian_accounts)
+                                
+                                if found_indian:
+                                    self.log_test("Chart of Accounts", True, f"Retrieved {len(data)} accounts with Indian standard chart", {"count": len(data), "sample": account})
+                                    return True
+                                else:
+                                    self.log_test("Chart of Accounts", True, f"Retrieved {len(data)} accounts (standard chart may not be initialized)", {"count": len(data), "sample": account})
+                                    return True
+                            else:
+                                missing = [f for f in required_fields if f not in account]
+                                self.log_test("Chart of Accounts", False, f"Missing fields in account: {missing}", account)
+                                return False
+                        else:
+                            self.log_test("Chart of Accounts", True, "Empty accounts list (chart may need initialization)", data)
+                            return True
+                    else:
+                        self.log_test("Chart of Accounts", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Chart of Accounts", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Chart of Accounts", False, f"Error: {str(e)}")
+            return False
+
+    async def test_journal_entries(self):
+        """Test Journal Entries endpoint GET /api/financial/journal-entries"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/journal-entries?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Check first journal entry structure
+                            entry = data[0]
+                            required_fields = ["id", "entry_number", "posting_date", "total_debit", "total_credit", "status"]
+                            
+                            if all(field in entry for field in required_fields):
+                                # Verify balanced entry
+                                total_debit = entry.get("total_debit", 0)
+                                total_credit = entry.get("total_credit", 0)
+                                is_balanced = abs(total_debit - total_credit) < 0.01
+                                
+                                if is_balanced:
+                                    self.log_test("Journal Entries", True, f"Retrieved {len(data)} journal entries, balanced entry verified", {"count": len(data), "sample": entry})
+                                    return True
+                                else:
+                                    self.log_test("Journal Entries", False, f"Unbalanced journal entry: debit={total_debit}, credit={total_credit}", entry)
+                                    return False
+                            else:
+                                missing = [f for f in required_fields if f not in entry]
+                                self.log_test("Journal Entries", False, f"Missing fields in journal entry: {missing}", entry)
+                                return False
+                        else:
+                            self.log_test("Journal Entries", True, "Empty journal entries list (valid)", data)
+                            return True
+                    else:
+                        self.log_test("Journal Entries", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Journal Entries", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Journal Entries", False, f"Error: {str(e)}")
+            return False
+
+    async def test_payments(self):
+        """Test Payments endpoint GET /api/financial/payments"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/payments?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Check first payment structure
+                            payment = data[0]
+                            required_fields = ["id", "payment_number", "payment_type", "amount", "payment_date", "status"]
+                            
+                            if all(field in payment for field in required_fields):
+                                # Verify payment types
+                                payment_type = payment.get("payment_type")
+                                if payment_type in ["Receive", "Pay"]:
+                                    self.log_test("Payments", True, f"Retrieved {len(data)} payments, valid payment type: {payment_type}", {"count": len(data), "sample": payment})
+                                    return True
+                                else:
+                                    self.log_test("Payments", False, f"Invalid payment type: {payment_type}", payment)
+                                    return False
+                            else:
+                                missing = [f for f in required_fields if f not in payment]
+                                self.log_test("Payments", False, f"Missing fields in payment: {missing}", payment)
+                                return False
+                        else:
+                            self.log_test("Payments", True, "Empty payments list (valid)", data)
+                            return True
+                    else:
+                        self.log_test("Payments", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Payments", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Payments", False, f"Error: {str(e)}")
+            return False
+
+    async def test_trial_balance_report(self):
+        """Test Trial Balance report GET /api/financial/reports/trial-balance"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/reports/trial-balance") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["as_of_date", "accounts", "total_debits", "total_credits", "is_balanced"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify trial balance is balanced
+                        total_debits = data.get("total_debits", 0)
+                        total_credits = data.get("total_credits", 0)
+                        is_balanced = data.get("is_balanced", False)
+                        
+                        if is_balanced and abs(total_debits - total_credits) < 0.01:
+                            self.log_test("Trial Balance Report", True, f"Trial balance is balanced: Debits={total_debits}, Credits={total_credits}", data)
+                            return True
+                        else:
+                            self.log_test("Trial Balance Report", False, f"Trial balance not balanced: Debits={total_debits}, Credits={total_credits}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Trial Balance Report", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Trial Balance Report", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Trial Balance Report", False, f"Error: {str(e)}")
+            return False
+
+    async def test_profit_loss_report(self):
+        """Test Profit & Loss report GET /api/financial/reports/profit-loss"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/reports/profit-loss") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["from_date", "to_date", "income", "expenses", "total_income", "total_expenses", "net_profit"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify profit calculation
+                        total_income = data.get("total_income", 0)
+                        total_expenses = data.get("total_expenses", 0)
+                        net_profit = data.get("net_profit", 0)
+                        calculated_profit = total_income - total_expenses
+                        
+                        if abs(calculated_profit - net_profit) < 0.01:
+                            self.log_test("Profit & Loss Report", True, f"P&L calculation correct: Income={total_income}, Expenses={total_expenses}, Profit={net_profit}", data)
+                            return True
+                        else:
+                            self.log_test("Profit & Loss Report", False, f"P&L calculation incorrect: expected {calculated_profit}, got {net_profit}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Profit & Loss Report", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Profit & Loss Report", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Profit & Loss Report", False, f"Error: {str(e)}")
+            return False
+
+    async def test_balance_sheet_report(self):
+        """Test Balance Sheet report GET /api/financial/reports/balance-sheet"""
+        try:
+            async with self.session.get(f"{self.base_url}/api/financial/reports/balance-sheet") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["as_of_date", "assets", "liabilities", "equity", "total_assets", "total_liabilities", "total_equity", "total_liabilities_equity"]
+                    
+                    if all(field in data for field in required_fields):
+                        # Verify balance sheet equation: Assets = Liabilities + Equity
+                        total_assets = data.get("total_assets", 0)
+                        total_liabilities_equity = data.get("total_liabilities_equity", 0)
+                        
+                        if abs(total_assets - total_liabilities_equity) < 0.01:
+                            self.log_test("Balance Sheet Report", True, f"Balance sheet equation balanced: Assets={total_assets}, Liabilities+Equity={total_liabilities_equity}", data)
+                            return True
+                        else:
+                            self.log_test("Balance Sheet Report", False, f"Balance sheet not balanced: Assets={total_assets}, Liabilities+Equity={total_liabilities_equity}", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("Balance Sheet Report", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("Balance Sheet Report", False, f"HTTP {response.status}")
+                    return False
+        except Exception as e:
+            self.log_test("Balance Sheet Report", False, f"Error: {str(e)}")
+            return False
+
+    async def run_financial_tests(self):
+        """Run Financial Management backend integration tests"""
+        print("🏦 Starting Financial Management Backend Integration Tests")
+        print(f"🌐 Testing against: {self.base_url}")
+        print("🎯 FINANCIAL MANAGEMENT ENDPOINTS TO TEST:")
+        print("   1. Financial settings endpoint GET /api/financial/settings")
+        print("   2. Chart of Accounts initialization POST /api/financial/initialize")
+        print("   3. Chart of Accounts listing GET /api/financial/accounts")
+        print("   4. Journal Entries endpoint GET /api/financial/journal-entries")
+        print("   5. Payments endpoint GET /api/financial/payments")
+        print("   6. Financial Reports endpoints:")
+        print("      - GET /api/financial/reports/trial-balance")
+        print("      - GET /api/financial/reports/profit-loss")
+        print("      - GET /api/financial/reports/balance-sheet")
+        print("=" * 80)
+        
+        # Financial Management tests to run
+        financial_tests = [
+            ("Health Check", self.test_health_check),
+            ("Financial Settings", self.test_financial_settings),
+            ("Financial Initialization", self.test_financial_initialization),
+            ("Chart of Accounts", self.test_chart_of_accounts),
+            ("Journal Entries", self.test_journal_entries),
+            ("Payments", self.test_payments),
+            ("Trial Balance Report", self.test_trial_balance_report),
+            ("Profit & Loss Report", self.test_profit_loss_report),
+            ("Balance Sheet Report", self.test_balance_sheet_report),
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        # Run financial tests
+        for test_name, test_func in financial_tests:
+            try:
+                result = await test_func()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test_name, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print("🏦 FINANCIAL MANAGEMENT BACKEND INTEGRATION TEST SUMMARY")
+        print("=" * 80)
+        print(f"✅ PASSED: {passed}")
+        print(f"❌ FAILED: {failed}")
+        print(f"📊 TOTAL:  {passed + failed}")
+        
+        if failed == 0:
+            print("🎉 ALL FINANCIAL MANAGEMENT TESTS PASSED!")
+        else:
+            print(f"⚠️  {failed} FINANCIAL MANAGEMENT TESTS FAILED")
+        
+        print("=" * 80)
+        
+        return passed, failed
+
     async def run_all_tests(self):
         """Run backend tests focusing on LOGIN FUNCTIONALITY - URGENT USER ISSUE"""
         print("🚀 Starting GiLi Backend API Testing Suite - URGENT LOGIN TESTING")
