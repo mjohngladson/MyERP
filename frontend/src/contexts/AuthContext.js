@@ -96,9 +96,9 @@ export const AuthProvider = ({ children }) => {
       const data = response.data;
       console.log('🚀 Railway backend response:', data);
       
-      if (!data.user || !data.token) {
+      if (!data.success || !data.user || !data.token) {
         console.error('❌ Invalid response format:', data);
-        return { success: false, error: 'Invalid server response' };
+        return { success: false, error: data.message || 'Invalid server response' };
       }
       
       // Store auth data from Railway backend response
