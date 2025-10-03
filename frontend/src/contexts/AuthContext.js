@@ -130,7 +130,14 @@ export const AuthProvider = ({ children }) => {
       
     } catch (error) {
       console.error('❌ Login error:', error);
-      return { success: false, error: error.message || 'Network error' };
+      
+      // Handle API service errors
+      const errorMessage = error.response?.data?.detail 
+        || error.response?.data?.message 
+        || error.message 
+        || 'Network error';
+      
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
