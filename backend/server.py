@@ -117,6 +117,7 @@ app.include_router(general_settings_router)
 app.include_router(master_data_router)
 app.include_router(credit_notes_router)
 app.include_router(debit_notes_router)
+app.include_router(get_financial_router())
 app.include_router(get_pos_router())
 
 app.add_middleware(
