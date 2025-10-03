@@ -26,6 +26,31 @@ DEFAULTS: Dict[str, Any] = {
         "enable_batches": True,
         "enable_serials": True,
     },
+    "financial": {
+        "base_currency": "INR",
+        "accounting_standard": "Indian GAAP",
+        "fiscal_year_start": "April",
+        "multi_currency_enabled": False,
+        "auto_exchange_rate_update": False,
+        "enable_auto_journal_entries": True,
+        "require_payment_approval": False,
+        "enable_budget_control": False,
+        "gst_categories": ["Taxable", "Exempt", "Zero Rated", "Nil Rated"],
+        "gstin": "",
+        "auto_create_accounts": True,
+        "default_payment_terms": "Net 30"
+    },
+    "currencies": [
+        {"code": "INR", "name": "Indian Rupee", "symbol": "₹", "rate": 1.0, "is_base": True},
+        {"code": "USD", "name": "US Dollar", "symbol": "$", "rate": 83.0, "is_base": False},
+        {"code": "EUR", "name": "Euro", "symbol": "€", "rate": 90.0, "is_base": False},
+        {"code": "GBP", "name": "British Pound", "symbol": "£", "rate": 105.0, "is_base": False}
+    ],
+    "accounting_standards": [
+        {"code": "IN_GAAP", "name": "Indian GAAP", "country": "India"},
+        {"code": "IFRS", "name": "International Financial Reporting Standards", "country": "International"},
+        {"code": "US_GAAP", "name": "US Generally Accepted Accounting Principles", "country": "USA"}
+    ],
     "created_at": now_utc(),
     "updated_at": now_utc(),
 }
