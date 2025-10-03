@@ -14,6 +14,22 @@ const GeneralSettings = ({ onBack }) => {
     uoms: ['NOS','PCS','PCK','KG','G','L','ML'],
     payment_terms: ['Net 0','Net 15','Net 30','Net 45'],
     stock: { valuation_method: 'FIFO', allow_negative_stock: false, enable_batches: true, enable_serials: true },
+    financial: {
+      base_currency: 'INR',
+      accounting_standard: 'Indian GAAP',
+      fiscal_year_start: 'April',
+      multi_currency_enabled: false,
+      auto_exchange_rate_update: false,
+      enable_auto_journal_entries: true,
+      require_payment_approval: false,
+      enable_budget_control: false,
+      gst_categories: ['Taxable', 'Exempt', 'Zero Rated', 'Nil Rated'],
+      gstin: '',
+      auto_create_accounts: true,
+      default_payment_terms: 'Net 30'
+    },
+    currencies: [],
+    accounting_standards: []
   });
 
   React.useEffect(()=>{
