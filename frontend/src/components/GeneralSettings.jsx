@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, Settings as SettingsIcon, Save, Layers, Barcode, Globe, Package, CreditCard } from 'lucide-react';
+import { ChevronLeft, Settings as SettingsIcon, Save, Layers, Barcode, Globe, Package, CreditCard, DollarSign } from 'lucide-react';
 
 const GeneralSettings = ({ onBack }) => {
   const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.REACT_APP_BACKEND_URL) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL) || '';
