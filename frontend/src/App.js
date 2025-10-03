@@ -236,6 +236,13 @@ function AppContent() {
         'Warehouse': 'warehouses',
         'Stock Entry': 'stock-entry',
         'Stock Reconciliation': 'stock-ledger',
+      },
+      financial: {
+        'Financial Dashboard': 'financial',
+        'Chart of Accounts': 'financial-accounts',
+        'Journal Entry': 'financial-journal-entries',
+        'Payment Entry': 'financial-payments',
+        'Financial Reports': 'financial-reports'
       }
     };
     const key = mapById[id]?.[subItem];
