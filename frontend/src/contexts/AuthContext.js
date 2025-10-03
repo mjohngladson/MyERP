@@ -85,26 +85,12 @@ export const AuthProvider = ({ children }) => {
       
       console.log('🔐 Attempting login with Railway backend...');
       
-      // Use env-configured backend URL
-      const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.REACT_APP_BACKEND_URL)
-        || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_BACKEND_URL);
-      if (!backendUrl) {
-        console.warn('⚠️ REACT_APP_BACKEND_URL is not set. Using relative /api for auth.');
-      } else {
-        console.log('🌐 Using backend URL from env:', backendUrl);
-      }
+      // Use the api service which has proper backend URL configuration
+      console.log('🌐 Using api service for authentication');
       
-      // Make actual API call to Railway backend
-      const apiUrl = backendUrl ? `${backendUrl}/api/auth/login` : '/api/auth/login';
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password
-        })
+      const response = await api.post('/auth/login', {
+        email: credentials.email,
+        password: credentials.password,
       });
       
       const data = await response.json();
