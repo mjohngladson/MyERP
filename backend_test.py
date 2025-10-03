@@ -7996,23 +7996,20 @@ class BackendTester:
         return len(test_results) > 0
 
     async def run_all_tests(self):
-        """Run backend tests focusing on CRITICAL FIXES for user-reported issues"""
-        print("🚀 Starting GiLi Backend API Testing Suite - CRITICAL FIXES TESTING")
+        """Run backend tests focusing on LOGIN FUNCTIONALITY - URGENT USER ISSUE"""
+        print("🚀 Starting GiLi Backend API Testing Suite - URGENT LOGIN TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 CRITICAL FIXES TO TEST:")
-        print("   1. Sales Invoice Send Button Fix - Verify POST /api/invoices/{id}/send works")
-        print("   2. Individual Email/SMS Status Tracking - Test separate email_sent_at, sms_sent_at fields")
-        print("   3. Email Delivery Issue - Test actual SendGrid email sending")
-        print("   4. Uniform Status Tracking - Verify Credit/Debit Notes use same format as Invoices")
+        print("🎯 URGENT LOGIN ISSUE TO TEST:")
+        print("   1. Login endpoint POST /api/auth/login with admin@gili.com / admin123")
+        print("   2. JWT token generation and response structure verification")
+        print("   3. Authentication response validation")
+        print("   4. Error handling for invalid credentials")
         print("=" * 80)
         
-        # Tests to run (CRITICAL FIXES as requested in review)
+        # Tests to run (LOGIN FUNCTIONALITY as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_uniform_sms_email_status_tracking,    # CRITICAL: Test uniform SMS/email status tracking across ALL 6 modules
-            self.test_sales_invoice_send_fixes,             # CRITICAL: Sales Invoice Send Button Fix + Individual Status Tracking
-            self.test_credit_debit_notes_uniform_status,    # CRITICAL: Uniform Status Tracking for Credit/Debit Notes
-            self.test_sendgrid_email_delivery,              # CRITICAL: Email Delivery Issue - Test actual SendGrid
+            self.test_login_functionality,                  # CRITICAL: Login endpoint testing - USER REPORTS NOT WORKING
         ]
         
         passed = 0
