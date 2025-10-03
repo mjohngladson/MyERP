@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 async def comprehensive_pos_test():
-    base_url = 'https://crediti-debi.preview.emergentagent.com'
+    base_url = 'https://gili-finance.preview.emergentagent.com'
     
     async with aiohttp.ClientSession() as session:
         print('🚀 Comprehensive PoS Integration API Testing')

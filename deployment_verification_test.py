@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL from environment
-BACKEND_URL = "https://crediti-debi.preview.emergentagent.com"
+BACKEND_URL = "https://gili-finance.preview.emergentagent.com"
 
 class DeploymentVerificationTester:
     def __init__(self):

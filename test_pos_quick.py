@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 
 async def test_pos_endpoints():
-    base_url = 'https://crediti-debi.preview.emergentagent.com'
+    base_url = 'https://gili-finance.preview.emergentagent.com'
     
     async with aiohttp.ClientSession() as session:
         print('🔍 Testing PoS Integration Endpoints')

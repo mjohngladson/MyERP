@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 
 # Get backend URL from environment
-BACKEND_URL = "https://crediti-debi.preview.emergentagent.com"
+BACKEND_URL = "https://gili-finance.preview.emergentagent.com"
 
 class TimestampTrackingTester:
     def __init__(self):
