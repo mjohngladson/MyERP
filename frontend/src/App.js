@@ -182,6 +182,32 @@ function AppContent() {
       case 'general-settings':
         return <GeneralSettings onBack={() => setActiveModule('dashboard')} />;
 
+      // Financial Management
+      case 'financial':
+        return <FinancialDashboard onNavigate={(path) => {
+          const routes = {
+            '/financial/accounts': 'financial-accounts',
+            '/financial/journal-entries': 'financial-journal-entries',
+            '/financial/payments': 'financial-payments',
+            '/financial/reports': 'financial-reports',
+            '/financial/settings': 'financial-settings'
+          };
+          const key = routes[path];
+          if (key) {
+            setActiveModule(key);
+          }
+        }} />;
+      case 'financial-accounts':
+        return <ChartOfAccounts onNavigate={(path) => {
+          if (path === '/financial') {
+            setActiveModule('financial');
+          } else if (path.startsWith('/financial/accounts/')) {
+            // Handle individual account view
+            const accountId = path.split('/').pop();
+            // Add account view logic here when component is created
+          }
+        }} />;
+
       default:
         return <Dashboard />;
     }
