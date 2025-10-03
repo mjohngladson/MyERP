@@ -49,7 +49,23 @@ const GeneralSettings = ({ onBack }) => {
             allow_negative_stock: !!(data?.stock?.allow_negative_stock),
             enable_batches: !!(data?.stock?.enable_batches ?? true),
             enable_serials: !!(data?.stock?.enable_serials ?? true),
-          }
+          },
+          financial: {
+            base_currency: data?.financial?.base_currency || 'INR',
+            accounting_standard: data?.financial?.accounting_standard || 'Indian GAAP',
+            fiscal_year_start: data?.financial?.fiscal_year_start || 'April',
+            multi_currency_enabled: !!(data?.financial?.multi_currency_enabled),
+            auto_exchange_rate_update: !!(data?.financial?.auto_exchange_rate_update),
+            enable_auto_journal_entries: data?.financial?.enable_auto_journal_entries ?? true,
+            require_payment_approval: !!(data?.financial?.require_payment_approval),
+            enable_budget_control: !!(data?.financial?.enable_budget_control),
+            gst_categories: Array.isArray(data?.financial?.gst_categories) ? data.financial.gst_categories : ['Taxable', 'Exempt', 'Zero Rated', 'Nil Rated'],
+            gstin: data?.financial?.gstin || '',
+            auto_create_accounts: data?.financial?.auto_create_accounts ?? true,
+            default_payment_terms: data?.financial?.default_payment_terms || 'Net 30'
+          },
+          currencies: Array.isArray(data.currencies) ? data.currencies : [],
+          accounting_standards: Array.isArray(data.accounting_standards) ? data.accounting_standards : []
         });
       } catch(e){ console.error('Load settings failed', e); }
       finally { setLoading(false); }
