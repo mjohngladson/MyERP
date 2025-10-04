@@ -127,10 +127,51 @@ const PaymentEntry = ({ onNavigate }) => {
     return type === 'Receive' ? 'text-green-600' : 'text-red-600';
   };
 
-  const filteredPayments = payments.filter(payment =>
-    payment.payment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.party_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPayments = payments
+    .filter(payment => {
+      // Search filter
+      const matchesSearch = payment.payment_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           payment.party_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Method filter
+      const matchesMethod = !methodFilter || payment.payment_method === methodFilter;
+      
+      return matchesSearch && matchesMethod;
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      let aValue, bValue;
+      
+      switch (sortConfig.key) {
+        case 'party':
+          aValue = a.party_name?.toLowerCase() || '';
+          bValue = b.party_name?.toLowerCase() || '';
+          break;
+        case 'amount':
+          aValue = a.amount || 0;
+          bValue = b.amount || 0;
+          break;
+        case 'method':
+          aValue = a.payment_method?.toLowerCase() || '';
+          bValue = b.payment_method?.toLowerCase() || '';
+          break;
+        case 'status':
+          aValue = a.status?.toLowerCase() || '';
+          bValue = b.status?.toLowerCase() || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
 
   if (loading) {
     return (
