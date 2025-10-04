@@ -247,6 +247,96 @@ async def update_sales_invoice(invoice_id: str, invoice_data: dict):
                 "total_amount": total_amount
             })
 
+        # If status changed to "submitted", create Journal Entry and Payment Entry (as pending)
+        if invoice_data.get("status") == "submitted" and existing.get("status") != "submitted":
+            from database import journal_entries_collection, payments_collection, accounts_collection
+            import uuid
+            
+            # Get accounts for journal entry
+            receivables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
+            sales_account = await accounts_collection.find_one({"account_name": {"$regex": "Sales", "$options": "i"}})
+            tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Tax", "$options": "i"}})
+            
+            total_amt = invoice_data.get("total_amount", existing.get("total_amount", 0))
+            tax_amt = invoice_data.get("tax_amount", existing.get("tax_amount", 0))
+            sales_amt = total_amt - tax_amt
+            
+            # Create Journal Entry for Sales Invoice
+            je_accounts = []
+            if receivables_account:
+                je_accounts.append({
+                    "account_id": receivables_account["id"],
+                    "account_name": receivables_account["account_name"],
+                    "debit_amount": total_amt,
+                    "credit_amount": 0,
+                    "description": f"Sales Invoice {existing.get('invoice_number', '')}"
+                })
+            if sales_account:
+                je_accounts.append({
+                    "account_id": sales_account["id"],
+                    "account_name": sales_account["account_name"],
+                    "debit_amount": 0,
+                    "credit_amount": sales_amt,
+                    "description": f"Sales for Invoice {existing.get('invoice_number', '')}"
+                })
+            if tax_account and tax_amt > 0:
+                je_accounts.append({
+                    "account_id": tax_account["id"],
+                    "account_name": tax_account["account_name"],
+                    "debit_amount": 0,
+                    "credit_amount": tax_amt,
+                    "description": f"Tax on Invoice {existing.get('invoice_number', '')}"
+                })
+            
+            if je_accounts:
+                je_id = str(uuid.uuid4())
+                journal_entry = {
+                    "id": je_id,
+                    "entry_number": f"JE-INV-{existing.get('invoice_number', '')}",
+                    "posting_date": invoice_data.get("invoice_date", existing.get("invoice_date")),
+                    "reference": existing.get("invoice_number", ""),
+                    "description": f"Sales Invoice entry for {existing.get('customer_name', '')}",
+                    "voucher_type": "Sales Invoice",
+                    "voucher_id": invoice_id,
+                    "accounts": je_accounts,
+                    "total_debit": total_amt,
+                    "total_credit": total_amt,
+                    "status": "posted",
+                    "is_auto_generated": True,
+                    "company_id": existing.get("company_id", "default_company"),
+                    "created_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc)
+                }
+                await journal_entries_collection.insert_one(journal_entry)
+            
+            # Create Payment Entry (pending - to be marked paid when actual payment received)
+            payment_id = str(uuid.uuid4())
+            payment_entry = {
+                "id": payment_id,
+                "payment_number": f"REC-{datetime.now().strftime('%Y%m%d')}-{await payments_collection.count_documents({}) + 1:04d}",
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": existing.get("customer_id"),
+                "party_name": existing.get("customer_name"),
+                "payment_date": invoice_data.get("invoice_date", existing.get("invoice_date")),
+                "amount": total_amt,
+                "base_amount": total_amt,
+                "unallocated_amount": total_amt,
+                "payment_method": "To Be Paid",
+                "currency": "INR",
+                "exchange_rate": 1.0,
+                "status": "draft",  # Draft until actual payment received
+                "reference_number": existing.get("invoice_number", ""),
+                "description": f"Payment entry for Invoice {existing.get('invoice_number', '')}",
+                "company_id": existing.get("company_id", "default_company"),
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }
+            await payments_collection.insert_one(payment_entry)
+            
+            result = await sales_invoices_collection.update_one({"_id": existing["_id"]}, {"$set": invoice_data})
+            return {"success": True, "message": "Invoice updated, Journal Entry and Payment Entry created", "journal_entry_id": je_id if je_accounts else None, "payment_entry_id": payment_id}
+        
         result = await sales_invoices_collection.update_one({"_id": existing["_id"]}, {"$set": invoice_data})
         if result.modified_count > 0:
             return {"success": True, "message": "Invoice updated successfully"}
