@@ -464,6 +464,75 @@ const GeneralSettings = ({ onBack }) => {
           </div>
         </div>
       )}
+
+      {tab==='system' && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border space-y-6 max-w-3xl">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Timezone & Date Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                <select 
+                  value={settings.timezone} 
+                  onChange={e=>setSettings(s=>({...s, timezone:e.target.value}))} 
+                  className="px-3 py-2 border rounded-lg w-full"
+                >
+                  <option value="Asia/Kolkata">Asia/Kolkata (IST - India)</option>
+                  <option value="America/New_York">America/New_York (EST - USA)</option>
+                  <option value="Europe/London">Europe/London (GMT - UK)</option>
+                  <option value="Asia/Dubai">Asia/Dubai (GST - UAE)</option>
+                  <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (JST - Japan)</option>
+                  <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+                  <option value="UTC">UTC (Universal Time)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">All dates and times will be displayed in this timezone</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
+                <select 
+                  value={settings.date_format} 
+                  onChange={e=>setSettings(s=>({...s, date_format:e.target.value}))} 
+                  className="px-3 py-2 border rounded-lg w-full"
+                >
+                  <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2024)</option>
+                  <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2024)</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD (2024-12-31)</option>
+                  <option value="DD-MMM-YYYY">DD-MMM-YYYY (31-Dec-2024)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Format for displaying dates throughout the application</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Time Format</label>
+                <select 
+                  value={settings.time_format} 
+                  onChange={e=>setSettings(s=>({...s, time_format:e.target.value}))} 
+                  className="px-3 py-2 border rounded-lg w-full"
+                >
+                  <option value="12">12-hour (01:30 PM)</option>
+                  <option value="24">24-hour (13:30)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Format for displaying times</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex">
+              <SettingsIcon className="text-blue-600 mr-3 flex-shrink-0" size={20} />
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900 mb-1">System Configuration</h4>
+                <p className="text-xs text-blue-800">
+                  These settings affect how dates and times are displayed across all modules. 
+                  Changes take effect immediately after saving.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
