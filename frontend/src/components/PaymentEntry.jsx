@@ -652,4 +652,159 @@ const PaymentFormModal = ({ payment, customers, suppliers, onSave, onClose }) =>
   );
 };
 
+// Payment View Modal Component
+const PaymentViewModal = ({ payment, onClose, formatCurrency, formatDate }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
+            <p className="text-sm text-gray-600 mt-1">{payment.payment_number}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* Payment Type Badge */}
+          <div className="flex items-center justify-between pb-4 border-b">
+            <div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                payment.payment_type === 'Receive' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {payment.payment_type === 'Receive' ? '↓' : '↑'} {payment.payment_type}
+              </span>
+            </div>
+            <div>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                payment.status === 'paid' 
+                  ? 'bg-green-100 text-green-800' 
+                  : payment.status === 'submitted'
+                  ? 'bg-blue-100 text-blue-800'
+                  : payment.status === 'draft'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+              </span>
+            </div>
+          </div>
+
+          {/* Amount Section */}
+          <div className="bg-gray-50 p-6 rounded-lg text-center">
+            <p className="text-sm text-gray-600 mb-2">Payment Amount</p>
+            <p className={`text-4xl font-bold ${
+              payment.payment_type === 'Receive' ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {payment.payment_type === 'Receive' ? '+' : '-'}{formatCurrency(payment.amount)}
+            </p>
+            {payment.currency !== 'INR' && (
+              <p className="text-sm text-gray-600 mt-2">
+                {payment.currency} @ Rate: {payment.exchange_rate} = {formatCurrency(payment.base_amount)} INR
+              </p>
+            )}
+          </div>
+
+          {/* Payment Information */}
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Party Type</label>
+              <p className="text-gray-900 font-medium">{payment.party_type}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Party Name</label>
+              <p className="text-gray-900 font-medium">{payment.party_name}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Payment Date</label>
+              <p className="text-gray-900 font-medium">{formatDate(payment.payment_date)}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Payment Method</label>
+              <p className="text-gray-900 font-medium">{payment.payment_method}</p>
+            </div>
+            {payment.reference_number && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-500 mb-1">Reference Number</label>
+                <p className="text-gray-900 font-medium">{payment.reference_number}</p>
+              </div>
+            )}
+            {payment.bank_account_id && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-500 mb-1">Bank Account</label>
+                <p className="text-gray-900 font-medium">{payment.bank_account_id}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Allocation Details */}
+          {payment.unallocated_amount > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-800">Unallocated Amount</p>
+                  <p className="text-xs text-orange-600 mt-1">This amount hasn't been allocated to any invoice</p>
+                </div>
+                <p className="text-lg font-bold text-orange-800">{formatCurrency(payment.unallocated_amount)}</p>
+              </div>
+            </div>
+          )}
+
+          {payment.allocated_invoices && payment.allocated_invoices.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Allocated to Invoices</label>
+              <div className="bg-gray-50 rounded-lg divide-y divide-gray-200">
+                {payment.allocated_invoices.map((inv, idx) => (
+                  <div key={idx} className="p-3 flex items-center justify-between">
+                    <span className="text-sm text-gray-900">{inv.invoice_id}</span>
+                    <span className="text-sm font-medium text-gray-900">{formatCurrency(inv.allocated_amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {payment.description && (
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Description</label>
+              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{payment.description}</p>
+            </div>
+          )}
+
+          {/* Metadata */}
+          <div className="pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+              <div>
+                <span className="font-medium">Created:</span> {formatDate(payment.created_at)}
+              </div>
+              {payment.updated_at && (
+                <div>
+                  <span className="font-medium">Updated:</span> {formatDate(payment.updated_at)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6 border-t border-gray-200 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default PaymentEntry;
