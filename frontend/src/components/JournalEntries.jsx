@@ -386,7 +386,7 @@ const JournalEntries = ({ onNavigate }) => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => {/* View details */}}
+                            onClick={() => setViewingEntry(entry)}
                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
                             title="View Entry"
                           >
@@ -395,11 +395,21 @@ const JournalEntries = ({ onNavigate }) => {
                           {entry.status === 'draft' && (
                             <>
                               <button
-                                onClick={() => setEditingEntry(entry)}
+                                onClick={() => {
+                                  setEditingEntry(entry);
+                                  setShowEntryForm(true);
+                                }}
                                 className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
                                 title="Edit Entry"
                               >
                                 <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(entry.id)}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                title="Delete Entry"
+                              >
+                                <Trash2 size={16} />
                               </button>
                               <button
                                 onClick={() => handlePostEntry(entry.id)}
