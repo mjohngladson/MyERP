@@ -254,9 +254,29 @@ async def create_payment(payment_data: dict):
         
         # Generate payment number if not provided
         if not payment_data.get("payment_number"):
-            count = await payments_collection.count_documents({})
             prefix = "REC" if payment_data.get("payment_type") == "Receive" else "PAY"
-            payment_data["payment_number"] = f"{prefix}-{datetime.now().strftime('%Y%m%d')}-{count + 1:04d}"
+            date_str = datetime.now().strftime('%Y%m%d')
+            
+            # Find the highest payment number for this prefix and date
+            pattern = f"{prefix}-{date_str}-"
+            existing_payments = await payments_collection.find({
+                "payment_number": {"$regex": f"^{pattern}"}
+            }).to_list(length=None)
+            
+            # Extract numbers and find max
+            max_num = 0
+            for payment in existing_payments:
+                try:
+                    num_part = payment.get("payment_number", "").split("-")[-1]
+                    num = int(num_part)
+                    if num > max_num:
+                        max_num = num
+                except (ValueError, IndexError):
+                    continue
+            
+            # Generate next number
+            next_num = max_num + 1
+            payment_data["payment_number"] = f"{prefix}-{date_str}-{next_num:04d}"
         
         # Default status to 'draft' 
         if not payment_data.get("status"):
