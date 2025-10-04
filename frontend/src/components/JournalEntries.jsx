@@ -17,7 +17,9 @@ const JournalEntries = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [voucherTypeFilter, setVoucherTypeFilter] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showEntryForm, setShowEntryForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [accounts, setAccounts] = useState([]);
