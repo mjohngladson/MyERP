@@ -115,6 +115,7 @@ const GeneralSettings = ({ onBack }) => {
           <button onClick={()=>setTab('stock')} className={`px-3 py-2 rounded ${tab==='stock'?'bg-blue-600 text-white':'bg-gray-100'}`}><Layers className="inline mr-1" size={16}/> Stock</button>
           <button onClick={()=>setTab('payments')} className={`px-3 py-2 rounded ${tab==='payments'?'bg-blue-600 text-white':'bg-gray-100'}`}><CreditCard className="inline mr-1" size={16}/> Payments</button>
           <button onClick={()=>setTab('financial')} className={`px-3 py-2 rounded ${tab==='financial'?'bg-blue-600 text-white':'bg-gray-100'}`}><DollarSign className="inline mr-1" size={16}/> Financial</button>
+          <button onClick={()=>setTab('system')} className={`px-3 py-2 rounded ${tab==='system'?'bg-blue-600 text-white':'bg-gray-100'}`}><SettingsIcon className="inline mr-1" size={16}/> System</button>
         </div>
       </div>
 
