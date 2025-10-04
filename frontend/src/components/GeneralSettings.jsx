@@ -47,6 +47,9 @@ const GeneralSettings = ({ onBack }) => {
           enable_variants: !!data.enable_variants,
           uoms: Array.isArray(data.uoms) ? data.uoms : ['NOS','PCS','PCK','KG','G','L','ML'],
           payment_terms: Array.isArray(data.payment_terms) ? data.payment_terms : ['Net 0','Net 15','Net 30','Net 45'],
+          timezone: data.timezone || 'Asia/Kolkata',
+          date_format: data.date_format || 'DD/MM/YYYY',
+          time_format: data.time_format || '12',
           stock: {
             valuation_method: data?.stock?.valuation_method || 'FIFO',
             allow_negative_stock: !!(data?.stock?.allow_negative_stock),
