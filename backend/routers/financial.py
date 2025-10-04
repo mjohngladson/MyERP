@@ -214,6 +214,89 @@ async def create_journal_entry(entry_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating journal entry: {str(e)}")
 
+@router.get("/journal-entries/{entry_id}")
+async def get_journal_entry(entry_id: str):
+    """Get single journal entry by ID"""
+    try:
+        entry = await journal_entries_collection.find_one({"id": entry_id})
+        if not entry:
+            raise HTTPException(status_code=404, detail="Journal entry not found")
+        return sanitize(entry)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching journal entry: {str(e)}")
+
+@router.put("/journal-entries/{entry_id}")
+async def update_journal_entry(entry_id: str, entry_data: dict):
+    """Update journal entry"""
+    try:
+        # Check if entry exists
+        existing_entry = await journal_entries_collection.find_one({"id": entry_id})
+        if not existing_entry:
+            raise HTTPException(status_code=404, detail="Journal entry not found")
+        
+        # Cannot update posted entries
+        if existing_entry.get("status") == "posted":
+            raise HTTPException(status_code=400, detail="Cannot update posted journal entry")
+        
+        # Validations
+        if "accounts" in entry_data and len(entry_data.get("accounts", [])) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 account lines are required")
+        
+        # Recalculate totals if accounts changed
+        if "accounts" in entry_data:
+            total_debit = sum(float(acc.get("debit_amount", 0)) for acc in entry_data.get("accounts", []))
+            total_credit = sum(float(acc.get("credit_amount", 0)) for acc in entry_data.get("accounts", []))
+            
+            # Validate balanced entry
+            if abs(total_debit - total_credit) > 0.01:
+                raise HTTPException(status_code=400, detail="Journal entry must be balanced (total debits = total credits)")
+            
+            entry_data["total_debit"] = total_debit
+            entry_data["total_credit"] = total_credit
+        
+        entry_data["updated_at"] = now_utc()
+        
+        result = await journal_entries_collection.update_one(
+            {"id": entry_id},
+            {"$set": entry_data}
+        )
+        
+        if result.modified_count > 0:
+            return {"success": True, "message": "Journal entry updated successfully"}
+        else:
+            return {"success": True, "message": "No changes made to journal entry"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating journal entry: {str(e)}")
+
+@router.delete("/journal-entries/{entry_id}")
+async def delete_journal_entry(entry_id: str):
+    """Delete journal entry"""
+    try:
+        # Check if entry exists
+        entry = await journal_entries_collection.find_one({"id": entry_id})
+        if not entry:
+            raise HTTPException(status_code=404, detail="Journal entry not found")
+        
+        # Only allow deletion of draft entries
+        if entry.get("status") != "draft":
+            raise HTTPException(status_code=400, detail="Only draft journal entries can be deleted")
+        
+        # Delete the entry
+        result = await journal_entries_collection.delete_one({"id": entry_id})
+        
+        if result.deleted_count > 0:
+            return {"success": True, "message": "Journal entry deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete journal entry")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting journal entry: {str(e)}")
+
 @router.post("/journal-entries/{entry_id}/post")
 async def post_journal_entry(entry_id: str):
     """Post journal entry to ledger"""
