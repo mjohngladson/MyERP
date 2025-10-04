@@ -8325,6 +8325,319 @@ class BackendTester:
         
         return passed, failed
 
+    async def test_payment_entry_module(self):
+        """Test Payment Entry module with comprehensive CRUD operations and validations"""
+        print("\n💰 TESTING PAYMENT ENTRY MODULE")
+        print("=" * 50)
+        
+        try:
+            # Test 1: GET /api/financial/payments (List Payments)
+            print("Testing GET /api/financial/payments...")
+            
+            # Test without filters
+            async with self.session.get(f"{self.base_url}/api/financial/payments") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        self.log_test("GET Payments - No Filters", True, f"Retrieved {len(data)} payments", {"count": len(data)})
+                    else:
+                        self.log_test("GET Payments - No Filters", False, "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("GET Payments - No Filters", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with payment_type filter
+            async with self.session.get(f"{self.base_url}/api/financial/payments?payment_type=Receive") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    receive_payments = [p for p in data if p.get("payment_type") == "Receive"]
+                    self.log_test("GET Payments - Payment Type Filter", True, f"Retrieved {len(receive_payments)} Receive payments", {"count": len(receive_payments)})
+                else:
+                    self.log_test("GET Payments - Payment Type Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with status filter
+            async with self.session.get(f"{self.base_url}/api/financial/payments?status=draft") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    draft_payments = [p for p in data if p.get("status") == "draft"]
+                    self.log_test("GET Payments - Status Filter", True, f"Retrieved {len(draft_payments)} draft payments", {"count": len(draft_payments)})
+                else:
+                    self.log_test("GET Payments - Status Filter", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: POST /api/financial/payments (Create Payment)
+            print("Testing POST /api/financial/payments...")
+            
+            # Test valid payment creation
+            valid_payment = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": str(uuid.uuid4()),
+                "party_name": "Test Customer Ltd",
+                "amount": 5000.00,
+                "payment_date": "2025-01-15",
+                "payment_method": "Cash",
+                "status": "paid",
+                "description": "Test payment for invoice settlement"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=valid_payment) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and data.get("payment_id"):
+                        created_payment_id = data["payment_id"]
+                        self.log_test("POST Payment - Valid Creation", True, f"Payment created with ID: {created_payment_id}", data)
+                    else:
+                        self.log_test("POST Payment - Valid Creation", False, "Missing success or payment_id in response", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("POST Payment - Valid Creation", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # Test validation errors
+            validation_tests = [
+                {"data": {**valid_payment, "party_id": ""}, "error": "Missing party_id"},
+                {"data": {**valid_payment, "party_name": ""}, "error": "Missing party_name"},
+                {"data": {**valid_payment, "payment_type": "Invalid"}, "error": "Invalid payment_type"},
+                {"data": {**valid_payment, "party_type": "Invalid"}, "error": "Invalid party_type"},
+                {"data": {**valid_payment, "amount": 0}, "error": "Zero amount"},
+                {"data": {**valid_payment, "amount": -100}, "error": "Negative amount"},
+                {"data": {**valid_payment, "payment_date": ""}, "error": "Missing payment_date"},
+                {"data": {**valid_payment, "payment_method": ""}, "error": "Missing payment_method"},
+            ]
+            
+            for test_case in validation_tests:
+                async with self.session.post(f"{self.base_url}/api/financial/payments", json=test_case["data"]) as response:
+                    if response.status == 400:
+                        self.log_test(f"POST Payment - Validation: {test_case['error']}", True, f"Correctly rejected with HTTP 400")
+                    else:
+                        self.log_test(f"POST Payment - Validation: {test_case['error']}", False, f"Expected HTTP 400, got {response.status}")
+                        return False
+            
+            # Test 3: GET /api/financial/payments/{payment_id} (View Single Payment)
+            print("Testing GET /api/financial/payments/{payment_id}...")
+            
+            # Retrieve the created payment
+            async with self.session.get(f"{self.base_url}/api/financial/payments/{created_payment_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    required_fields = ["id", "payment_number", "payment_type", "party_name", "amount", "payment_date", "payment_method", "status"]
+                    if all(field in data for field in required_fields):
+                        # Verify payment_number is auto-generated
+                        if data.get("payment_number") and data["payment_number"].startswith("REC-"):
+                            self.log_test("GET Payment by ID - Valid", True, f"Retrieved payment: {data['payment_number']}", {"payment_number": data["payment_number"], "amount": data["amount"]})
+                        else:
+                            self.log_test("GET Payment by ID - Valid", False, "Payment number not auto-generated correctly", data)
+                            return False
+                    else:
+                        missing = [f for f in required_fields if f not in data]
+                        self.log_test("GET Payment by ID - Valid", False, f"Missing fields: {missing}", data)
+                        return False
+                else:
+                    self.log_test("GET Payment by ID - Valid", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test with non-existent ID
+            fake_id = str(uuid.uuid4())
+            async with self.session.get(f"{self.base_url}/api/financial/payments/{fake_id}") as response:
+                if response.status == 404:
+                    self.log_test("GET Payment by ID - Non-existent", True, "Correctly returned 404 for non-existent payment")
+                else:
+                    self.log_test("GET Payment by ID - Non-existent", False, f"Expected HTTP 404, got {response.status}")
+                    return False
+            
+            # Test 4: PUT /api/financial/payments/{payment_id} (Update Payment)
+            print("Testing PUT /api/financial/payments/{payment_id}...")
+            
+            # Create a draft payment for updating
+            draft_payment = {
+                "payment_type": "Pay",
+                "party_type": "Supplier",
+                "party_id": str(uuid.uuid4()),
+                "party_name": "Test Supplier Pvt Ltd",
+                "amount": 3000.00,
+                "payment_date": "2025-01-16",
+                "payment_method": "Bank Transfer",
+                "status": "draft",
+                "description": "Draft payment for testing updates"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=draft_payment) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    draft_payment_id = data["payment_id"]
+                else:
+                    self.log_test("PUT Payment - Create Draft", False, f"Failed to create draft payment: HTTP {response.status}")
+                    return False
+            
+            # Update the draft payment
+            update_data = {
+                "amount": 3500.00,
+                "description": "Updated payment amount and description"
+            }
+            
+            async with self.session.put(f"{self.base_url}/api/financial/payments/{draft_payment_id}", json=update_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_test("PUT Payment - Valid Update", True, "Payment updated successfully", data)
+                    else:
+                        self.log_test("PUT Payment - Valid Update", False, "Update response missing success flag", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("PUT Payment - Valid Update", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # Verify changes persist
+            async with self.session.get(f"{self.base_url}/api/financial/payments/{draft_payment_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("amount") == 3500.00 and "Updated payment" in data.get("description", ""):
+                        self.log_test("PUT Payment - Verify Changes", True, "Changes persisted correctly", {"amount": data["amount"], "description": data["description"]})
+                    else:
+                        self.log_test("PUT Payment - Verify Changes", False, "Changes not persisted", data)
+                        return False
+                else:
+                    self.log_test("PUT Payment - Verify Changes", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test updating non-existent payment
+            async with self.session.put(f"{self.base_url}/api/financial/payments/{fake_id}", json=update_data) as response:
+                if response.status == 404:
+                    self.log_test("PUT Payment - Non-existent", True, "Correctly returned 404 for non-existent payment")
+                else:
+                    self.log_test("PUT Payment - Non-existent", False, f"Expected HTTP 404, got {response.status}")
+                    return False
+            
+            # Test 5: DELETE /api/financial/payments/{payment_id} (Delete Payment)
+            print("Testing DELETE /api/financial/payments/{payment_id}...")
+            
+            # Create another draft payment for deletion
+            delete_payment = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": str(uuid.uuid4()),
+                "party_name": "Delete Test Customer",
+                "amount": 1000.00,
+                "payment_date": "2025-01-17",
+                "payment_method": "Cash",
+                "status": "draft",
+                "description": "Payment to be deleted"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=delete_payment) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    delete_payment_id = data["payment_id"]
+                else:
+                    self.log_test("DELETE Payment - Create Test Payment", False, f"Failed to create test payment: HTTP {response.status}")
+                    return False
+            
+            # Delete the draft payment
+            async with self.session.delete(f"{self.base_url}/api/financial/payments/{delete_payment_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_test("DELETE Payment - Draft Payment", True, "Draft payment deleted successfully", data)
+                    else:
+                        self.log_test("DELETE Payment - Draft Payment", False, "Delete response missing success flag", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DELETE Payment - Draft Payment", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # Verify payment is removed
+            async with self.session.get(f"{self.base_url}/api/financial/payments/{delete_payment_id}") as response:
+                if response.status == 404:
+                    self.log_test("DELETE Payment - Verify Removal", True, "Payment successfully removed from database")
+                else:
+                    self.log_test("DELETE Payment - Verify Removal", False, f"Payment still exists after deletion: HTTP {response.status}")
+                    return False
+            
+            # Try deleting a "paid" payment (should fail)
+            async with self.session.delete(f"{self.base_url}/api/financial/payments/{created_payment_id}") as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "Cannot delete paid payment" in data.get("detail", ""):
+                        self.log_test("DELETE Payment - Paid Payment", True, "Correctly prevented deletion of paid payment")
+                    else:
+                        self.log_test("DELETE Payment - Paid Payment", False, "Wrong error message for paid payment deletion", data)
+                        return False
+                else:
+                    self.log_test("DELETE Payment - Paid Payment", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+            
+            # Test deleting non-existent payment
+            async with self.session.delete(f"{self.base_url}/api/financial/payments/{fake_id}") as response:
+                if response.status == 404:
+                    self.log_test("DELETE Payment - Non-existent", True, "Correctly returned 404 for non-existent payment")
+                else:
+                    self.log_test("DELETE Payment - Non-existent", False, f"Expected HTTP 404, got {response.status}")
+                    return False
+            
+            # Test 6: Dashboard Integration
+            print("Testing Dashboard Integration...")
+            
+            # Create multiple payments for dashboard testing
+            dashboard_payments = [
+                {
+                    "payment_type": "Receive",
+                    "party_type": "Customer",
+                    "party_id": str(uuid.uuid4()),
+                    "party_name": "Dashboard Customer 1",
+                    "amount": 2000.00,
+                    "payment_date": "2025-01-18",
+                    "payment_method": "Bank Transfer",
+                    "status": "paid"
+                },
+                {
+                    "payment_type": "Pay",
+                    "party_type": "Supplier",
+                    "party_id": str(uuid.uuid4()),
+                    "party_name": "Dashboard Supplier 1",
+                    "amount": 1500.00,
+                    "payment_date": "2025-01-18",
+                    "payment_method": "Cash",
+                    "status": "paid"
+                }
+            ]
+            
+            created_dashboard_payments = []
+            for payment in dashboard_payments:
+                async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        created_dashboard_payments.append(data["payment_id"])
+            
+            # Verify GET /api/financial/payments?limit=1000 returns all payments
+            async with self.session.get(f"{self.base_url}/api/financial/payments?limit=1000") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    total_payments = len(data)
+                    
+                    # Calculate totals
+                    receive_total = sum(p.get("amount", 0) for p in data if p.get("payment_type") == "Receive")
+                    pay_total = sum(p.get("amount", 0) for p in data if p.get("payment_type") == "Pay")
+                    
+                    self.log_test("Dashboard Integration - All Payments", True, 
+                                f"Retrieved {total_payments} payments. Receive: ₹{receive_total}, Pay: ₹{pay_total}", 
+                                {"total_count": total_payments, "receive_total": receive_total, "pay_total": pay_total})
+                else:
+                    self.log_test("Dashboard Integration - All Payments", False, f"HTTP {response.status}")
+                    return False
+            
+            print("✅ Payment Entry Module Testing Completed Successfully!")
+            return True
+            
+        except Exception as e:
+            self.log_test("Payment Entry Module", False, f"Critical error during testing: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on LOGIN FUNCTIONALITY - URGENT USER ISSUE"""
         print("🚀 Starting GiLi Backend API Testing Suite - URGENT LOGIN TESTING")
