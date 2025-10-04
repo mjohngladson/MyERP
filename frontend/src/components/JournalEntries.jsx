@@ -161,7 +161,7 @@ const JournalEntries = ({ onNavigate }) => {
   };
 
   const handlePostEntry = async (entryId) => {
-    try:
+    try {
       await api.post(`/financial/journal-entries/${entryId}/post`);
       alert('Journal entry posted successfully!');
       loadData();
