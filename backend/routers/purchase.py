@@ -233,6 +233,38 @@ async def update_purchase_order(order_id: str, payload: dict):
                 'discount_amount': discount_amount,
                 'total_amount': total_amount
             })
+        # If status changed to "submitted", create Purchase Invoice
+        if payload.get('status') == 'submitted' and existing.get('status') != 'submitted':
+            from database import purchase_invoices_collection
+            import uuid
+            from datetime import timedelta
+            
+            # Create Purchase Invoice from Purchase Order
+            invoice_data = {
+                'id': str(uuid.uuid4()),
+                'invoice_number': f"PINV-{datetime.now().strftime('%Y%m%d')}-{await purchase_invoices_collection.count_documents({}) + 1:04d}",
+                'purchase_order_id': order_id,
+                'order_number': existing.get('order_number', ''),
+                'supplier_id': existing.get('supplier_id'),
+                'supplier_name': existing.get('supplier_name'),
+                'invoice_date': datetime.now().strftime('%Y-%m-%d'),
+                'due_date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'),
+                'status': 'draft',
+                'items': payload.get('items', existing.get('items', [])),
+                'subtotal': payload.get('subtotal', existing.get('subtotal', 0)),
+                'discount_amount': payload.get('discount_amount', existing.get('discount_amount', 0)),
+                'tax_rate': payload.get('tax_rate', existing.get('tax_rate', 18)),
+                'tax_amount': payload.get('tax_amount', existing.get('tax_amount', 0)),
+                'total_amount': payload.get('total_amount', existing.get('total_amount', 0)),
+                'company_id': existing.get('company_id', 'default_company'),
+                'created_at': datetime.now(timezone.utc),
+                'updated_at': datetime.now(timezone.utc)
+            }
+            
+            await purchase_invoices_collection.insert_one(invoice_data)
+            res = await purchase_orders_collection.update_one({ '_id': existing['_id'] }, { '$set': payload })
+            return { 'success': True, 'message': 'Purchase Order updated and Purchase Invoice created', 'invoice_id': invoice_data['id'], 'modified': res.modified_count }
+        
         res = await purchase_orders_collection.update_one({ '_id': existing['_id'] }, { '$set': payload })
         return { 'success': True, 'modified': res.modified_count }
     except HTTPException:
