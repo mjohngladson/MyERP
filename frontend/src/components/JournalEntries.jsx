@@ -238,6 +238,57 @@ const JournalEntries = ({ onNavigate }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Insights Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Entries</p>
+                <p className="text-2xl font-bold text-gray-900">{insights.totalEntries}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <FileText className="text-blue-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Draft Entries</p>
+                <p className="text-2xl font-bold text-yellow-600">{insights.draftCount}</p>
+              </div>
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <Edit className="text-yellow-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Posted Entries</p>
+                <p className="text-2xl font-bold text-green-600">{insights.postedCount}</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(insights.totalDebitAmount)}</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Calendar className="text-purple-600" size={24} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
           <div className="flex items-center justify-between mb-4">
