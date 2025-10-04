@@ -13,6 +13,9 @@ const GeneralSettings = ({ onBack }) => {
     enable_variants: true,
     uoms: ['NOS','PCS','PCK','KG','G','L','ML'],
     payment_terms: ['Net 0','Net 15','Net 30','Net 45'],
+    timezone: 'Asia/Kolkata',
+    date_format: 'DD/MM/YYYY',
+    time_format: '12',
     stock: { valuation_method: 'FIFO', allow_negative_stock: false, enable_batches: true, enable_serials: true },
     financial: {
       base_currency: 'INR',
