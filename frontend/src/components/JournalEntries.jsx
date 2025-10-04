@@ -85,6 +85,29 @@ const JournalEntries = ({ onNavigate }) => {
     entry.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setVoucherTypeFilter('');
+    setDateRange({ from: '', to: '' });
+    setSortConfig({ key: null, direction: 'asc' });
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return '⇅';
+    }
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
   const handlePostEntry = async (entryId) => {
     try {
       await api.post(`/financial/journal-entries/${entryId}/post`);
