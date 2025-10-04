@@ -300,15 +300,36 @@ async def update_sales_order(order_id: str, order_data: dict):
 @router.delete("/orders/{order_id}")
 async def delete_sales_order(order_id: str):
     try:
-        result = await sales_orders_collection.delete_one({"id": order_id})
-        if result.deleted_count == 0:
+        # Check if order exists
+        order = await sales_orders_collection.find_one({"id": order_id})
+        if not order:
             try:
-                result = await sales_orders_collection.delete_one({"_id": ObjectId(order_id)})
+                order = await sales_orders_collection.find_one({"_id": ObjectId(order_id)})
             except Exception:
                 pass
+        if not order:
+            raise HTTPException(status_code=404, detail="Sales order not found")
+        
+        # Check if order is linked to any invoices
+        from database import sales_invoices_collection
+        linked_invoice = await sales_invoices_collection.find_one({"sales_order_id": order_id})
+        if linked_invoice:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete sales order. It is linked to invoice {linked_invoice.get('invoice_number', 'N/A')}"
+            )
+        
+        # Only allow deletion of draft or cancelled orders
+        if order.get("status") not in ["draft", "cancelled"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Only draft or cancelled sales orders can be deleted"
+            )
+        
+        result = await sales_orders_collection.delete_one({"id": order_id})
         if result.deleted_count > 0:
-            return {"success": True}
-        raise HTTPException(status_code=404, detail="Sales order not found")
+            return {"success": True, "message": "Sales order deleted successfully"}
+        raise HTTPException(status_code=500, detail="Failed to delete sales order")
     except HTTPException:
         raise
     except Exception as e:
