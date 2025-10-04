@@ -561,11 +561,16 @@ async def create_payment_journal_entry(payment_data: dict):
                 }
             ]
         
+        # Ensure posting_date is a string in YYYY-MM-DD format
+        posting_date = payment_data["payment_date"]
+        if isinstance(posting_date, datetime):
+            posting_date = posting_date.strftime("%Y-%m-%d")
+        
         # Create journal entry
         entry_data = {
             "id": str(uuid.uuid4()),
             "entry_number": f"JE-PAY-{payment_data['payment_number']}",
-            "posting_date": payment_data["payment_date"],
+            "posting_date": posting_date,
             "reference": payment_data["payment_number"],
             "description": f"Payment entry for {payment_data['party_name']}",
             "accounts": accounts,
