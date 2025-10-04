@@ -764,4 +764,125 @@ const JournalEntryFormModal = ({ entry, accounts, onSave, onClose }) => {
   );
 };
 
+// Journal Entry View Modal Component
+const JournalEntryViewModal = ({ entry, accounts, onClose, formatCurrency, formatDate }) => {
+  const getAccountName = (accountId) => {
+    const account = accounts.find(a => a.id === accountId);
+    return account ? account.account_name : accountId;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Journal Entry Details</h3>
+            <p className="text-sm text-gray-600 mt-1">{entry.entry_number}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* Header Info */}
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Posting Date</label>
+              <p className="text-gray-900 font-medium">{formatDate(entry.posting_date)}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                entry.status === 'posted' 
+                  ? 'bg-green-100 text-green-800' 
+                  : entry.status === 'draft'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {entry.status}
+              </span>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-500 mb-1">Description</label>
+              <p className="text-gray-900">{entry.description}</p>
+            </div>
+            {entry.reference && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-500 mb-1">Reference</label>
+                <p className="text-gray-900">{entry.reference}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Account Lines */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">Account Lines</label>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {entry.accounts?.map((acc, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {getAccountName(acc.account_id)}
+                        {acc.description && (
+                          <div className="text-xs text-gray-500 mt-1">{acc.description}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                        {acc.debit_amount > 0 ? formatCurrency(acc.debit_amount) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                        {acc.credit_amount > 0 ? formatCurrency(acc.credit_amount) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-50 font-semibold">
+                    <td className="px-4 py-3 text-sm text-gray-900">Total</td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">{formatCurrency(entry.total_debit)}</td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">{formatCurrency(entry.total_credit)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+              <div>
+                <span className="font-medium">Created:</span> {formatDate(entry.created_at)}
+              </div>
+              {entry.updated_at && (
+                <div>
+                  <span className="font-medium">Updated:</span> {formatDate(entry.updated_at)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6 border-t border-gray-200 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default JournalEntries;
