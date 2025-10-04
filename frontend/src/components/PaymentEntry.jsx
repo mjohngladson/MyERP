@@ -72,6 +72,21 @@ const PaymentEntry = ({ onNavigate }) => {
     });
   };
 
+  const handleDelete = async (paymentId) => {
+    if (!window.confirm('Are you sure you want to delete this payment?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/financial/payments/${paymentId}`);
+      alert('Payment deleted successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      alert(error.response?.data?.detail || 'Failed to delete payment');
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       'draft': 'bg-yellow-100 text-yellow-800',
