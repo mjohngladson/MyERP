@@ -146,7 +146,7 @@ const SalesOrderForm = ({ orderId, onBack, onSave }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Order Number</label>
                 <input type="text" value={order.order_number} onChange={(e)=>setOrder(prev=>({...prev, order_number: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Order Date</label>
                   <input type="date" value={(order.order_date || new Date().toISOString()).split('T')[0]} onChange={(e)=>setOrder(prev=>({...prev, order_date: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
@@ -154,6 +154,16 @@ const SalesOrderForm = ({ orderId, onBack, onSave }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
                   <input type="date" value={order.delivery_date} onChange={(e)=>setOrder(prev=>({...prev, delivery_date: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select value={order.status||'draft'} onChange={(e)=>setOrder(prev=>({...prev, status: e.target.value}))} className="w-full px-3 py-2 border rounded-md">
+                    <option value="draft">Draft</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="fulfilled">Fulfilled</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
               <div>
