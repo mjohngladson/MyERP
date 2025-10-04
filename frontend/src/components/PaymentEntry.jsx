@@ -20,6 +20,7 @@ const PaymentEntry = ({ onNavigate }) => {
   const [statusFilter, setStatusFilter] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
+  const [viewingPayment, setViewingPayment] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
 
