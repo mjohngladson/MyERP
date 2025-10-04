@@ -409,6 +409,16 @@ const PaymentEntry = ({ onNavigate }) => {
           }}
         />
       )}
+
+      {/* View Payment Modal */}
+      {viewingPayment && (
+        <PaymentViewModal
+          payment={viewingPayment}
+          onClose={() => setViewingPayment(null)}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+        />
+      )}
     </div>
   );
 };
