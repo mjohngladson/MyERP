@@ -29,7 +29,7 @@ const PaymentEntry = ({ onNavigate }) => {
 
   useEffect(() => {
     loadData();
-  }, [typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter, methodFilter]);
 
   const loadData = async () => {
     setLoading(true);
