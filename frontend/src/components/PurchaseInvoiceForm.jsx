@@ -148,7 +148,7 @@ const PurchaseInvoiceForm = ({ invoiceId, onBack, onSave }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
                 <input type="text" value={inv.invoice_number} onChange={(e)=>setInv(prev=>({...prev, invoice_number: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
                   <input type="date" value={(inv.invoice_date||new Date().toISOString()).split('T')[0]} onChange={(e)=>setInv(prev=>({...prev, invoice_date: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
@@ -156,16 +156,6 @@ const PurchaseInvoiceForm = ({ invoiceId, onBack, onSave }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                   <input type="date" value={inv.due_date} onChange={(e)=>setInv(prev=>({...prev, due_date: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select value={inv.status||'draft'} onChange={(e)=>setInv(prev=>({...prev, status: e.target.value}))} className="w-full px-3 py-2 border rounded-md">
-                    <option value="draft">Draft</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="paid">Paid</option>
-                    <option value="overdue">Overdue</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
                 </div>
               </div>
             </div>
