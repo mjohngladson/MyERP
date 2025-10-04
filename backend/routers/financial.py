@@ -234,6 +234,22 @@ async def get_payments(
 async def create_payment(payment_data: dict):
     """Create new payment"""
     try:
+        # Validations
+        if not payment_data.get("party_id"):
+            raise HTTPException(status_code=400, detail="Party is required")
+        if not payment_data.get("party_name"):
+            raise HTTPException(status_code=400, detail="Party name is required")
+        if not payment_data.get("payment_type") or payment_data.get("payment_type") not in ["Receive", "Pay"]:
+            raise HTTPException(status_code=400, detail="Valid payment type is required (Receive or Pay)")
+        if not payment_data.get("party_type") or payment_data.get("party_type") not in ["Customer", "Supplier"]:
+            raise HTTPException(status_code=400, detail="Valid party type is required (Customer or Supplier)")
+        if not payment_data.get("amount") or float(payment_data.get("amount", 0)) <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than zero")
+        if not payment_data.get("payment_date"):
+            raise HTTPException(status_code=400, detail="Payment date is required")
+        if not payment_data.get("payment_method"):
+            raise HTTPException(status_code=400, detail="Payment method is required")
+        
         payment_data["id"] = str(uuid.uuid4())
         
         # Generate payment number if not provided
@@ -241,6 +257,10 @@ async def create_payment(payment_data: dict):
             count = await payments_collection.count_documents({})
             prefix = "REC" if payment_data.get("payment_type") == "Receive" else "PAY"
             payment_data["payment_number"] = f"{prefix}-{datetime.now().strftime('%Y%m%d')}-{count + 1:04d}"
+        
+        # Default status to 'paid' instead of 'draft' for immediate reflection
+        if not payment_data.get("status"):
+            payment_data["status"] = "paid"
         
         # Calculate base amount if different currency
         exchange_rate = float(payment_data.get("exchange_rate", 1.0))
