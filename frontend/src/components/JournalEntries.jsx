@@ -145,8 +145,23 @@ const JournalEntries = ({ onNavigate }) => {
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
-  const handlePostEntry = async (entryId) => {
+  const handleDelete = async (entryId) => {
+    if (!window.confirm('Are you sure you want to delete this journal entry?')) {
+      return;
+    }
+    
     try {
+      await api.delete(`/financial/journal-entries/${entryId}`);
+      alert('Journal entry deleted successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      alert(error.response?.data?.detail || 'Failed to delete journal entry');
+    }
+  };
+
+  const handlePostEntry = async (entryId) => {
+    try:
       await api.post(`/financial/journal-entries/${entryId}/post`);
       alert('Journal entry posted successfully!');
       loadData();
