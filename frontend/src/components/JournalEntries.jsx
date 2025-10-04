@@ -80,10 +80,45 @@ const JournalEntries = ({ onNavigate }) => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const filteredEntries = entries.filter(entry =>
-    entry.entry_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEntries = entries
+    .filter(entry =>
+      entry.entry_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      
+      let aValue, bValue;
+      
+      switch (sortConfig.key) {
+        case 'description':
+          aValue = a.description?.toLowerCase() || '';
+          bValue = b.description?.toLowerCase() || '';
+          break;
+        case 'amount':
+          aValue = a.total_debit || 0;
+          bValue = b.total_debit || 0;
+          break;
+        case 'voucher_type':
+          aValue = a.voucher_type?.toLowerCase() || '';
+          bValue = b.voucher_type?.toLowerCase() || '';
+          break;
+        case 'status':
+          aValue = a.status?.toLowerCase() || '';
+          bValue = b.status?.toLowerCase() || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
 
   const clearFilters = () => {
     setSearchTerm('');
