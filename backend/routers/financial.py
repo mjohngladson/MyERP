@@ -733,8 +733,10 @@ async def get_profit_loss_statement(
 async def get_balance_sheet(
     as_of_date: Optional[str] = Query(None, description="As of date (YYYY-MM-DD)")
 ):
-    """Generate Balance Sheet"""
+    """Generate Balance Sheet - includes all posted journal entries and payments"""
     try:
+        target_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+        
         # Get asset, liability, and equity accounts
         asset_accounts = await accounts_collection.find({
             "root_type": "Asset", "is_active": True, "is_group": False
@@ -748,30 +750,50 @@ async def get_balance_sheet(
             "root_type": "Equity", "is_active": True, "is_group": False
         }).to_list(length=None)
         
-        total_assets = sum(acc.get("account_balance", 0) for acc in asset_accounts)
-        total_liabilities = sum(abs(acc.get("account_balance", 0)) for acc in liability_accounts)
-        total_equity = sum(abs(acc.get("account_balance", 0)) for acc in equity_accounts)
+        # Initialize balances
+        asset_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in asset_accounts}
+        liability_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in liability_accounts}
+        equity_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in equity_accounts}
+        
+        # Get all posted journal entries up to target date
+        journal_entries = await journal_entries_collection.find({
+            "status": "posted",
+            "posting_date": {"$lte": target_date}
+        }).to_list(length=None)
+        
+        # Aggregate balances from journal entries
+        for entry in journal_entries:
+            for acc in entry.get("accounts", []):
+                account_id = acc.get("account_id")
+                debit = float(acc.get("debit_amount", 0))
+                credit = float(acc.get("credit_amount", 0))
+                
+                # Asset accounts: debit increases, credit decreases
+                if account_id in asset_balances:
+                    asset_balances[account_id]["amount"] += (debit - credit)
+                
+                # Liability accounts: credit increases, debit decreases
+                elif account_id in liability_balances:
+                    liability_balances[account_id]["amount"] += (credit - debit)
+                
+                # Equity accounts: credit increases, debit decreases
+                elif account_id in equity_balances:
+                    equity_balances[account_id]["amount"] += (credit - debit)
+        
+        # Filter out zero balances
+        asset_list = [acc for acc in asset_balances.values() if abs(acc["amount"]) > 0.01]
+        liability_list = [acc for acc in liability_balances.values() if abs(acc["amount"]) > 0.01]
+        equity_list = [acc for acc in equity_balances.values() if abs(acc["amount"]) > 0.01]
+        
+        total_assets = sum(acc["amount"] for acc in asset_list)
+        total_liabilities = sum(acc["amount"] for acc in liability_list)
+        total_equity = sum(acc["amount"] for acc in equity_list)
         
         return {
-            "as_of_date": as_of_date or datetime.now().strftime("%Y-%m-%d"),
-            "assets": [
-                {
-                    "account_name": acc["account_name"],
-                    "amount": acc.get("account_balance", 0)
-                } for acc in asset_accounts if acc.get("account_balance", 0) != 0
-            ],
-            "liabilities": [
-                {
-                    "account_name": acc["account_name"],
-                    "amount": abs(acc.get("account_balance", 0))
-                } for acc in liability_accounts if acc.get("account_balance", 0) != 0
-            ],
-            "equity": [
-                {
-                    "account_name": acc["account_name"],
-                    "amount": abs(acc.get("account_balance", 0))
-                } for acc in equity_accounts if acc.get("account_balance", 0) != 0
-            ],
+            "as_of_date": target_date,
+            "assets": asset_list,
+            "liabilities": liability_list,
+            "equity": equity_list,
             "total_assets": total_assets,
             "total_liabilities": total_liabilities,
             "total_equity": total_equity,
