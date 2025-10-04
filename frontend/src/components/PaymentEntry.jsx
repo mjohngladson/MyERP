@@ -337,20 +337,32 @@ const PaymentEntry = ({ onNavigate }) => {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => {/* View details */}}
+                            onClick={() => setViewingPayment(payment)}
                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
                             title="View Payment"
                           >
                             <Eye size={16} />
                           </button>
                           {payment.status === 'draft' && (
-                            <button
-                              onClick={() => setEditingPayment(payment)}
-                              className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
-                              title="Edit Payment"
-                            >
-                              <Edit size={16} />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setEditingPayment(payment);
+                                  setShowPaymentForm(true);
+                                }}
+                                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                                title="Edit Payment"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(payment.id)}
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                title="Delete Payment"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
