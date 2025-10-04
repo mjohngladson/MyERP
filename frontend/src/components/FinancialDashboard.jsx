@@ -197,11 +197,23 @@ const FinancialDashboard = ({ onNavigate }) => {
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Assets</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(quickStats.totalAssets)}</p>
+                <p className="text-sm text-gray-600">Total Received</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(quickStats.totalReceived)}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <TrendingUp className="text-blue-600" size={24} />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <TrendingUp className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Paid</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(quickStats.totalPaid)}</p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-lg">
+                <TrendingDown className="text-red-600" size={24} />
               </div>
             </div>
           </div>
@@ -212,20 +224,8 @@ const FinancialDashboard = ({ onNavigate }) => {
                 <p className="text-sm text-gray-600">Cash Balance</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(quickStats.cashBalance)}</p>
               </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="text-green-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Monthly Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(quickStats.totalIncome)}</p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <PieChart className="text-purple-600" size={24} />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <DollarSign className="text-blue-600" size={24} />
               </div>
             </div>
           </div>
