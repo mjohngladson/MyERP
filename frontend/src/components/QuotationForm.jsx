@@ -117,16 +117,6 @@ const QuotationForm = ({ quotationId, onBack, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Quotation Date</label>
                   <input type="date" value={(qt.quotation_date||new Date().toISOString()).split('T')[0]} onChange={(e)=>setQt(prev=>({...prev, quotation_date: e.target.value}))} className="w-full px-3 py-2 border rounded-md" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select value={qt.status||'draft'} onChange={(e)=>setQt(prev=>({...prev, status: e.target.value}))} className="w-full px-3 py-2 border rounded-md">
-                    <option value="draft">Draft</option>
-                    <option value="sent">Sent</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>
