@@ -26,7 +26,7 @@ const JournalEntries = ({ onNavigate }) => {
 
   useEffect(() => {
     loadData();
-  }, [statusFilter, dateRange]);
+  }, [statusFilter, voucherTypeFilter, dateRange]);
 
   const loadData = async () => {
     setLoading(true);
