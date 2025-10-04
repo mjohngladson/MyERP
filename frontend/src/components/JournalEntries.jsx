@@ -23,6 +23,7 @@ const JournalEntries = ({ onNavigate }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showEntryForm, setShowEntryForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [viewingEntry, setViewingEntry] = useState(null);
   const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
