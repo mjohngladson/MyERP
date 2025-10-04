@@ -282,6 +282,86 @@ async def create_payment(payment_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating payment: {str(e)}")
 
+@router.get("/payments/{payment_id}")
+async def get_payment(payment_id: str):
+    """Get single payment by ID"""
+    try:
+        payment = await payments_collection.find_one({"id": payment_id})
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        return sanitize(payment)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching payment: {str(e)}")
+
+@router.put("/payments/{payment_id}")
+async def update_payment(payment_id: str, payment_data: dict):
+    """Update payment"""
+    try:
+        # Check if payment exists
+        existing_payment = await payments_collection.find_one({"id": payment_id})
+        if not existing_payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        
+        # Validations
+        if payment_data.get("party_id") and not payment_data.get("party_id"):
+            raise HTTPException(status_code=400, detail="Party is required")
+        if payment_data.get("amount") is not None and float(payment_data.get("amount", 0)) <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than zero")
+        if payment_data.get("payment_type") and payment_data.get("payment_type") not in ["Receive", "Pay"]:
+            raise HTTPException(status_code=400, detail="Valid payment type is required (Receive or Pay)")
+        
+        # Recalculate base amount if amount or exchange rate changed
+        if "amount" in payment_data or "exchange_rate" in payment_data:
+            amount = float(payment_data.get("amount", existing_payment.get("amount", 0)))
+            exchange_rate = float(payment_data.get("exchange_rate", existing_payment.get("exchange_rate", 1.0)))
+            payment_data["base_amount"] = amount * exchange_rate
+            payment_data["unallocated_amount"] = payment_data["base_amount"]
+        
+        payment_data["updated_at"] = now_utc()
+        
+        result = await payments_collection.update_one(
+            {"id": payment_id},
+            {"$set": payment_data}
+        )
+        
+        if result.modified_count > 0:
+            return {"success": True, "message": "Payment updated successfully"}
+        else:
+            return {"success": True, "message": "No changes made to payment"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating payment: {str(e)}")
+
+@router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: str):
+    """Delete payment"""
+    try:
+        # Check if payment exists
+        payment = await payments_collection.find_one({"id": payment_id})
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        
+        # Only allow deletion of draft or submitted payments, not paid ones
+        if payment.get("status") == "paid":
+            raise HTTPException(status_code=400, detail="Cannot delete paid payment. Please cancel it first.")
+        
+        # Delete the payment
+        result = await payments_collection.delete_one({"id": payment_id})
+        
+        if result.deleted_count > 0:
+            # Also delete associated journal entry if exists
+            await journal_entries_collection.delete_one({"voucher_id": payment_id})
+            return {"success": True, "message": "Payment deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete payment")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting payment: {str(e)}")
+
 async def create_payment_journal_entry(payment_data: dict):
     """Create automatic journal entry for payment"""
     try:
