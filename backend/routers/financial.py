@@ -258,9 +258,9 @@ async def create_payment(payment_data: dict):
             prefix = "REC" if payment_data.get("payment_type") == "Receive" else "PAY"
             payment_data["payment_number"] = f"{prefix}-{datetime.now().strftime('%Y%m%d')}-{count + 1:04d}"
         
-        # Default status to 'paid' instead of 'draft' for immediate reflection
+        # Default status to 'draft' 
         if not payment_data.get("status"):
-            payment_data["status"] = "paid"
+            payment_data["status"] = "draft"
         
         # Calculate base amount if different currency
         exchange_rate = float(payment_data.get("exchange_rate", 1.0))
