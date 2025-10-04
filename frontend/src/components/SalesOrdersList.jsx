@@ -96,6 +96,20 @@ const SalesOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder }) =>
     } catch (e) { console.error(e); alert('Error sending'); } finally { setSending(false); }
   };
 
+  const handleDelete = async (order) => {
+    if (!window.confirm(`Are you sure you want to delete sales order ${order.order_number}?`)) {
+      return;
+    }
+    try {
+      await api.delete(`/sales/orders/${order.id}`);
+      alert('Sales order deleted successfully');
+      refetch && refetch();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert(error.response?.data?.detail || 'Failed to delete sales order');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen"><div className="animate-pulse h-40 bg-gray-100 rounded"/></div>
