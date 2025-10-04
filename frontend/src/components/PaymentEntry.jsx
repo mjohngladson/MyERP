@@ -692,7 +692,7 @@ const PaymentViewModal = ({ payment, onClose, formatCurrency, formatDate }) => {
                   ? 'bg-yellow-100 text-yellow-800'
                   : 'bg-red-100 text-red-800'
               }`}>
-                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                {payment.status ? payment.status.charAt(0).toUpperCase() + payment.status.slice(1) : 'Unknown'}
               </span>
             </div>
           </div>
