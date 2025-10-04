@@ -25,6 +25,12 @@ const JournalEntries = ({ onNavigate }) => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [viewingEntry, setViewingEntry] = useState(null);
   const [accounts, setAccounts] = useState([]);
+  const [insights, setInsights] = useState({
+    totalEntries: 0,
+    draftCount: 0,
+    postedCount: 0,
+    totalDebitAmount: 0
+  });
 
   useEffect(() => {
     loadData();
