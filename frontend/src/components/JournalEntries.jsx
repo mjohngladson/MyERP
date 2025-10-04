@@ -4,6 +4,7 @@ import {
   Search, 
   Edit, 
   Eye, 
+  Trash2,
   CheckCircle,
   FileText,
   Filter,
