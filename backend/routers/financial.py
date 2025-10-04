@@ -670,9 +670,12 @@ async def get_profit_loss_statement(
     from_date: Optional[str] = Query(None, description="From date (YYYY-MM-DD)"),
     to_date: Optional[str] = Query(None, description="To date (YYYY-MM-DD)")
 ):
-    """Generate Profit & Loss statement"""
+    """Generate Profit & Loss statement - includes all posted journal entries and payments"""
     try:
-        # Get income and expense accounts
+        start_date = from_date or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        end_date = to_date or datetime.now().strftime("%Y-%m-%d")
+        
+        # Get all income and expense accounts
         income_accounts = await accounts_collection.find({
             "root_type": "Income", "is_active": True, "is_group": False
         }).to_list(length=None)
@@ -681,25 +684,44 @@ async def get_profit_loss_statement(
             "root_type": "Expense", "is_active": True, "is_group": False
         }).to_list(length=None)
         
-        total_income = sum(abs(acc.get("account_balance", 0)) for acc in income_accounts)
-        total_expenses = sum(acc.get("account_balance", 0) for acc in expense_accounts)
+        # Initialize account balances
+        income_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in income_accounts}
+        expense_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in expense_accounts}
+        
+        # Get all posted journal entries in date range
+        journal_entries = await journal_entries_collection.find({
+            "status": "posted",
+            "posting_date": {"$gte": start_date, "$lte": end_date}
+        }).to_list(length=None)
+        
+        # Aggregate amounts from journal entries
+        for entry in journal_entries:
+            for acc in entry.get("accounts", []):
+                account_id = acc.get("account_id")
+                debit = float(acc.get("debit_amount", 0))
+                credit = float(acc.get("credit_amount", 0))
+                
+                # Income accounts: credit increases, debit decreases
+                if account_id in income_balances:
+                    income_balances[account_id]["amount"] += (credit - debit)
+                
+                # Expense accounts: debit increases, credit decreases
+                elif account_id in expense_balances:
+                    expense_balances[account_id]["amount"] += (debit - credit)
+        
+        # Filter out zero balances and build result
+        income_list = [acc for acc in income_balances.values() if abs(acc["amount"]) > 0.01]
+        expense_list = [acc for acc in expense_balances.values() if abs(acc["amount"]) > 0.01]
+        
+        total_income = sum(acc["amount"] for acc in income_list)
+        total_expenses = sum(acc["amount"] for acc in expense_list)
         net_profit = total_income - total_expenses
         
         return {
-            "from_date": from_date or datetime.now().replace(day=1).strftime("%Y-%m-%d"),
-            "to_date": to_date or datetime.now().strftime("%Y-%m-%d"),
-            "income": [
-                {
-                    "account_name": acc["account_name"],
-                    "amount": abs(acc.get("account_balance", 0))
-                } for acc in income_accounts if acc.get("account_balance", 0) != 0
-            ],
-            "expenses": [
-                {
-                    "account_name": acc["account_name"],
-                    "amount": acc.get("account_balance", 0)
-                } for acc in expense_accounts if acc.get("account_balance", 0) != 0
-            ],
+            "from_date": start_date,
+            "to_date": end_date,
+            "income": income_list,
+            "expenses": expense_list,
             "total_income": total_income,
             "total_expenses": total_expenses,
             "net_profit": net_profit
