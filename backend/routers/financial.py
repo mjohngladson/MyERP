@@ -122,9 +122,11 @@ async def get_journal_entries(
         if from_date or to_date:
             date_filter = {}
             if from_date:
-                date_filter["$gte"] = datetime.fromisoformat(from_date)
+                # Handle both date string and datetime
+                date_filter["$gte"] = from_date
             if to_date:
-                date_filter["$lte"] = datetime.fromisoformat(to_date)
+                # Add one day to include the entire end date
+                date_filter["$lte"] = to_date
             query["posting_date"] = date_filter
             
         entries = await journal_entries_collection.find(query).sort("posting_date", -1).skip(skip).limit(limit).to_list(length=limit)
