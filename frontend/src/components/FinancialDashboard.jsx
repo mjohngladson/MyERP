@@ -74,13 +74,27 @@ const FinancialDashboard = ({ onNavigate }) => {
       const liabilities = accounts.filter(acc => acc.root_type === 'Liability');
       const cashAccounts = accounts.filter(acc => acc.account_name.toLowerCase().includes('cash'));
 
+      // Calculate total received and paid from all payments (not just recent 5)
+      const allPaymentsRes = await api.get('/financial/payments?limit=1000');
+      const allPayments = allPaymentsRes.data || [];
+      
+      const totalReceived = allPayments
+        .filter(p => p.payment_type === 'Receive' && p.status === 'paid')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      
+      const totalPaid = allPayments
+        .filter(p => p.payment_type === 'Pay' && p.status === 'paid')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+
       setQuickStats({
         totalAssets: balanceSheet.total_assets || 0,
         totalLiabilities: balanceSheet.total_liabilities || 0,
         totalIncome: pnl.total_income || 0,
         totalExpenses: pnl.total_expenses || 0,
         netProfit: pnl.net_profit || 0,
-        cashBalance: cashAccounts.reduce((sum, acc) => sum + (acc.account_balance || 0), 0)
+        cashBalance: cashAccounts.reduce((sum, acc) => sum + (acc.account_balance || 0), 0),
+        totalReceived: totalReceived,
+        totalPaid: totalPaid
       });
 
     } catch (error) {
