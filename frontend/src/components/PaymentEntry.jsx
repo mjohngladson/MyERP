@@ -436,6 +436,7 @@ const PaymentFormModal = ({ payment, customers, suppliers, onSave, onClose }) =>
     reference_number: '',
     currency: 'INR',
     exchange_rate: 1.0,
+    status: 'paid',
     description: ''
   });
   const [saving, setSaving] = useState(false);
