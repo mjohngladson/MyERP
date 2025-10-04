@@ -8639,20 +8639,23 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on LOGIN FUNCTIONALITY - URGENT USER ISSUE"""
-        print("🚀 Starting GiLi Backend API Testing Suite - URGENT LOGIN TESTING")
+        """Run backend tests focusing on PAYMENT ENTRY MODULE - COMPREHENSIVE TESTING"""
+        print("🚀 Starting GiLi Backend API Testing Suite - PAYMENT ENTRY MODULE TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 URGENT LOGIN ISSUE TO TEST:")
-        print("   1. Login endpoint POST /api/auth/login with admin@gili.com / admin123")
-        print("   2. JWT token generation and response structure verification")
-        print("   3. Authentication response validation")
-        print("   4. Error handling for invalid credentials")
+        print("🎯 PAYMENT ENTRY MODULE COMPREHENSIVE TESTS:")
+        print("   1. GET /api/financial/payments (List Payments with filters)")
+        print("   2. POST /api/financial/payments (Create Payment with validations)")
+        print("   3. GET /api/financial/payments/{id} (View Single Payment)")
+        print("   4. PUT /api/financial/payments/{id} (Update Payment)")
+        print("   5. DELETE /api/financial/payments/{id} (Delete Payment)")
+        print("   6. Dashboard Integration Testing")
         print("=" * 80)
         
-        # Tests to run (LOGIN FUNCTIONALITY as requested in review)
+        # Tests to run (PAYMENT ENTRY MODULE as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_login_functionality,                  # CRITICAL: Login endpoint testing - USER REPORTS NOT WORKING
+            self.test_login_functionality,                  # Authentication for API access
+            self.test_payment_entry_module,                 # COMPREHENSIVE: Payment Entry CRUD operations
         ]
         
         passed = 0
