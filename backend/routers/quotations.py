@@ -237,15 +237,36 @@ async def update_quotation(quotation_id: str, payload: dict):
 @router.delete("/{quotation_id}")
 async def delete_quotation(quotation_id: str):
     try:
-        res = await sales_quotations_collection.delete_one({"id": quotation_id})
-        if res.deleted_count == 0:
+        # Check if quotation exists
+        quotation = await sales_quotations_collection.find_one({"id": quotation_id})
+        if not quotation:
             try:
-                res = await sales_quotations_collection.delete_one({"_id": ObjectId(quotation_id)})
+                quotation = await sales_quotations_collection.find_one({"_id": ObjectId(quotation_id)})
             except Exception:
                 pass
+        if not quotation:
+            raise HTTPException(status_code=404, detail="Quotation not found")
+        
+        # Check if quotation is linked to any sales orders
+        from database import sales_orders_collection
+        linked_order = await sales_orders_collection.find_one({"quotation_id": quotation_id})
+        if linked_order:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete quotation. It is linked to sales order {linked_order.get('order_number', 'N/A')}"
+            )
+        
+        # Only allow deletion of draft or cancelled quotations
+        if quotation.get("status") not in ["draft", "cancelled"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Only draft or cancelled quotations can be deleted"
+            )
+        
+        res = await sales_quotations_collection.delete_one({"id": quotation_id})
         if res.deleted_count > 0:
-            return {"success": True}
-        raise HTTPException(status_code=404, detail="Quotation not found")
+            return {"success": True, "message": "Quotation deleted successfully"}
+        raise HTTPException(status_code=500, detail="Failed to delete quotation")
     except HTTPException:
         raise
     except Exception as e:
