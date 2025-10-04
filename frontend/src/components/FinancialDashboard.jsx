@@ -33,7 +33,9 @@ const FinancialDashboard = ({ onNavigate }) => {
     totalIncome: 0,
     totalExpenses: 0,
     netProfit: 0,
-    cashBalance: 0
+    cashBalance: 0,
+    totalReceived: 0,
+    totalPaid: 0
   });
 
   useEffect(() => {
