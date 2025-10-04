@@ -287,17 +287,45 @@ const JournalEntries = ({ onNavigate }) => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Entry Details
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('voucher_type')}
+                      title="Click to sort"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Entry Details</span>
+                        <span className="text-gray-400">{getSortIcon('voucher_type')}</span>
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('description')}
+                      title="Click to sort"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Description</span>
+                        <span className="text-gray-400">{getSortIcon('description')}</span>
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('amount')}
+                      title="Click to sort"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Amount</span>
+                        <span className="text-gray-400">{getSortIcon('amount')}</span>
+                      </div>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      onClick={() => handleSort('status')}
+                      title="Click to sort"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>Status</span>
+                        <span className="text-gray-400">{getSortIcon('status')}</span>
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
