@@ -343,7 +343,7 @@ const PaymentEntry = ({ onNavigate }) => {
                           >
                             <Eye size={16} />
                           </button>
-                          {payment.status === 'draft' && (
+                          {(payment.status === 'draft' || payment.status === 'submitted') && (
                             <>
                               <button
                                 onClick={() => {
