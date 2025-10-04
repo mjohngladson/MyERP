@@ -464,6 +464,17 @@ const JournalEntries = ({ onNavigate }) => {
           }}
         />
       )}
+
+      {/* View Journal Entry Modal */}
+      {viewingEntry && (
+        <JournalEntryViewModal
+          entry={viewingEntry}
+          accounts={accounts}
+          onClose={() => setViewingEntry(null)}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+        />
+      )}
     </div>
   );
 };
