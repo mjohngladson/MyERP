@@ -56,41 +56,53 @@ async def fix_duplicate_journal_entries():
         
         # Keep first entry as-is, renumber the rest
         for idx, entry in enumerate(entries[1:], start=1):
-            # Extract prefix and date from original number
-            parts = entry_number.split("-")
-            if len(parts) == 3:
-                prefix = parts[0]
-                date_str = parts[1]
-                
-                # Find next available number for this prefix and date
-                pattern = f"{prefix}-{date_str}-"
-                existing = await journal_entries_collection.find({
-                    "entry_number": {"$regex": f"^{pattern}"}
-                }).to_list(length=None)
-                
-                # Extract numbers and find max
-                max_num = 0
-                for e in existing:
-                    try:
-                        num_part = e.get("entry_number", "").split("-")[-1]
-                        num = int(num_part)
-                        if num > max_num:
-                            max_num = num
-                    except (ValueError, IndexError):
-                        continue
-                
-                # Generate new unique number
-                new_num = max_num + 1
-                new_entry_number = f"{prefix}-{date_str}-{new_num:04d}"
-                
-                # Update the entry
-                await journal_entries_collection.update_one(
-                    {"id": entry["id"]},
-                    {"$set": {"entry_number": new_entry_number}}
-                )
-                
-                print(f"  ✓ Updated entry {entry['id'][:8]}... from {entry_number} to {new_entry_number}")
-                fixed_count += 1
+            # For auto-generated payment entries, generate a simpler unique ID
+            if entry.get("is_auto_generated"):
+                # Generate based on timestamp
+                import time
+                timestamp = int(time.time() * 1000)
+                new_entry_number = f"JE-AUTO-{timestamp}"
+            else:
+                # Extract prefix and date from original number
+                parts = entry_number.split("-")
+                if len(parts) >= 3:
+                    prefix = "JE"
+                    date_str = datetime.now().strftime('%Y%m%d')
+                    
+                    # Find next available number for this date
+                    pattern = f"{prefix}-{date_str}-"
+                    existing = await journal_entries_collection.find({
+                        "entry_number": {"$regex": f"^{pattern}"}
+                    }).to_list(length=None)
+                    
+                    # Extract numbers and find max
+                    max_num = 0
+                    for e in existing:
+                        try:
+                            num_part = e.get("entry_number", "").split("-")[-1]
+                            num = int(num_part)
+                            if num > max_num:
+                                max_num = num
+                        except (ValueError, IndexError):
+                            continue
+                    
+                    # Generate new unique number
+                    new_num = max_num + 1
+                    new_entry_number = f"{prefix}-{date_str}-{new_num:04d}"
+                else:
+                    # Fallback for unusual formats
+                    import time
+                    timestamp = int(time.time() * 1000)
+                    new_entry_number = f"JE-FIX-{timestamp}"
+            
+            # Update the entry
+            await journal_entries_collection.update_one(
+                {"id": entry["id"]},
+                {"$set": {"entry_number": new_entry_number}}
+            )
+            
+            print(f"  ✓ Updated entry {entry['id'][:8]}... from {entry_number} to {new_entry_number}")
+            fixed_count += 1
     
     print(f"\n✅ Fixed {fixed_count} duplicate journal entry numbers!")
     
