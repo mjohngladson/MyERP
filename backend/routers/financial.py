@@ -590,33 +590,73 @@ async def create_payment_journal_entry(payment_data: dict):
 async def get_trial_balance(
     as_of_date: Optional[str] = Query(None, description="As of date (YYYY-MM-DD)")
 ):
-    """Generate trial balance report"""
+    """Generate trial balance report - includes all posted journal entries and payments"""
     try:
-        # In a real implementation, this would calculate balances from journal entries
-        # For now, return account balances
+        target_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
+        
+        # Get all accounts
         accounts = await accounts_collection.find({"is_active": True, "is_group": False}).to_list(length=None)
         
+        # Calculate balances from journal entries up to target date
+        account_balances = {}
+        for account in accounts:
+            account_balances[account["id"]] = {
+                "account_code": account["account_code"],
+                "account_name": account["account_name"],
+                "root_type": account["root_type"],
+                "balance": 0.0
+            }
+        
+        # Get all posted journal entries up to target date
+        journal_entries = await journal_entries_collection.find({
+            "status": "posted",
+            "posting_date": {"$lte": target_date}
+        }).to_list(length=None)
+        
+        # Aggregate balances from journal entries
+        for entry in journal_entries:
+            for acc in entry.get("accounts", []):
+                account_id = acc.get("account_id")
+                if account_id in account_balances:
+                    debit = float(acc.get("debit_amount", 0))
+                    credit = float(acc.get("credit_amount", 0))
+                    
+                    # Calculate balance based on account type
+                    root_type = account_balances[account_id]["root_type"]
+                    if root_type in ["Asset", "Expense"]:
+                        account_balances[account_id]["balance"] += (debit - credit)
+                    else:  # Liability, Equity, Income
+                        account_balances[account_id]["balance"] += (credit - debit)
+        
+        # Build trial balance
         total_debits = 0
         total_credits = 0
         trial_balance = []
         
-        for account in accounts:
-            balance = account.get("account_balance", 0)
-            debit_balance = balance if balance > 0 and account["root_type"] in ["Asset", "Expense"] else 0
-            credit_balance = abs(balance) if balance < 0 or account["root_type"] in ["Liability", "Equity", "Income"] else 0
-            
-            if balance != 0:  # Only show accounts with balances
+        for account_id, acc_data in account_balances.items():
+            balance = acc_data["balance"]
+            if abs(balance) > 0.01:  # Only show accounts with balances
+                if balance > 0:
+                    debit_balance = balance
+                    credit_balance = 0
+                else:
+                    debit_balance = 0
+                    credit_balance = abs(balance)
+                
                 trial_balance.append({
-                    "account_code": account["account_code"],
-                    "account_name": account["account_name"],
+                    "account_code": acc_data["account_code"],
+                    "account_name": acc_data["account_name"],
                     "debit_balance": debit_balance,
                     "credit_balance": credit_balance
                 })
                 total_debits += debit_balance
                 total_credits += credit_balance
         
+        # Sort by account code
+        trial_balance.sort(key=lambda x: x["account_code"])
+        
         return {
-            "as_of_date": as_of_date or datetime.now().strftime("%Y-%m-%d"),
+            "as_of_date": target_date,
             "accounts": trial_balance,
             "total_debits": total_debits,
             "total_credits": total_credits,
