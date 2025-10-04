@@ -140,8 +140,29 @@ async def create_journal_entry(entry_data: dict):
         
         # Generate entry number if not provided
         if not entry_data.get("entry_number"):
-            count = await journal_entries_collection.count_documents({})
-            entry_data["entry_number"] = f"JE-{datetime.now().strftime('%Y%m%d')}-{count + 1:04d}"
+            date_str = datetime.now().strftime('%Y%m%d')
+            prefix = "JE"
+            
+            # Find the highest entry number for this date
+            pattern = f"{prefix}-{date_str}-"
+            existing_entries = await journal_entries_collection.find({
+                "entry_number": {"$regex": f"^{pattern}"}
+            }).to_list(length=None)
+            
+            # Extract numbers and find max
+            max_num = 0
+            for entry in existing_entries:
+                try:
+                    num_part = entry.get("entry_number", "").split("-")[-1]
+                    num = int(num_part)
+                    if num > max_num:
+                        max_num = num
+                except (ValueError, IndexError):
+                    continue
+            
+            # Generate next number
+            next_num = max_num + 1
+            entry_data["entry_number"] = f"{prefix}-{date_str}-{next_num:04d}"
         
         # Calculate totals
         total_debit = sum(float(acc.get("debit_amount", 0)) for acc in entry_data.get("accounts", []))
