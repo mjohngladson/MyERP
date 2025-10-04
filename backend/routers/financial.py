@@ -136,6 +136,25 @@ async def get_journal_entries(
 async def create_journal_entry(entry_data: dict):
     """Create new journal entry"""
     try:
+        # Validations
+        if not entry_data.get("posting_date"):
+            raise HTTPException(status_code=400, detail="Posting date is required")
+        if not entry_data.get("description"):
+            raise HTTPException(status_code=400, detail="Description is required")
+        if not entry_data.get("accounts") or len(entry_data.get("accounts", [])) < 2:
+            raise HTTPException(status_code=400, detail="At least 2 account lines are required")
+        
+        # Validate each account line
+        for idx, acc in enumerate(entry_data.get("accounts", [])):
+            if not acc.get("account_id"):
+                raise HTTPException(status_code=400, detail=f"Account is required for line {idx + 1}")
+            debit = float(acc.get("debit_amount", 0))
+            credit = float(acc.get("credit_amount", 0))
+            if debit == 0 and credit == 0:
+                raise HTTPException(status_code=400, detail=f"Either debit or credit amount is required for line {idx + 1}")
+            if debit > 0 and credit > 0:
+                raise HTTPException(status_code=400, detail=f"Line {idx + 1} cannot have both debit and credit amounts")
+        
         entry_data["id"] = str(uuid.uuid4())
         
         # Generate entry number if not provided
@@ -163,6 +182,14 @@ async def create_journal_entry(entry_data: dict):
             # Generate next number
             next_num = max_num + 1
             entry_data["entry_number"] = f"{prefix}-{date_str}-{next_num:04d}"
+        
+        # Default status and voucher type
+        if not entry_data.get("status"):
+            entry_data["status"] = "draft"
+        if not entry_data.get("voucher_type"):
+            entry_data["voucher_type"] = "Journal Entry"
+        if not entry_data.get("is_auto_generated"):
+            entry_data["is_auto_generated"] = False
         
         # Calculate totals
         total_debit = sum(float(acc.get("debit_amount", 0)) for acc in entry_data.get("accounts", []))
