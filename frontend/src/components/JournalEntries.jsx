@@ -35,6 +35,7 @@ const JournalEntries = ({ onNavigate }) => {
         api.get('/financial/journal-entries', {
           params: {
             ...(statusFilter && { status: statusFilter }),
+            ...(voucherTypeFilter && { voucher_type: voucherTypeFilter }),
             ...(dateRange.from && { from_date: dateRange.from }),
             ...(dateRange.to && { to_date: dateRange.to }),
             limit: 50
