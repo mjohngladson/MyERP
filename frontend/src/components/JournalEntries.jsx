@@ -52,8 +52,21 @@ const JournalEntries = ({ onNavigate }) => {
         api.get('/financial/accounts')
       ]);
       
-      setEntries(entriesRes.data || []);
+      const entriesData = entriesRes.data || [];
+      setEntries(entriesData);
       setAccounts(accountsRes.data || []);
+      
+      // Calculate insights
+      const draftCount = entriesData.filter(e => e.status === 'draft').length;
+      const postedCount = entriesData.filter(e => e.status === 'posted').length;
+      const totalDebitAmount = entriesData.reduce((sum, e) => sum + (e.total_debit || 0), 0);
+      
+      setInsights({
+        totalEntries: entriesData.length,
+        draftCount,
+        postedCount,
+        totalDebitAmount
+      });
     } catch (error) {
       console.error('Error loading data:', error);
       setEntries([]);
