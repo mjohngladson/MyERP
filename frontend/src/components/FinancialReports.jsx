@@ -20,6 +20,8 @@ const FinancialReports = ({ onNavigate }) => {
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     to: new Date().toISOString().split('T')[0]
   });
+  
+  // This ensures "to" date defaults to today
   const [reportData, setReportData] = useState({});
 
   const reports = [
