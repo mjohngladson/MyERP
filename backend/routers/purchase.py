@@ -243,15 +243,36 @@ async def update_purchase_order(order_id: str, payload: dict):
 @router.delete("/orders/{order_id}")
 async def delete_purchase_order(order_id: str):
     try:
-        res = await purchase_orders_collection.delete_one({ 'id': order_id })
-        if res.deleted_count == 0:
+        # Check if order exists
+        order = await purchase_orders_collection.find_one({'id': order_id})
+        if not order:
             try:
-                res = await purchase_orders_collection.delete_one({ '_id': ObjectId(order_id) })
+                order = await purchase_orders_collection.find_one({'_id': ObjectId(order_id)})
             except Exception:
                 pass
+        if not order:
+            raise HTTPException(status_code=404, detail='Purchase order not found')
+        
+        # Check if order is linked to any purchase invoices
+        from database import purchase_invoices_collection
+        linked_invoice = await purchase_invoices_collection.find_one({"purchase_order_id": order_id})
+        if linked_invoice:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete purchase order. It is linked to invoice {linked_invoice.get('invoice_number', 'N/A')}"
+            )
+        
+        # Only allow deletion of draft or cancelled orders
+        if order.get("status") not in ["draft", "cancelled"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Only draft or cancelled purchase orders can be deleted"
+            )
+        
+        res = await purchase_orders_collection.delete_one({'id': order_id})
         if res.deleted_count > 0:
-            return { 'success': True }
-        raise HTTPException(status_code=404, detail='Purchase order not found')
+            return {'success': True, 'message': 'Purchase order deleted successfully'}
+        raise HTTPException(status_code=500, detail='Failed to delete purchase order')
     except HTTPException:
         raise
     except Exception as e:
