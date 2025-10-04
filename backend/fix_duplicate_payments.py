@@ -51,7 +51,8 @@ async def fix_duplicate_payments():
     fixed_count = 0
     for payment_number, payments in duplicates.items():
         # Sort by created_at to keep the oldest one with original number
-        payments.sort(key=lambda x: x.get("created_at", ""))
+        from datetime import datetime
+        payments.sort(key=lambda x: x.get("created_at") if isinstance(x.get("created_at"), datetime) else datetime.min)
         
         # Keep first payment as-is, renumber the rest
         for idx, payment in enumerate(payments[1:], start=1):
