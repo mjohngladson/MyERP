@@ -486,6 +486,7 @@ const JournalEntryFormModal = ({ entry, accounts, onSave, onClose }) => {
     posting_date: new Date().toISOString().split('T')[0],
     reference: '',
     description: '',
+    status: 'draft',
     accounts: [
       { account_id: '', account_name: '', debit_amount: 0, credit_amount: 0, description: '' },
       { account_id: '', account_name: '', debit_amount: 0, credit_amount: 0, description: '' }
