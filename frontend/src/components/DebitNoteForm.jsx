@@ -8,18 +8,21 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
   const [saving, setSaving] = React.useState(false);
   const [masterItems, setMasterItems] = React.useState([]);
   const [suppliers, setSuppliers] = React.useState([]);
+  const [invoices, setInvoices] = React.useState([]);
   const [form, setForm] = React.useState({
+    supplier_id: '',
     supplier_name: '',
     supplier_email: '',
     supplier_phone: '',
     supplier_address: '',
     debit_note_date: new Date().toISOString().split('T')[0],
+    reference_invoice_id: '',
     reference_invoice: '',
     reason: 'Return',
     items: [{ item_name: '', quantity: 1, rate: 0, amount: 0 }],
     discount_amount: 0,
     tax_rate: 18,
-    status: 'Draft',
+    status: 'draft',
     notes: ''
   });
 
