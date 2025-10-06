@@ -39,7 +39,7 @@ Comprehensive guide with:
 
 2. **Add this environment variable:**
    ```
-   REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com
+   REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com
    ```
    
 3. **Make sure it's configured as a BUILD-TIME variable** (not just runtime)
@@ -57,7 +57,7 @@ After deployment completes:
 3. **Try to login** with: `admin@gili.com` / `admin123`
 4. **Check the network request** - should go to:
    ```
-   https://retail-erp.preview.emergentagent.com/api/auth/login
+   https://erp-nextgen.preview.emergentagent.com/api/auth/login
    ```
 5. **Should receive JSON response** with `success: true` and a JWT token
 
@@ -69,7 +69,7 @@ After deployment completes:
 - Error: "Invalid response format: <!doctype html>"
 
 **After Fix:**
-- API call goes to: `https://retail-erp.preview.emergentagent.com/api/auth/login`
+- API call goes to: `https://erp-nextgen.preview.emergentagent.com/api/auth/login`
 - Returns: JSON with authentication token
 - Login works successfully ✅
 

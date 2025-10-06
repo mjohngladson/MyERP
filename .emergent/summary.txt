@@ -1,68 +1,69 @@
 <analysis>
-The AI engineer's work trajectory covered substantial ground, initially tackling various Financial Management module bugs and feature enhancements. This included resolving a persistent 404 error in Credit Note autocomplete caused by a frontend-backend endpoint mismatch. A significant portion of the work involved addressing a mixed content error where the frontend's HTTPS calls were downgraded to HTTP, requiring multiple debugging attempts and consultation with the troubleshoot agent, though it remained partially unresolved. Subsequently, the engineer implemented status-based controls for transaction modules, comprehensive upsert validations, refined validation messages, and updated mandatory field indicators. Other fixes included removing duplicate UI buttons, enabling missing Create functionality, and enhancing global search capabilities. The work culminated in debugging deployment-specific issues on Railway, particularly concerning environment variable propagation for the frontend, which caused API calls to return HTML instead of JSON. The process demonstrates a systematic approach to feature development and bug fixing, alongside a persistent struggle with environment configuration and deployment specifics.
+The AI engineer's work primarily focused on resolving critical deployment and application-level bugs while progressively adding requested features. Initial challenges involved fixing a mixed content error and ensuring  was correctly propagated on Railway, culminating in identifying and fixing a subtle CORS preflight issue where middleware was incorrectly ordered. A significant logical bug was found in Debit Notes, where an  variable was undefined during subtotal calculation. Frontend enhancements included adding submitted and cancelled status options to DN/CN forms, and fixing supplier population in Purchase Orders/Invoices. Backend logic was refined to handle case sensitivity in status validation. Database issues were tackled by initializing the Chart of Accounts, and subsequently updating account documents with  and  fields to ensure they were visible in the frontend. The latest work involved persistent debugging of frontend cache issues, where despite explicit rebuilds and environment variable verification, the UI continued to display stale data, likely due to aggressive browser caching or static file serving mechanisms.
 </analysis>
 
 <product_requirements>
-The GiLi project is an ERPNext MVP clone for retail, built with React, FastAPI, and MongoDB, including an offline Electron PoS. Core functionality includes CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, Quotations, Purchase Orders, and Purchase Invoices, with advanced list features. The application features a collapsible sidebar, robust Create and Global Search, a complete Stock module, and full CRUD for Items, Customers, and Suppliers with configurable fields. Credit Note and Debit Note modules support real SMS/Email functionality (Twilio, SendGrid) with PDF attachments, dynamic item/customer population using autocomplete search, and uniform send status tracking. A comprehensive Financial Management system was recently built, encompassing accounting, payments, bank reconciliation, and financial reports, designed for multi-currency, GST/Tax compliance, and Indian accounting standards, integrating with existing Sales and Purchase modules. Recent enhancements involved fixing financial module issues, implementing automated document workflows, refining transaction forms, improving validation messages, and adding mandatory field indicators. The system requires accurate routing and secure (HTTPS) communication for all API calls.
+The GiLi project is an ERPNext MVP clone for retail, utilizing React, FastAPI, and MongoDB, complemented by an offline Electron PoS. It encompasses core CRUD, view, and Send functionalities for Sales Invoices, Sales Orders, Quotations, Purchase Orders, and Purchase Invoices, alongside advanced list features, a collapsible sidebar, and robust Global Search. The system includes a comprehensive Stock module, full CRUD for Items, Customers, and Suppliers, and advanced Credit Note/Debit Note modules with real SMS/Email integration (Twilio, SendGrid), dynamic autocompletes, and uniform send status tracking. A comprehensive Financial Management system has been implemented for accounting, payments, bank reconciliation, and financial reports, designed for multi-currency and Indian tax compliance. Recent work addressed financial module issues, automated document workflows, refined transaction forms, improved validation, and added mandatory field indicators. The application requires accurate routing, secure HTTPS communication, and flexible deployment between preview and production environments.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full-stack Architecture**: React (Frontend), FastAPI (Backend), MongoDB (Database).
-- **Deployment**: Railway, Docker, Supervisor, Kubernetes (Ingress).
-- **Data Management**: Pydantic (UUIDs), Axios.
-- **UI/UX**: Tailwind CSS, Shadcn/ui, Autocomplete Search component.
-- **Third-Party Integrations**: SendGrid (Email), Twilio (SMS).
-- **Backend Services**: Centralized  for uniform status,  for shared validation logic.
+-   **Full-stack Architecture**: React (Frontend), FastAPI (Backend), MongoDB (Database).
+-   **Deployment**: Railway, Docker, Supervisor, Kubernetes (Ingress),  for static assets.
+-   **Data Management**: Pydantic (UUIDs), Axios.
+-   **UI/UX**: Tailwind CSS, Shadcn/ui, Autocomplete Search component.
+-   **Third-Party Integrations**: SendGrid (Email), Twilio (SMS).
+-   **Backend Services**: Centralized , .
+-   **CORS**: Cross-Origin Resource Sharing, Preflight requests ( method).
 </key_technical_concepts>
 
 <code_architecture>
 
--   : Sales invoice API. CRUD operations. Modified to integrate centralized upsert validations.
--   : Sales quotations API. Modified to integrate centralized upsert validations.
--   : Sales orders API. Modified to integrate centralized upsert validations.
--   : Purchase orders API. Modified to integrate centralized upsert validations (including supplier name).
--   : Purchase invoices API. Modified to integrate centralized upsert validations (including supplier name).
--   : Credit notes API. Modified to integrate centralized upsert validations.  field made optional.
--   : Debit notes API. Modified to integrate centralized upsert validations.  field made optional.
--   : Global search API. The  endpoint was enhanced to include searching across all transaction types (Sales Orders, Quotations, Invoices, Purchase Orders, Credit Notes, Debit Notes) in addition to existing items, customers, and suppliers.
--   : Configuration handling.
--   : Core Financial Management API.
--   : MongoDB connection and collection definitions. Enforced unique indexes for payment/journal entry numbers.
--   : Pydantic models for various entities.
--   : Python dependencies. Modified to remove a problematic local wheel file () that caused deployment failures on Railway.
--   : FastAPI entry point. Registered financial router. Modified CORS middleware to include the Railway UI URL.
--   : (NEW) Centralized Python module for comprehensive upsert validation logic, including required fields, amount checks, date checks, and status transition rules. This ensures consistent validation messages and logic across all transaction modules.
--   : Environment variables for the frontend.  was updated to point to the Railway production API URL ().
--   : Main application component. Modified to pass the  prop to .
--   : Reusable autocomplete component. Prop mismatch ( to ) fixed in usage (initially, then fixed in specific forms).
--   : Credit note creation/edit form. Initial fix for 404 error by changing  to . Asterisks added for mandatory fields (Customer Name, Reference Invoice, Items).  field made optional.
--   : Lists credit notes. Already had status-based visibility for Edit/Delete/Send buttons.
--   : Debit note creation/edit form. Asterisks added for mandatory fields (Supplier Name, Reference Invoice, Items).  field made optional.
--   : Lists debit notes. Already had status-based visibility for Edit/Delete/Send buttons.
--   : Global search component. Calls the  endpoint.
--   : Purchase order form. Asterisks added for mandatory fields (Supplier Name, Items).
--   : Lists purchase orders. Modified to add status-based visibility for Edit/Delete/Send buttons.
--   : Purchase invoice form. Asterisks added for mandatory fields (Supplier Name, Items).
--   : Lists purchase invoices. Modified to add status-based visibility for Edit/Delete/Send buttons.
--   : Quotation form. Asterisks added for mandatory fields (Customer Name, Items).
--   : Lists quotations. Modified to add status-based visibility for Edit/Delete/Send buttons.
--   : Sales invoice form. Asterisks added for mandatory fields (Customer Name, Items).
--   : Lists sales invoices. Modified to remove a duplicate New Invoice button and added status-based visibility for Edit/Delete/Send buttons.
--   : Sales order form. Asterisks added for mandatory fields (Customer Name, Items).
--   : Lists sales orders. Modified to add status-based visibility for Edit/Delete/Send buttons.
--   : Frontend API service. Modified multiple times to debug environment variable reading (), axios base URL configuration, and added/removed debug logs. Final state ensures  is used and debug logs removed.
--   : Supervisor configuration. Modified to pass  to the frontend process and to include  (which was later reverted).
+
+**File Summaries:**
+-   : Added a new  POST endpoint to enable email/SMS functionality for purchase invoices. Corrected the supplier listing API path from  to .
+-   : Modified update endpoint to convert the  field to lowercase before validation to ensure case-insensitive status transitions (e.g., Submitted becomes submitted).
+-   : Fixed a critical bug where  was undefined when calculating the subtotal during , leading to server errors on POST requests. Implemented  on the  field in both create and update endpoints for case-insensitive validation.
+-   : Updated account documents (implicitly via script) to include  and  fields, essential for filtering and displaying accounts in the Chart of Accounts frontend.
+-   : Crucially reordered the  to be applied *before* any API routers are included, resolving CORS preflight ( method) issues for POST/PUT/DELETE requests. Also, ensured  works by checking configuration.
+-   : Confirmed that backend validation logic already supported submitted and cancelled statuses for credit/debit notes.
+-   : Modified to allow easy switching between Preview and Railway backend URLs by commenting/uncommenting the  entries.
+-   : Implicitly involved in  and  changes; safety checks were added to ensure the  prop is always an array.
+-   : Added Submitted and Cancelled as options to the status dropdown.
+-   : Added Submitted and Cancelled as options to the status dropdown. Added safety checks for supplier autocomplete to handle potentially empty or undefined supplier data.
+-   : Corrected the API endpoint used for fetching supplier data from  to .
+-   : Fixed logic to correctly populate the  field when loading existing purchase order data, and corrected the supplier listing API path.
+-   : Implemented a Send button with associated modal and API call, enabling email/SMS functionality for submitted/paid purchase invoices. Standardized the icon used for the Send action to match other modules ( icon, , ).
+-   : Fixed logic to correctly populate the  field when loading existing purchase invoice data, and corrected the supplier listing API path.
+-   : Frontend component for displaying Chart of Accounts. The component was showing incorrect data, requiring backend API adjustments.
+-   : Modified to explicitly use  and removed debug logs. Involved in debugging environment variable propagation.
+-   : (NEW) Script created to initialize a comprehensive Chart of Accounts in the MongoDB database, including essential asset, liability, equity, income, and expense accounts.
+-   : (NEW) Python script to safely drop all specified collections in the MongoDB database, allowing for a fresh start with data.
+-   [1;33mNo option specified[0m
+
+Backend URL Switcher
+
+Usage: ./switch-backend.sh [option]
+
+Options:
+  preview    - Switch to Preview Mode (Emergent Platform)
+  railway    - Switch to Railway Production
+  current    - Show current backend URL
+  help       - Show this help message
+
+Example:
+  ./switch-backend.sh preview
+  ./switch-backend.sh railway: (NEW) Shell script to easily switch the  in the frontend's  file between preview and production Railway URLs.
 </code_architecture>
 
 <pending_tasks>
-- Investigate and resolve the  error during login on the Railway deployment, which indicates  is not correctly configured for the frontend in the Railway environment.
-- Implement additional Financial Management features (e.g., Bank Reconciliation, Payment-Invoice Allocation).
+-   Investigate and resolve the persistent frontend caching issue causing stale data to display despite correct  being embedded in the build.
+-   Implement additional Financial Management features (e.g., Bank Reconciliation, Payment-Invoice Allocation), as initially outlined in the product requirements.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was debugging a critical deployment issue on Railway. The user reported that during login, the frontend was receiving an HTML page (likely the frontend's ) instead of a JSON response from the backend API. The console output displayed: . This strongly suggests that the frontend application, when deployed on Railway, is incorrectly resolving API requests to itself (port 3000) instead of the backend API (port 8001, routed via ). This behavior is characteristic of the  environment variable not being correctly picked up or configured in the Railway deployment environment for the frontend, causing Axios to fall back to relative paths that are then handled by the frontend's web server. The backend's CORS settings were already confirmed to include the Railway UI URL, and local debugging showed the frontend's  file and local supervisor configuration correctly setting the HTTPS backend URL. The problem lies specifically within the Railway frontend's build/runtime environment.
+Immediately prior to this summary, the AI engineer was engaged in a deep debugging session related to the frontend displaying stale data in the Chart of Accounts, specifically incorrect account numbers and counts. This occurred despite multiple rebuilds of the frontend and verification that the  in  was correctly set to , and that this URL was successfully embedded in the frontend's JavaScript bundle. The user explicitly stated, there is still mismatch , seems like it is pointing to railway api url (Chat 468), indicating that even after rebuilding and restarting the frontend, the UI was fetching data from the old Railway production backend, not the intended Preview backend. The problem's root cause is suspected to be aggressive browser caching of the frontend application or an issue with how the  command handles static assets with updated environment variables, leading to the user consistently seeing an outdated version of the application despite server-side changes. The latest action involved attempting to force a complete cache clear and rebuild to definitively resolve this caching anomaly.
 </current_work>
 
 <optional_next_step>
-Investigate the Railway frontend deployment configuration to ensure  is correctly set and consumed.
+The next step is to run the force cache clear and rebuild, then take a screenshot of the Chart of Accounts to confirm the correct data is displayed, verifying the still mismatch issue is resolved.
 </optional_next_step>

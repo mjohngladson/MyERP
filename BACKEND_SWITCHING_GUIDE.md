@@ -40,7 +40,7 @@ Edit `/app/frontend/.env` file manually:
 **For Preview Mode:**
 ```bash
 # Option 1: Preview Mode (Emergent Platform)
-REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com
 
 # Option 2: Railway Production
 # REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app
@@ -49,7 +49,7 @@ REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com
 **For Railway:**
 ```bash
 # Option 1: Preview Mode (Emergent Platform)
-# REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com
+# REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com
 
 # Option 2: Railway Production
 REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app
@@ -66,7 +66,7 @@ sudo supervisorctl restart frontend
 
 | Environment | URL | Use Case |
 |------------|-----|----------|
-| **Preview** | `https://retail-erp.preview.emergentagent.com` | Emergent platform preview/testing |
+| **Preview** | `https://erp-nextgen.preview.emergentagent.com` | Emergent platform preview/testing |
 | **Railway** | `https://myerp-production.up.railway.app` | Production deployment on Railway |
 | **Local** | `http://localhost:8001` | Local development (not recommended for frontend) |
 
@@ -161,7 +161,7 @@ cat /app/frontend/.env
 
 **For Preview:**
 ```bash
-curl https://retail-erp.preview.emergentagent.com/api/
+curl https://erp-nextgen.preview.emergentagent.com/api/
 ```
 
 **For Railway:**
@@ -179,14 +179,14 @@ Both should return a response (not 404 or connection refused).
 ```bash
 $ ./switch-backend.sh current
 Current backend URL:
-https://retail-erp.preview.emergentagent.com
+https://erp-nextgen.preview.emergentagent.com
 ```
 
 ### Switch to Railway
 ```bash
 $ ./switch-backend.sh railway
 Current backend URL:
-https://retail-erp.preview.emergentagent.com
+https://erp-nextgen.preview.emergentagent.com
 
 Switching to Railway...
 ✓ Switched to Railway
@@ -207,13 +207,13 @@ https://myerp-production.up.railway.app
 
 Switching to Preview Mode...
 ✓ Switched to Preview Mode
-✓ Backend URL: https://retail-erp.preview.emergentagent.com
+✓ Backend URL: https://erp-nextgen.preview.emergentagent.com
 
 Restarting frontend to apply changes...
 ✓ Frontend restarted
 
 Current backend URL:
-https://retail-erp.preview.emergentagent.com
+https://erp-nextgen.preview.emergentagent.com
 ```
 
 ---

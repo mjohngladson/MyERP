@@ -21,15 +21,15 @@ switch_to_preview() {
     echo -e "${YELLOW}Switching to Preview Mode...${NC}"
     
     # Create temporary file with updated content
-    sed -e 's|^REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com|' \
-        -e 's|^# REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com|REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com|' \
+    sed -e 's|^REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com|' \
+        -e 's|^# REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com|REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com|' \
         -e 's|^REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app|# REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app|' \
         "$ENV_FILE" > "${ENV_FILE}.tmp"
     
     mv "${ENV_FILE}.tmp" "$ENV_FILE"
     
     echo -e "${GREEN}✓ Switched to Preview Mode${NC}"
-    echo -e "${GREEN}✓ Backend URL: https://retail-erp.preview.emergentagent.com${NC}"
+    echo -e "${GREEN}✓ Backend URL: https://erp-nextgen.preview.emergentagent.com${NC}"
 }
 
 switch_to_railway() {
@@ -38,7 +38,7 @@ switch_to_railway() {
     # Create temporary file with updated content
     sed -e 's|^REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app|' \
         -e 's|^# REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app|REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app|' \
-        -e 's|^REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com|# REACT_APP_BACKEND_URL=https://retail-erp.preview.emergentagent.com|' \
+        -e 's|^REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com|# REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com|' \
         "$ENV_FILE" > "${ENV_FILE}.tmp"
     
     mv "${ENV_FILE}.tmp" "$ENV_FILE"
