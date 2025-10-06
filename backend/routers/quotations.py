@@ -191,6 +191,10 @@ async def create_quotation(payload: dict):
             "discount_amount": discount_amount,
             "total_amount": total_amount
         })
+        
+        # Validate amounts after calculation
+        validate_amounts(payload, "Quotation")
+        
         res = await sales_quotations_collection.insert_one(payload)
         if res.inserted_id:
             payload["_id"] = str(res.inserted_id)
