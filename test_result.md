@@ -297,6 +297,7 @@ test_plan:
     - "Credit Notes Enhanced API - Search filters and send functionality working perfectly"
     - "Debit Notes Enhanced API - Search filters and send functionality working perfectly"
     - "Credit Notes and Debit Notes Frontend Timestamp Tracking Fix - User reported issue resolved, timestamps update correctly after send operations"
+    - "Sales Invoices API Credit Note Autocomplete Fix - 404 error resolved, /api/invoices endpoint now accessible with proper autocomplete data structure"
 backend:
   - task: "Payment Entry Module - Comprehensive CRUD Operations and Validations"
     implemented: true
