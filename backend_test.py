@@ -8823,23 +8823,22 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on PAYMENT ENTRY MODULE - COMPREHENSIVE TESTING"""
-        print("🚀 Starting GiLi Backend API Testing Suite - PAYMENT ENTRY MODULE TESTING")
+        """Run backend tests focusing on SALES INVOICES API - CREDIT NOTE AUTOCOMPLETE FIX TESTING"""
+        print("🚀 Starting GiLi Backend API Testing Suite - SALES INVOICES API TESTING")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 PAYMENT ENTRY MODULE COMPREHENSIVE TESTS:")
-        print("   1. GET /api/financial/payments (List Payments with filters)")
-        print("   2. POST /api/financial/payments (Create Payment with validations)")
-        print("   3. GET /api/financial/payments/{id} (View Single Payment)")
-        print("   4. PUT /api/financial/payments/{id} (Update Payment)")
-        print("   5. DELETE /api/financial/payments/{id} (Delete Payment)")
-        print("   6. Dashboard Integration Testing")
+        print("🎯 SALES INVOICES API COMPREHENSIVE TESTS:")
+        print("   1. GET /api/invoices (List all invoices - basic endpoint test)")
+        print("   2. GET /api/invoices?limit=5 (Test limit parameter for autocomplete)")
+        print("   3. Verify response structure is correct for frontend autocomplete")
+        print("   4. Check that at least some test invoices exist in the database")
+        print("   5. Test search functionality for autocomplete filtering")
+        print("   6. Test endpoint accessibility (the main fix - no 404 error)")
         print("=" * 80)
         
-        # Tests to run (PAYMENT ENTRY MODULE as requested in review)
+        # Tests to run (SALES INVOICES API as requested in review)
         tests_to_run = [
             self.test_health_check,                         # Basic API health check
-            self.test_login_functionality,                  # Authentication for API access
-            self.test_payment_entry_module,                 # COMPREHENSIVE: Payment Entry CRUD operations
+            self.test_sales_invoices_api,                   # COMPREHENSIVE: Sales Invoices API for Credit Note autocomplete fix
         ]
         
         passed = 0
