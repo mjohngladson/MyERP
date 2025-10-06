@@ -109,7 +109,11 @@ const PurchaseInvoiceForm = ({ invoiceId, onBack, onSave }) => {
     // eslint-disable-next-line
   }, [inv.items, inv.discount_amount, inv.tax_rate]);
 
-  const selectSupplier = (s)=> setInv(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
+  const selectSupplier = (s)=> {
+    if (s && s.name) {
+      setInv(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
+    }
+  };
 
   const saveInvoice = async (status='draft')=>{
     setSaving(true);
