@@ -43,7 +43,7 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
 
   const loadSuppliers = async ()=>{
     try { 
-      const r = await fetch(`${api.getBaseUrl()}/api/reporting/suppliers`);
+      const r = await fetch(`${api.getBaseUrl()}/api/master/suppliers`);
       const d = await r.json().catch(()=>[]);
       setSuppliers(toArray(d));
     } catch(e){ setSuppliers([]); }
