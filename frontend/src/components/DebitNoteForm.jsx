@@ -337,7 +337,9 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
           {/* Items */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">Items</h3>
+              <h3 className="text-lg font-medium">
+                Items <span className="text-red-500">*</span>
+              </h3>
               <button
                 onClick={addItem}
                 className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
