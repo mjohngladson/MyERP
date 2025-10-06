@@ -320,6 +320,9 @@ async def delete_quotation(quotation_id: str):
         if not quotation:
             raise HTTPException(status_code=404, detail="Quotation not found")
         
+        # Validate deletion is allowed
+        validate_transaction_delete(quotation.get("status", "draft"), "Quotation")
+        
         # Check if quotation is linked to any sales orders
         from database import sales_orders_collection
         linked_order = await sales_orders_collection.find_one({"quotation_id": quotation_id})
@@ -327,13 +330,6 @@ async def delete_quotation(quotation_id: str):
             raise HTTPException(
                 status_code=400, 
                 detail=f"Cannot delete quotation. It is linked to sales order {linked_order.get('order_number', 'N/A')}"
-            )
-        
-        # Only allow deletion of draft or cancelled quotations
-        if quotation.get("status") not in ["draft", "cancelled"]:
-            raise HTTPException(
-                status_code=400, 
-                detail="Only draft or cancelled quotations can be deleted"
             )
         
         res = await sales_quotations_collection.delete_one({"id": quotation_id})
