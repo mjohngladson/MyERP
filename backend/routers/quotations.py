@@ -266,6 +266,9 @@ async def update_quotation(quotation_id: str, payload: dict):
                 "discount_amount": discount_amount,
                 "total_amount": total_amount
             })
+            # Validate amounts after recalculation
+            validate_amounts(payload, "Quotation")
+        
         # If status changed to "submitted" or "accepted", create Sales Order
         if payload.get("status") in ["submitted", "accepted"] and existing.get("status") not in ["submitted", "accepted"]:
             from database import sales_orders_collection
