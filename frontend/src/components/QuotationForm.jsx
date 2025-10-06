@@ -129,7 +129,19 @@ const QuotationForm = ({ quotationId, onBack, onSave }) => {
                 <option value="">Select Customer</option>
                 {customers.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </select>
-              <input type="text" value={qt.customer_name} onChange={(e)=>setQt(prev=>({...prev, customer_name: e.target.value}))} className="w-full px-3 py-2 border rounded-md" placeholder="Customer Name" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Name <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={qt.customer_name} 
+                  onChange={(e)=>setQt(prev=>({...prev, customer_name: e.target.value}))} 
+                  className="w-full px-3 py-2 border rounded-md" 
+                  placeholder="Enter customer name" 
+                  required
+                />
+              </div>
             </div>
           </div>
         </div>
