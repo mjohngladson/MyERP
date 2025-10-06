@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 # Get backend URL from environment
-BACKEND_URL = "https://gili-erp-1.preview.emergentagent.com"
+BACKEND_URL = "https://retail-erp.preview.emergentagent.com"
 
 class TaxVerificationTester:
     def __init__(self):

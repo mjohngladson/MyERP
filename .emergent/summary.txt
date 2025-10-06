@@ -1,11 +1,9 @@
 <analysis>
-The AI engineer successfully progressed the GiLi ERP application from an MVP to a feature-rich retail solution, implementing comprehensive modules and addressing critical bug fixes. Initial work included Master Data, Credit/Debit Notes, and a complete Financial Management system. The current trajectory focused heavily on refining the Financial Management module, addressing user-reported issues such as missing UI for financial settings, missing CRUD for Payment/Journal Entries, inaccurate financial reports, and duplicate document numbering.
-
-Key improvements included adding filtering, sorting, and insights to financial modules, enforcing unique document IDs, and automating workflows for document creation (e.g., Quotation to Sales Order, Sales Invoice to Journal/Payment Entry). The engineer also implemented status-based controls for editing, deleting, and sending transactions across various modules. The final issue encountered was a persistent autocomplete problem in Credit Notes due to a 404 error from the  endpoint, which the AI was actively debugging to identify routing misconfigurations. The systematic approach to fixing each user-reported issue demonstrates a methodical development process.
+The AI engineer's work trajectory covered substantial ground, initially tackling various Financial Management module bugs and feature enhancements. This included resolving a persistent 404 error in Credit Note autocomplete caused by a frontend-backend endpoint mismatch. A significant portion of the work involved addressing a mixed content error where the frontend's HTTPS calls were downgraded to HTTP, requiring multiple debugging attempts and consultation with the troubleshoot agent, though it remained partially unresolved. Subsequently, the engineer implemented status-based controls for transaction modules, comprehensive upsert validations, refined validation messages, and updated mandatory field indicators. Other fixes included removing duplicate UI buttons, enabling missing Create functionality, and enhancing global search capabilities. The work culminated in debugging deployment-specific issues on Railway, particularly concerning environment variable propagation for the frontend, which caused API calls to return HTML instead of JSON. The process demonstrates a systematic approach to feature development and bug fixing, alongside a persistent struggle with environment configuration and deployment specifics.
 </analysis>
 
 <product_requirements>
-The GiLi project is an ERPNext MVP clone for retail, built with React, FastAPI, and MongoDB, including an offline Electron PoS. Core functionality includes CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, Quotations, Purchase Orders, and Purchase Invoices, with advanced list features. The application features a collapsible sidebar, robust Create and Global Search, a complete Stock module, and full CRUD for Items, Customers, and Suppliers with configurable fields. Credit Note and Debit Note modules support real SMS/Email functionality (Twilio, SendGrid) with PDF attachments, dynamic item/customer population using autocomplete search, and uniform send status tracking. A comprehensive Financial Management system was recently built, encompassing accounting, payments, bank reconciliation, and financial reports, designed for multi-currency, GST/Tax compliance, and Indian accounting standards, integrating with existing Sales and Purchase modules. Recent enhancements involved fixing financial module issues, implementing automated document workflows, and refining transaction forms.
+The GiLi project is an ERPNext MVP clone for retail, built with React, FastAPI, and MongoDB, including an offline Electron PoS. Core functionality includes CRUD, view, and Send capabilities for Sales Invoices, Sales Orders, Quotations, Purchase Orders, and Purchase Invoices, with advanced list features. The application features a collapsible sidebar, robust Create and Global Search, a complete Stock module, and full CRUD for Items, Customers, and Suppliers with configurable fields. Credit Note and Debit Note modules support real SMS/Email functionality (Twilio, SendGrid) with PDF attachments, dynamic item/customer population using autocomplete search, and uniform send status tracking. A comprehensive Financial Management system was recently built, encompassing accounting, payments, bank reconciliation, and financial reports, designed for multi-currency, GST/Tax compliance, and Indian accounting standards, integrating with existing Sales and Purchase modules. Recent enhancements involved fixing financial module issues, implementing automated document workflows, refining transaction forms, improving validation messages, and adding mandatory field indicators. The system requires accurate routing and secure (HTTPS) communication for all API calls.
 </product_requirements>
 
 <key_technical_concepts>
@@ -14,50 +12,57 @@ The GiLi project is an ERPNext MVP clone for retail, built with React, FastAPI, 
 - **Data Management**: Pydantic (UUIDs), Axios.
 - **UI/UX**: Tailwind CSS, Shadcn/ui, Autocomplete Search component.
 - **Third-Party Integrations**: SendGrid (Email), Twilio (SMS).
-- **Backend Services**: Centralized  for uniform status.
+- **Backend Services**: Centralized  for uniform status,  for shared validation logic.
 </key_technical_concepts>
 
 <code_architecture>
 
-
-
--   : Handles configuration. Added financial configs (currency, tax, accounting standards) and timezone setting.
--   : Core API for Financial Mgmt. Added CRUD, validations, unique numbering for Payments/Journal Entries. Updated reports to use actual entries, fixed date handling.
--   : Handles Credit Notes. Linked to Sales Invoices, generates accounting entries on submission. Delete with linked record checks.
--   : Handles Debit Notes. Linked to Purchase Invoices, generates accounting entries on submission. Delete with linked record checks.
--   : Handles Sales Quotations. Delete with linked record checks. Creates Sales Order on submission.
--   : Handles Sales Orders/Invoices. SO delete with linked record checks. SO creates SI on submission. SI creates Journal/Payment Entries on submission.
--   : Handles Purchase Orders/Invoices. PO delete with linked record checks. PO creates PI on submission.
--   : Handles Purchase Invoices. Creates Journal/Payment Entries on submission.
--   : MongoDB connection. Added financial collections. Enforced unique indexes for payment/journal entry numbers.
--   : Pydantic models. Expanded for Financial Management entities.
--   : FastAPI entry point. Registered  router.
--    & : Scripts to fix/prevent duplicate payment/journal entry numbers and create unique indexes.
--   : Reusable search. Prop mismatch ( to ) fixed in usage.
--   : Frontend settings. Added 'Financial' and 'System' tabs for financial configs and timezone.
--   : Frontend for Payments. Added CRUD, validations, filters, sorting, status dropdown. Fixed  error, button visibility.
--   : Frontend for Journal Entries. Added CRUD, validations, filters, sorting, status dropdown, insights. Fixed date filter, button visibility.
--   : Financial Dashboard. Displays 'Total Received'/'Total Paid' from payments.
--   : Financial Reports. Ensures 'to date' defaults to current date.
--   : Lists Sales Orders. Added delete handler with linked record checks.
--    & : Lists CN/DN. Status-based visibility for Edit/Delete/Send buttons.
--   Forms (, etc.): Transaction forms. Status dropdowns added then rolled back. CN/DN forms: made invoice mandatory, autocomplete enabled (prop fix).
-
+-   : Sales invoice API. CRUD operations. Modified to integrate centralized upsert validations.
+-   : Sales quotations API. Modified to integrate centralized upsert validations.
+-   : Sales orders API. Modified to integrate centralized upsert validations.
+-   : Purchase orders API. Modified to integrate centralized upsert validations (including supplier name).
+-   : Purchase invoices API. Modified to integrate centralized upsert validations (including supplier name).
+-   : Credit notes API. Modified to integrate centralized upsert validations.  field made optional.
+-   : Debit notes API. Modified to integrate centralized upsert validations.  field made optional.
+-   : Global search API. The  endpoint was enhanced to include searching across all transaction types (Sales Orders, Quotations, Invoices, Purchase Orders, Credit Notes, Debit Notes) in addition to existing items, customers, and suppliers.
+-   : Configuration handling.
+-   : Core Financial Management API.
+-   : MongoDB connection and collection definitions. Enforced unique indexes for payment/journal entry numbers.
+-   : Pydantic models for various entities.
+-   : Python dependencies. Modified to remove a problematic local wheel file () that caused deployment failures on Railway.
+-   : FastAPI entry point. Registered financial router. Modified CORS middleware to include the Railway UI URL.
+-   : (NEW) Centralized Python module for comprehensive upsert validation logic, including required fields, amount checks, date checks, and status transition rules. This ensures consistent validation messages and logic across all transaction modules.
+-   : Environment variables for the frontend.  was updated to point to the Railway production API URL ().
+-   : Main application component. Modified to pass the  prop to .
+-   : Reusable autocomplete component. Prop mismatch ( to ) fixed in usage (initially, then fixed in specific forms).
+-   : Credit note creation/edit form. Initial fix for 404 error by changing  to . Asterisks added for mandatory fields (Customer Name, Reference Invoice, Items).  field made optional.
+-   : Lists credit notes. Already had status-based visibility for Edit/Delete/Send buttons.
+-   : Debit note creation/edit form. Asterisks added for mandatory fields (Supplier Name, Reference Invoice, Items).  field made optional.
+-   : Lists debit notes. Already had status-based visibility for Edit/Delete/Send buttons.
+-   : Global search component. Calls the  endpoint.
+-   : Purchase order form. Asterisks added for mandatory fields (Supplier Name, Items).
+-   : Lists purchase orders. Modified to add status-based visibility for Edit/Delete/Send buttons.
+-   : Purchase invoice form. Asterisks added for mandatory fields (Supplier Name, Items).
+-   : Lists purchase invoices. Modified to add status-based visibility for Edit/Delete/Send buttons.
+-   : Quotation form. Asterisks added for mandatory fields (Customer Name, Items).
+-   : Lists quotations. Modified to add status-based visibility for Edit/Delete/Send buttons.
+-   : Sales invoice form. Asterisks added for mandatory fields (Customer Name, Items).
+-   : Lists sales invoices. Modified to remove a duplicate New Invoice button and added status-based visibility for Edit/Delete/Send buttons.
+-   : Sales order form. Asterisks added for mandatory fields (Customer Name, Items).
+-   : Lists sales orders. Modified to add status-based visibility for Edit/Delete/Send buttons.
+-   : Frontend API service. Modified multiple times to debug environment variable reading (), axios base URL configuration, and added/removed debug logs. Final state ensures  is used and debug logs removed.
+-   : Supervisor configuration. Modified to pass  to the frontend process and to include  (which was later reverted).
 </code_architecture>
 
 <pending_tasks>
-- Resolve the 404 error for  endpoint currently affecting Credit Note autocomplete.
-- Implement status-based 'send' control across all transaction modules (SQ, SO, SI, PO, PI, CN, DN): allow send only after submission, disallow edit/delete after submission.
-- Ensure comprehensive upsert validations are in place for SQ, SO, SI, PO, PI, CN, DN.
+- Investigate and resolve the  error during login on the Railway deployment, which indicates  is not correctly configured for the frontend in the Railway environment.
 - Implement additional Financial Management features (e.g., Bank Reconciliation, Payment-Invoice Allocation).
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was debugging a persistent issue where customer and invoice data were not populating in the Credit Note form's autocomplete fields. This followed previous attempts to make reference invoice fields mandatory with autocomplete and fixing prop mismatches ( vs. ) in the  component's usage within  and .
-
-The current debugging session identified the root cause: the backend endpoint  was returning a 404 error. The AI was in the process of investigating the FastAPI backend's routing configuration for sales invoices, specifically checking  and , to understand why the endpoint was not correctly accessible when the trajectory concluded.
+Immediately prior to this summary, the AI engineer was debugging a critical deployment issue on Railway. The user reported that during login, the frontend was receiving an HTML page (likely the frontend's ) instead of a JSON response from the backend API. The console output displayed: . This strongly suggests that the frontend application, when deployed on Railway, is incorrectly resolving API requests to itself (port 3000) instead of the backend API (port 8001, routed via ). This behavior is characteristic of the  environment variable not being correctly picked up or configured in the Railway deployment environment for the frontend, causing Axios to fall back to relative paths that are then handled by the frontend's web server. The backend's CORS settings were already confirmed to include the Railway UI URL, and local debugging showed the frontend's  file and local supervisor configuration correctly setting the HTTPS backend URL. The problem lies specifically within the Railway frontend's build/runtime environment.
 </current_work>
 
 <optional_next_step>
-Investigate and fix the 404 error for the  endpoint.
+Investigate the Railway frontend deployment configuration to ensure  is correctly set and consumed.
 </optional_next_step>
