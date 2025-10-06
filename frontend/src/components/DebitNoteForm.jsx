@@ -35,11 +35,22 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
           api.master.suppliers.list('', 100),
           api.get('/purchase/invoices', { params: { limit: 200 } })
         ]);
-        setMasterItems(itemsRes.data || []);
-        setSuppliers(suppliersRes.data || []);
-        setInvoices(invoicesRes.data || []);
+        
+        // Handle different response structures
+        const items = Array.isArray(itemsRes) ? itemsRes : (itemsRes?.data || []);
+        const suppliersList = Array.isArray(suppliersRes) ? suppliersRes : (suppliersRes?.data || []);
+        const invoicesList = Array.isArray(invoicesRes) ? invoicesRes : (invoicesRes?.data || []);
+        
+        console.log('Loaded suppliers:', suppliersList);
+        setMasterItems(items);
+        setSuppliers(suppliersList);
+        setInvoices(invoicesList);
       } catch (e) {
         console.error('Failed to load master data:', e);
+        // Set empty arrays on error
+        setMasterItems([]);
+        setSuppliers([]);
+        setInvoices([]);
       }
     };
     loadMasterData();
