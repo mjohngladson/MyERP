@@ -288,6 +288,16 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
         await create_credit_note_accounting_entries(full_doc)
         
         result = await credit_notes_collection.update_one(
+            {"id": credit_note_id},
+            {"$set": body}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Credit note not found")
+        
+        return {"success": True, "message": "Credit Note updated and accounting entries created"}
+    
+    result = await credit_notes_collection.update_one(
         {"id": credit_note_id},
         {"$set": body}
     )
