@@ -660,6 +660,98 @@ class BackendTester:
         except Exception as e:
             self.log_test("Global Search", False, f"Error: {str(e)}")
             return False
+
+    async def test_quotation_validations(self):
+        """Test comprehensive quotation validation system"""
+        try:
+            # Test 1: Create quotation WITHOUT customer_name (should fail with 400)
+            invalid_payload = {
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}]
+            }
+            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "customer_name" in data.get("detail", "").lower():
+                        self.log_test("Quotation Validation - Missing customer_name", True, "Correctly rejected missing customer_name", data)
+                    else:
+                        self.log_test("Quotation Validation - Missing customer_name", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Missing customer_name", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 2: Create quotation WITHOUT items (should fail with 400)
+            invalid_payload = {
+                "customer_name": "Test Customer"
+            }
+            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "items" in data.get("detail", "").lower():
+                        self.log_test("Quotation Validation - Missing items", True, "Correctly rejected missing items", data)
+                    else:
+                        self.log_test("Quotation Validation - Missing items", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Missing items", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 3: Create quotation with empty items array (should fail with 400)
+            invalid_payload = {
+                "customer_name": "Test Customer",
+                "items": []
+            }
+            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "at least one item" in data.get("detail", "").lower():
+                        self.log_test("Quotation Validation - Empty items array", True, "Correctly rejected empty items array", data)
+                    else:
+                        self.log_test("Quotation Validation - Empty items array", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Empty items array", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 4: Create quotation with item quantity = 0 (should fail with 400)
+            invalid_payload = {
+                "customer_name": "Test Customer",
+                "items": [{"item_name": "Test Item", "quantity": 0, "rate": 100}]
+            }
+            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "quantity must be greater than 0" in data.get("detail", "").lower():
+                        self.log_test("Quotation Validation - Zero quantity", True, "Correctly rejected zero quantity", data)
+                    else:
+                        self.log_test("Quotation Validation - Zero quantity", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Zero quantity", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 5: Create quotation with negative rate (should fail with 400)
+            invalid_payload = {
+                "customer_name": "Test Customer",
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": -50}]
+            }
+            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "rate cannot be negative" in data.get("detail", "").lower():
+                        self.log_test("Quotation Validation - Negative rate", True, "Correctly rejected negative rate", data)
+                    else:
+                        self.log_test("Quotation Validation - Negative rate", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Negative rate", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            return True
+
+        except Exception as e:
+            self.log_test("Quotation Validations", False, f"Error during quotation validation testing: {str(e)}")
+            return False
     
     async def test_sales_overview_report(self):
         """Test sales overview report endpoint"""
