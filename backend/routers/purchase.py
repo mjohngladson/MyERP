@@ -28,6 +28,37 @@ except Exception:
 
 router = APIRouter(prefix="/api/purchase", tags=["purchase"])
 
+# ============ WORKFLOW HELPER FUNCTIONS ============
+async def create_purchase_invoice_from_order(order_id: str, order_data: dict):
+    """Create Purchase Invoice from Purchase Order when status changes to submitted"""
+    from database import purchase_invoices_collection
+    import uuid
+    from datetime import timedelta
+    
+    invoice_data = {
+        'id': str(uuid.uuid4()),
+        'invoice_number': f"PINV-{datetime.now().strftime('%Y%m%d')}-{await purchase_invoices_collection.count_documents({}) + 1:04d}",
+        'purchase_order_id': order_id,
+        'order_number': order_data.get('order_number', ''),
+        'supplier_id': order_data.get('supplier_id'),
+        'supplier_name': order_data.get('supplier_name'),
+        'invoice_date': datetime.now().strftime('%Y-%m-%d'),
+        'due_date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'),
+        'status': 'draft',
+        'items': order_data.get('items', []),
+        'subtotal': order_data.get('subtotal', 0),
+        'discount_amount': order_data.get('discount_amount', 0),
+        'tax_rate': order_data.get('tax_rate', 18),
+        'tax_amount': order_data.get('tax_amount', 0),
+        'total_amount': order_data.get('total_amount', 0),
+        'company_id': order_data.get('company_id', 'default_company'),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc)
+    }
+    
+    await purchase_invoices_collection.insert_one(invoice_data)
+    return invoice_data
+
 @router.get("/orders", response_model=List[dict])
 async def list_purchase_orders(
     limit: int = Query(50, ge=1, le=200),
