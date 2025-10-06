@@ -162,16 +162,28 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
 
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Supplier</h3>
-            <select value={po.supplier_id} onChange={(e)=>{ const s = supplierList.find(x=>x.id===e.target.value); if(s) selectSupplier(s); else setPo(prev=>({...prev, supplier_id: e.target.value})); }} className="w-full px-3 py-2 border rounded-md">
-              <option value="">Select Supplier</option>
-              {supplierList.map(s=> (<option key={s.id} value={s.id}>{s.name}</option>))}
-            </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Supplier Name <span className="text-red-500">*</span>
+              </label>
+              <select 
+                value={po.supplier_id} 
+                onChange={(e)=>{ const s = supplierList.find(x=>x.id===e.target.value); if(s) selectSupplier(s); else setPo(prev=>({...prev, supplier_id: e.target.value})); }} 
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              >
+                <option value="">Select Supplier</option>
+                {supplierList.map(s=> (<option key={s.id} value={s.id}>{s.name}</option>))}
+              </select>
+            </div>
           </div>
         </div>
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Items</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Items <span className="text-red-500">*</span>
+            </h3>
             <button onClick={addItem} className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"><Plus className="h-4 w-4" /><span>Add Item</span></button>
           </div>
           <div className="overflow-x-auto">
