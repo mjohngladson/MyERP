@@ -251,12 +251,21 @@ async def get_credit_note(credit_note_id: str):
 @router.put("/credit-notes/{credit_note_id}")
 async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
     """Update credit note"""
+    # Get existing credit note
+    existing = await credit_notes_collection.find_one({"id": credit_note_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    # Cannot edit submitted credit notes
+    if existing.get("status") == "submitted":
+        raise HTTPException(status_code=400, detail="Cannot edit submitted credit note")
+    
     # Calculate totals if items are provided or discount/tax fields are changed
     if "items" in body or "discount_amount" in body or "tax_rate" in body:
-        items = body.get("items", [])
+        items = body.get("items", existing.get("items", []))
         subtotal = sum(float(item.get("amount", 0)) for item in items)
-        discount_amount = float(body.get("discount_amount", 0))
-        tax_rate = float(body.get("tax_rate", 18))
+        discount_amount = float(body.get("discount_amount", existing.get("discount_amount", 0)))
+        tax_rate = float(body.get("tax_rate", existing.get("tax_rate", 18)))
         
         discounted_total = subtotal - discount_amount
         tax_amount = (discounted_total * tax_rate) / 100
@@ -264,15 +273,21 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
         
         body.update({
             "subtotal": subtotal,
-            "discount_amount": discount_amount,  # Ensure discount_amount is included
-            "tax_rate": tax_rate,  # Ensure tax_rate is included
+            "discount_amount": discount_amount,
+            "tax_rate": tax_rate,
             "tax_amount": tax_amount,
             "total_amount": total_amount
         })
     
     body["updated_at"] = now_utc()
     
-    result = await credit_notes_collection.update_one(
+    # If status changed to submitted, create accounting entries
+    if body.get("status") == "submitted" and existing.get("status") != "submitted":
+        # Merge with existing data for accounting
+        full_doc = {**existing, **body}
+        await create_credit_note_accounting_entries(full_doc)
+        
+        result = await credit_notes_collection.update_one(
         {"id": credit_note_id},
         {"$set": body}
     )
