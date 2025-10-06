@@ -328,6 +328,14 @@ async def update_debit_note(debit_note_id: str, body: Dict[str, Any]):
 @router.delete("/debit-notes/{debit_note_id}")
 async def delete_debit_note(debit_note_id: str):
     """Delete debit note"""
+    # Get existing to check status
+    existing = await debit_notes_collection.find_one({"id": debit_note_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Debit note not found")
+    
+    # Validate deletion is allowed
+    validate_transaction_delete(existing.get("status", "draft"), "Debit Note")
+    
     result = await debit_notes_collection.delete_one({"id": debit_note_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Debit note not found")
