@@ -351,6 +351,91 @@ async def delete_purchase_invoice(invoice_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting purchase invoice: {str(e)}")
 
+
+@router.post("/invoices/{invoice_id}/send")
+async def send_purchase_invoice(invoice_id: str, body: dict):
+    """Send purchase invoice via email/SMS"""
+    from typing import Dict, Any
+    from services.send_tracking import track_send_status
+    
+    # Get the purchase invoice
+    invoice = await purchase_invoices_collection.find_one({"id": invoice_id})
+    if not invoice:
+        # Try with ObjectId
+        try:
+            invoice = await purchase_invoices_collection.find_one({"_id": ObjectId(invoice_id)})
+        except:
+            pass
+    
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Purchase invoice not found")
+    
+    try:
+        method = body.get("method", "email")
+        recipient = body.get("email") or body.get("phone")
+        
+        if not recipient:
+            raise HTTPException(status_code=400, detail="Email or phone number is required")
+        
+        # Import services
+        from services.email_service import SendGridEmailService
+        from services.sms_service import TwilioSmsService
+        
+        send_result = None
+        
+        if method == "email":
+            try:
+                email_service = SendGridEmailService()
+                # Convert to invoice format for email template
+                invoice_data = {
+                    "invoice_number": invoice.get("invoice_number"),
+                    "invoice_date": invoice.get("invoice_date"),
+                    "due_date": invoice.get("due_date"),
+                    "supplier_name": invoice.get("supplier_name"),
+                    "customer_name": invoice.get("supplier_name"),  # For template compatibility
+                    "items": invoice.get("items", []),
+                    "subtotal": invoice.get("subtotal", 0),
+                    "tax_amount": invoice.get("tax_amount", 0),
+                    "total_amount": invoice.get("total_amount", 0)
+                }
+                send_result = await email_service.send_invoice_email(
+                    to_email=recipient,
+                    invoice_data=invoice_data,
+                    attach_pdf=body.get("attach_pdf", False)
+                )
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Email send failed: {str(e)}")
+        
+        elif method == "sms":
+            try:
+                sms_service = TwilioSmsService()
+                message = f"Purchase Invoice {invoice.get('invoice_number')} from {invoice.get('supplier_name')} for ₹{invoice.get('total_amount', 0):.2f}. Due: {invoice.get('due_date', 'N/A')}"
+                send_result = await sms_service.send_sms(to_phone=recipient, message=message)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"SMS send failed: {str(e)}")
+        
+        # Track send status
+        invoice_id_str = str(invoice.get("id") or invoice.get("_id"))
+        await track_send_status(
+            collection=purchase_invoices_collection,
+            document_id=invoice_id_str,
+            method=method,
+            recipient=recipient,
+            success=bool(send_result)
+        )
+        
+        return {
+            "success": True,
+            "message": f"Purchase invoice sent via {method}",
+            "send_result": send_result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending purchase invoice: {str(e)}")
+
+
 @router.get("/invoices/stats/overview")
 async def purchase_invoice_stats(
     status: Optional[str] = Query(None),
