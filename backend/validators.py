@@ -306,7 +306,7 @@ def validate_transaction_update(existing_status: str, document_type: str = "Docu
     if existing_status in immutable_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type}: Cannot update {existing_status} documents. Only draft documents can be modified."
+            detail=f"This {document_type.lower()} cannot be modified because it has been {existing_status}. Only draft documents can be edited."
         )
 
 
