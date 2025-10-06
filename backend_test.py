@@ -10318,16 +10318,16 @@ class BackendTester:
             return 0, 1
 
 async def main():
-    """Main function to run Stock Reports API Tests"""
+    """Main function to run Validation System Tests"""
     async with BackendTester() as tester:
-        # Run stock reports API tests as requested in review
-        passed, total, results = await tester.run_all_tests()
+        # Run validation system tests as requested in review
+        passed, failed = await tester.run_validation_tests()
         
-        if passed > 0 and passed == total:
-            print("🎉 Stock Reports API Tests PASSED!")
+        if failed == 0:
+            print("🎉 Validation System Tests PASSED!")
             return 0
         else:
-            print("💥 Stock Reports API Tests detected critical issues!")
+            print("💥 Validation System Tests detected critical issues!")
             return 1
 
 if __name__ == "__main__":
