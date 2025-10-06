@@ -229,6 +229,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Sales Invoices API Credit Note Autocomplete Fix Testing - COMPLETED ✅"
     - "Payment Entry Module Comprehensive Testing - COMPLETED ✅"
     - "Financial Management System Integration Testing - COMPLETED ✅"
     - "Login Functionality Testing - COMPLETED ✅"
