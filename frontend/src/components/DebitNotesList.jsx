@@ -318,27 +318,33 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                   >
                     <Eye size={14} className="text-gray-600" />
                   </button>
-                  <button 
-                    onClick={() => onEditDebitNote && onEditDebitNote(note)} 
-                    className="p-1 hover:bg-gray-100 rounded" 
-                    title="Edit"
-                  >
-                    <Edit size={14} className="text-gray-600" />
-                  </button>
-                  <button 
-                    onClick={() => openSendModal(note)} 
-                    className="p-1 hover:bg-gray-100 rounded" 
-                    title="Send"
-                  >
-                    <Send size={14} className="text-blue-600" />
-                  </button>
-                  <button 
-                    onClick={() => remove(note)} 
-                    className="p-1 hover:bg-gray-100 rounded" 
-                    title="Delete"
-                  >
-                    <Trash2 size={14} className="text-red-600" />
-                  </button>
+                  {note.status === 'draft' && (
+                    <>
+                      <button 
+                        onClick={() => onEditDebitNote && onEditDebitNote(note)} 
+                        className="p-1 hover:bg-gray-100 rounded" 
+                        title="Edit"
+                      >
+                        <Edit size={14} className="text-gray-600" />
+                      </button>
+                      <button 
+                        onClick={() => remove(note)} 
+                        className="p-1 hover:bg-gray-100 rounded" 
+                        title="Delete"
+                      >
+                        <Trash2 size={14} className="text-red-600" />
+                      </button>
+                    </>
+                  )}
+                  {note.status === 'submitted' && (
+                    <button 
+                      onClick={() => openSendModal(note)} 
+                      className="p-1 hover:bg-gray-100 rounded" 
+                      title="Send"
+                    >
+                      <Send size={14} className="text-blue-600" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
