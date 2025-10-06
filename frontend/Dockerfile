@@ -18,6 +18,11 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
+# Accept backend URL as build argument (Railway will pass this)
+ARG REACT_APP_BACKEND_URL
+# Set it as environment variable for the build process
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+
 # Set environment for build
 ENV NODE_OPTIONS="--openssl-legacy-provider"
 ENV GENERATE_SOURCEMAP=false
