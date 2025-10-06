@@ -132,12 +132,12 @@ def validate_amounts(data: Dict[str, Any], document_type: str = "Document"):
         if total_amount < 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type}: total_amount cannot be negative"
+                detail="Total amount cannot be negative"
             )
     except (TypeError, ValueError):
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type}: invalid total_amount value"
+            detail="Please enter a valid total amount"
         )
     
     # Validate discount
@@ -147,19 +147,19 @@ def validate_amounts(data: Dict[str, Any], document_type: str = "Document"):
         if discount < 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type}: discount_amount cannot be negative"
+                detail="Discount amount cannot be negative"
             )
         
         subtotal = float(data.get("subtotal", 0))
         if discount > subtotal:
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type}: discount_amount cannot exceed subtotal"
+                detail="Discount amount cannot be greater than the subtotal"
             )
     except (TypeError, ValueError):
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type}: invalid discount_amount value"
+            detail="Please enter a valid discount amount"
         )
     
     # Validate tax rate
@@ -169,12 +169,12 @@ def validate_amounts(data: Dict[str, Any], document_type: str = "Document"):
         if tax_rate < 0 or tax_rate > 100:
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type}: tax_rate must be between 0 and 100"
+                detail="Tax rate must be between 0% and 100%"
             )
     except (TypeError, ValueError):
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type}: invalid tax_rate value"
+            detail="Please enter a valid tax rate"
         )
 
 
