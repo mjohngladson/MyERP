@@ -299,11 +299,11 @@ async def global_search(
 @router.get("/suggestions")
 async def search_suggestions(
     query: str = Query(..., description="Search query for suggestions"),
-    limit: int = Query(8, description="Maximum number of suggestions")
+    limit: int = Query(12, description="Maximum number of suggestions")
 ):
     """
     Get search suggestions for autocomplete
-    Returns quick suggestions based on popular searches
+    Returns quick suggestions from all document types
     """
     if not query or len(query.strip()) < 1:
         return {"suggestions": []}
@@ -313,43 +313,175 @@ async def search_suggestions(
     
     suggestions = []
     
+    # Get quotations
+    quotation_cursor = db.sales_quotations.find(
+        {"$or": [
+            {"quotation_number": {"$regex": pattern}},
+            {"customer_name": {"$regex": pattern}}
+        ]},
+        {"quotation_number": 1, "customer_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(2)
+    
+    async for quot in quotation_cursor:
+        suggestions.append({
+            "id": quot.get("id"),
+            "text": f"{quot.get('quotation_number')} - {quot.get('customer_name')}",
+            "type": "quotation",
+            "category": "Quotations",
+            "amount": quot.get("total_amount")
+        })
+    
+    # Get sales orders
+    order_cursor = db.sales_orders.find(
+        {"$or": [
+            {"order_number": {"$regex": pattern}},
+            {"customer_name": {"$regex": pattern}}
+        ]},
+        {"order_number": 1, "customer_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(2)
+    
+    async for order in order_cursor:
+        suggestions.append({
+            "id": order.get("id"),
+            "text": f"{order.get('order_number')} - {order.get('customer_name')}",
+            "type": "sales_order",
+            "category": "Sales Orders",
+            "amount": order.get("total_amount")
+        })
+    
+    # Get sales invoices
+    invoice_cursor = db.sales_invoices.find(
+        {"$or": [
+            {"invoice_number": {"$regex": pattern}},
+            {"customer_name": {"$regex": pattern}}
+        ]},
+        {"invoice_number": 1, "customer_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(2)
+    
+    async for inv in invoice_cursor:
+        suggestions.append({
+            "id": inv.get("id"),
+            "text": f"{inv.get('invoice_number')} - {inv.get('customer_name')}",
+            "type": "sales_invoice",
+            "category": "Sales Invoices",
+            "amount": inv.get("total_amount")
+        })
+    
+    # Get purchase orders
+    po_cursor = db.purchase_orders.find(
+        {"$or": [
+            {"order_number": {"$regex": pattern}},
+            {"supplier_name": {"$regex": pattern}}
+        ]},
+        {"order_number": 1, "supplier_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(1)
+    
+    async for po in po_cursor:
+        suggestions.append({
+            "id": po.get("id"),
+            "text": f"{po.get('order_number')} - {po.get('supplier_name')}",
+            "type": "purchase_order",
+            "category": "Purchase Orders",
+            "amount": po.get("total_amount")
+        })
+    
+    # Get purchase invoices
+    pi_cursor = db.purchase_invoices.find(
+        {"$or": [
+            {"invoice_number": {"$regex": pattern}},
+            {"supplier_name": {"$regex": pattern}}
+        ]},
+        {"invoice_number": 1, "supplier_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(1)
+    
+    async for pi in pi_cursor:
+        suggestions.append({
+            "id": pi.get("id"),
+            "text": f"{pi.get('invoice_number')} - {pi.get('supplier_name')}",
+            "type": "purchase_invoice",
+            "category": "Purchase Invoices",
+            "amount": pi.get("total_amount")
+        })
+    
+    # Get credit notes
+    cn_cursor = db.credit_notes.find(
+        {"$or": [
+            {"credit_note_number": {"$regex": pattern}},
+            {"customer_name": {"$regex": pattern}}
+        ]},
+        {"credit_note_number": 1, "customer_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(1)
+    
+    async for cn in cn_cursor:
+        suggestions.append({
+            "id": cn.get("id"),
+            "text": f"{cn.get('credit_note_number')} - {cn.get('customer_name')}",
+            "type": "credit_note",
+            "category": "Credit Notes",
+            "amount": cn.get("total_amount")
+        })
+    
+    # Get debit notes
+    dn_cursor = db.debit_notes.find(
+        {"$or": [
+            {"debit_note_number": {"$regex": pattern}},
+            {"supplier_name": {"$regex": pattern}}
+        ]},
+        {"debit_note_number": 1, "supplier_name": 1, "total_amount": 1, "_id": 0}
+    ).limit(1)
+    
+    async for dn in dn_cursor:
+        suggestions.append({
+            "id": dn.get("id"),
+            "text": f"{dn.get('debit_note_number')} - {dn.get('supplier_name')}",
+            "type": "debit_note",
+            "category": "Debit Notes",
+            "amount": dn.get("total_amount")
+        })
+    
     # Get customer name suggestions
     customer_cursor = db.customers.find(
         {"name": {"$regex": pattern}},
-        {"name": 1, "_id": 0}
-    ).limit(3)
+        {"name": 1, "email": 1, "_id": 0}
+    ).limit(2)
     
     async for customer in customer_cursor:
         suggestions.append({
-            "text": customer["name"],
+            "id": customer.get("id"),
+            "text": customer.get("name"),
             "type": "customer",
-            "category": "Customers"
+            "category": "Customers",
+            "subtitle": customer.get("email", "")
         })
     
     # Get item name suggestions
     item_cursor = db.items.find(
         {"name": {"$regex": pattern}},
-        {"name": 1, "_id": 0}
-    ).limit(3)
+        {"name": 1, "unit_price": 1, "_id": 0}
+    ).limit(2)
     
     async for item in item_cursor:
         suggestions.append({
-            "text": item["name"],
+            "id": item.get("id"),
+            "text": item.get("name"),
             "type": "item", 
-            "category": "Items"
+            "category": "Items",
+            "price": item.get("unit_price")
         })
     
     # Get supplier name suggestions
     supplier_cursor = db.suppliers.find(
         {"name": {"$regex": pattern}},
-        {"name": 1, "_id": 0}
-    ).limit(2)
+        {"name": 1, "email": 1, "_id": 0}
+    ).limit(1)
     
     async for supplier in supplier_cursor:
         suggestions.append({
-            "text": supplier["name"],
+            "id": supplier.get("id"),
+            "text": supplier.get("name"),
             "type": "supplier",
-            "category": "Suppliers"
+            "category": "Suppliers",
+            "subtitle": supplier.get("email", "")
         })
     
     # Limit total suggestions
