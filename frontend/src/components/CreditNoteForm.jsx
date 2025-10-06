@@ -280,12 +280,24 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice</label>
-                <input
-                  value={form.reference_invoice}
-                  onChange={e => updateForm('reference_invoice', e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="Original invoice number"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice *</label>
+                <AutocompleteSearch
+                  items={invoices}
+                  selectedValue={form.reference_invoice}
+                  onSelect={(invoice) => {
+                    updateForm('reference_invoice_id', invoice.id);
+                    updateForm('reference_invoice', invoice.invoice_number);
+                    // Auto-fill customer if not set
+                    if (!form.customer_name && invoice.customer_name) {
+                      updateForm('customer_id', invoice.customer_id);
+                      updateForm('customer_name', invoice.customer_name);
+                      updateForm('customer_email', invoice.customer_email || '');
+                      updateForm('customer_phone', invoice.customer_phone || '');
+                    }
+                  }}
+                  displayField="invoice_number"
+                  placeholder="Search invoice..."
+                  className="w-full"
                 />
               </div>
               <div>
