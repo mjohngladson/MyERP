@@ -75,12 +75,34 @@ async def get_credit_notes(
 
 @router.post("/credit-notes")
 async def create_credit_note(body: Dict[str, Any]):
-    """Create new credit note"""
+    """Create new credit note with validation and linking"""
+    # Validations
     if not body or not body.get("customer_name"):
         raise HTTPException(status_code=400, detail="customer_name is required")
+    if not body.get("credit_note_date"):
+        raise HTTPException(status_code=400, detail="credit_note_date is required")
+    if not body.get("reason"):
+        raise HTTPException(status_code=400, detail="reason is required")
+    
+    items = body.get("items", [])
+    if not items or len(items) == 0:
+        raise HTTPException(status_code=400, detail="At least one item is required")
+    
+    # Validate and link to original invoice if provided
+    reference_invoice_id = body.get("reference_invoice_id")
+    reference_invoice_number = body.get("reference_invoice")
+    
+    if reference_invoice_id:
+        from database import sales_invoices_collection
+        original_invoice = await sales_invoices_collection.find_one({"id": reference_invoice_id})
+        if not original_invoice:
+            raise HTTPException(status_code=404, detail="Referenced invoice not found")
+        
+        # Auto-fill reference number if not provided
+        if not reference_invoice_number:
+            reference_invoice_number = original_invoice.get("invoice_number")
     
     # Calculate totals
-    items = body.get("items", [])
     subtotal = sum(float(item.get("amount", 0)) for item in items)
     discount_amount = float(body.get("discount_amount", 0))
     tax_rate = float(body.get("tax_rate", 18))
@@ -92,14 +114,16 @@ async def create_credit_note(body: Dict[str, Any]):
     doc = {
         "id": str(uuid.uuid4()),
         "credit_note_number": generate_credit_note_number(),
+        "customer_id": body.get("customer_id"),
         "customer_name": body.get("customer_name"),
         "customer_email": body.get("customer_email"),
         "customer_phone": body.get("customer_phone"),
         "customer_address": body.get("customer_address"),
         
         "credit_note_date": body.get("credit_note_date"),
-        "reference_invoice": body.get("reference_invoice"),  # Original invoice number
-        "reason": body.get("reason", "Return"),  # Return, Allowance, Correction
+        "reference_invoice_id": reference_invoice_id,
+        "reference_invoice": reference_invoice_number,
+        "reason": body.get("reason", "Return"),
         
         "items": items,
         "subtotal": subtotal,
@@ -108,14 +132,21 @@ async def create_credit_note(body: Dict[str, Any]):
         "tax_amount": tax_amount,
         "total_amount": total_amount,
         
-        "status": body.get("status", "Draft"),  # Draft, Issued, Applied
+        "status": body.get("status", "draft").lower(),
         "notes": body.get("notes"),
+        "company_id": body.get("company_id", "default_company"),
         
         "created_at": now_utc(),
         "updated_at": now_utc(),
     }
     
     await credit_notes_collection.insert_one(doc)
+    
+    # If created directly as submitted, create reversal entries
+    if doc["status"] == "submitted":
+        await create_credit_note_accounting_entries(doc)
+        return {"success": True, "message": "Credit Note created and accounting entries generated", "credit_note": sanitize(doc)}
+    
     return {"success": True, "credit_note": sanitize(doc)}
 
 
