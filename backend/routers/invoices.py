@@ -211,6 +211,9 @@ async def create_sales_invoice(invoice_data: dict):
             "tax_amount": tax_amount,
             "total_amount": total_amount
         })
+        
+        # Validate amounts after calculation
+        validate_amounts(invoice_data, "Sales Invoice")
 
         result = await sales_invoices_collection.insert_one(invoice_data)
         if result.inserted_id:
