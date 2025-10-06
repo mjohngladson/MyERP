@@ -28,6 +28,95 @@ def generate_credit_note_number():
     return f"CN-{date_str}-{str(uuid.uuid4())[:4].upper()}"
 
 
+async def create_credit_note_accounting_entries(credit_note: Dict[str, Any]):
+    """Create reversal journal entry and adjust payment for credit note"""
+    from database import journal_entries_collection, payments_collection, accounts_collection
+    
+    # Get accounts
+    receivables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
+    sales_return_account = await accounts_collection.find_one({"account_name": {"$regex": "Sales Return|Returns", "$options": "i"}})
+    tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Tax", "$options": "i"}})
+    
+    if not receivables_account or not sales_return_account:
+        # Skip if accounts don't exist
+        return
+    
+    total_amt = credit_note.get("total_amount", 0)
+    tax_amt = credit_note.get("tax_amount", 0)
+    sales_amt = total_amt - tax_amt
+    
+    # Create reversal journal entry
+    je_accounts = []
+    je_accounts.append({
+        "account_id": sales_return_account["id"],
+        "account_name": sales_return_account["account_name"],
+        "debit_amount": sales_amt,
+        "credit_amount": 0,
+        "description": f"Credit Note {credit_note.get('credit_note_number', '')}"
+    })
+    
+    if tax_account and tax_amt > 0:
+        je_accounts.append({
+            "account_id": tax_account["id"],
+            "account_name": tax_account["account_name"],
+            "debit_amount": tax_amt,
+            "credit_amount": 0,
+            "description": f"Tax reversal for CN {credit_note.get('credit_note_number', '')}"
+        })
+    
+    je_accounts.append({
+        "account_id": receivables_account["id"],
+        "account_name": receivables_account["account_name"],
+        "debit_amount": 0,
+        "credit_amount": total_amt,
+        "description": f"Credit Note {credit_note.get('credit_note_number', '')}"
+    })
+    
+    je_id = str(uuid.uuid4())
+    journal_entry = {
+        "id": je_id,
+        "entry_number": f"JE-CN-{credit_note.get('credit_note_number', '')}",
+        "posting_date": credit_note.get("credit_note_date"),
+        "reference": credit_note.get("credit_note_number", ""),
+        "description": f"Credit Note for {credit_note.get('customer_name', '')} - {credit_note.get('reason', '')}",
+        "voucher_type": "Credit Note",
+        "voucher_id": credit_note.get("id"),
+        "accounts": je_accounts,
+        "total_debit": total_amt,
+        "total_credit": total_amt,
+        "status": "posted",
+        "is_auto_generated": True,
+        "company_id": credit_note.get("company_id", "default_company"),
+        "created_at": now_utc(),
+        "updated_at": now_utc()
+    }
+    await journal_entries_collection.insert_one(journal_entry)
+    
+    # Find and adjust related payment entry if linked to invoice
+    if credit_note.get("reference_invoice_id"):
+        # Find payment for the original invoice
+        payment = await payments_collection.find_one({
+            "party_id": credit_note.get("customer_id"),
+            "payment_type": "Receive",
+            "reference_number": credit_note.get("reference_invoice")
+        })
+        
+        if payment:
+            # Reduce the payment amount by credit note amount
+            new_amount = payment.get("amount", 0) - total_amt
+            await payments_collection.update_one(
+                {"id": payment["id"]},
+                {"$set": {
+                    "amount": max(0, new_amount),
+                    "base_amount": max(0, new_amount),
+                    "unallocated_amount": max(0, payment.get("unallocated_amount", 0) - total_amt),
+                    "updated_at": now_utc()
+                }}
+            )
+    
+    return je_id
+
+
 @router.get("/credit-notes")
 async def get_credit_notes(
     search: Optional[str] = None,
