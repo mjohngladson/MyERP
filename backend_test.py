@@ -765,7 +765,7 @@ class BackendTester:
                 "discount_amount": 10
             }
             quotation_id = None
-            async with self.session.post(f"{self.base_url}/api/quotations", json=valid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=valid_payload) as response:
                 if response.status == 200:
                     data = await response.json()
                     if data.get("success") and "quotation" in data:
