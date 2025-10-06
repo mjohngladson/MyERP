@@ -27,6 +27,35 @@ except Exception:
 
 router = APIRouter(prefix="/api/quotations", tags=["quotations"])
 
+# ============ WORKFLOW HELPER FUNCTIONS ============
+async def create_sales_order_from_quotation(quotation_id: str, quotation_data: dict):
+    """Create Sales Order from Quotation when status changes to submitted/accepted"""
+    from database import sales_orders_collection
+    
+    order_data = {
+        "id": str(uuid.uuid4()),
+        "order_number": f"SO-{datetime.now().strftime('%Y%m%d')}-{await sales_orders_collection.count_documents({}) + 1:04d}",
+        "quotation_id": quotation_id,
+        "quotation_number": quotation_data.get("quotation_number", ""),
+        "customer_id": quotation_data.get("customer_id"),
+        "customer_name": quotation_data.get("customer_name"),
+        "order_date": datetime.now().strftime("%Y-%m-%d"),
+        "delivery_date": quotation_data.get("quotation_date"),
+        "status": "draft",
+        "items": quotation_data.get("items", []),
+        "subtotal": quotation_data.get("subtotal", 0),
+        "discount_amount": quotation_data.get("discount_amount", 0),
+        "tax_rate": quotation_data.get("tax_rate", 18),
+        "tax_amount": quotation_data.get("tax_amount", 0),
+        "total_amount": quotation_data.get("total_amount", 0),
+        "company_id": quotation_data.get("company_id", "default_company"),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    await sales_orders_collection.insert_one(order_data)
+    return order_data
+
 @router.get("/", response_model=List[dict])
 async def list_quotations(
     limit: int = Query(50, ge=1, le=200),
