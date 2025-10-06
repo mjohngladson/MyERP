@@ -233,7 +233,7 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name *</label>
                 <AutocompleteSearch
-                  options={suppliers.map(supplier => ({
+                  options={(Array.isArray(suppliers) ? suppliers : []).map(supplier => ({
                     ...supplier,
                     subtitle: supplier.email || supplier.phone || supplier.mobile
                   }))}
