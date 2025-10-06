@@ -13,6 +13,12 @@ from validators import (
 
 router = APIRouter(prefix="/api/purchase", tags=["purchase_invoices"])
 
+# Import workflow helpers
+from workflow_helpers import (
+    create_journal_entry_for_purchase_invoice,
+    create_payment_entry_for_purchase_invoice
+)
+
 @router.get("/invoices", response_model=List[dict])
 async def list_purchase_invoices(
     limit: int = Query(50, ge=1, le=200),
