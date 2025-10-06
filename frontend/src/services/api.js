@@ -1,11 +1,9 @@
 import axios from 'axios';
 
-// Backend URL strictly from environment variables per platform rules  
-// In development, use relative paths to avoid mixed content issues with webpack-dev-server
+// Backend URL strictly from environment variables per platform rules
 const ENV_URL = process.env.REACT_APP_BACKEND_URL || '';
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
-const BACKEND_URL = IS_DEVELOPMENT ? '' : ENV_URL;
+const BACKEND_URL = ENV_URL;
 const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 if (!BACKEND_URL) {
@@ -20,8 +18,6 @@ window.addEventListener('online', () => { isOnline = true; });
 window.addEventListener('offline', () => { isOnline = false; });
 
 // Create axios instance
-console.log('🔍 DEBUG - API_BASE being used for axios:', API_BASE);
-console.log('🔍 DEBUG - BACKEND_URL value:', BACKEND_URL);
 const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
@@ -32,9 +28,6 @@ const apiClient = axios.create({
 
 // Request interceptor for auth and network checking
 apiClient.interceptors.request.use((config) => {
-  console.log('🔍 DEBUG - Interceptor - Full URL being requested:', config.url);
-  console.log('🔍 DEBUG - Interceptor - BaseURL:', config.baseURL);
-  
   // Check if user is offline
   if (!isOnline) {
     throw new axios.Cancel('You are currently offline. Please check your internet connection.');
