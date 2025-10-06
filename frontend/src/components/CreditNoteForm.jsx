@@ -8,18 +8,21 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
   const [saving, setSaving] = React.useState(false);
   const [masterItems, setMasterItems] = React.useState([]);
   const [customers, setCustomers] = React.useState([]);
+  const [invoices, setInvoices] = React.useState([]);
   const [form, setForm] = React.useState({
+    customer_id: '',
     customer_name: '',
     customer_email: '',
     customer_phone: '',
     customer_address: '',
     credit_note_date: new Date().toISOString().split('T')[0],
+    reference_invoice_id: '',
     reference_invoice: '',
     reason: 'Return',
     items: [{ item_name: '', quantity: 1, rate: 0, amount: 0 }],
     discount_amount: 0,
     tax_rate: 18,
-    status: 'Draft',
+    status: 'draft',
     notes: ''
   });
 
