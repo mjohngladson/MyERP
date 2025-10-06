@@ -235,6 +235,13 @@ async def create_purchase_order(payload: dict):
             payload['id'] = str(res.inserted_id)
             if '_id' in payload:
                 del payload['_id']
+            order_id = payload.get('id')
+            
+            # If creating directly with submitted status, trigger workflow
+            if payload.get('status') == 'submitted':
+                invoice_data = await create_purchase_invoice_from_order(order_id, payload)
+                return { 'success': True, 'order': payload, 'message': 'Purchase Order created and Purchase Invoice created', 'invoice_id': invoice_data['id'] }
+            
             return { 'success': True, 'order': payload }
         raise HTTPException(status_code=500, detail='Failed to create purchase order')
     except HTTPException:
