@@ -307,31 +307,9 @@ async def update_quotation(quotation_id: str, payload: dict):
         
         # If status changed to "submitted" or "accepted", create Sales Order
         if payload.get("status") in ["submitted", "accepted"] and existing.get("status") not in ["submitted", "accepted"]:
-            from database import sales_orders_collection
-            
-            # Create Sales Order from Quotation
-            order_data = {
-                "id": str(uuid.uuid4()),
-                "order_number": f"SO-{datetime.now().strftime('%Y%m%d')}-{await sales_orders_collection.count_documents({}) + 1:04d}",
-                "quotation_id": quotation_id,
-                "quotation_number": existing.get("quotation_number", ""),
-                "customer_id": existing.get("customer_id"),
-                "customer_name": existing.get("customer_name"),
-                "order_date": datetime.now().strftime("%Y-%m-%d"),
-                "delivery_date": existing.get("quotation_date"),
-                "status": "draft",
-                "items": existing.get("items", []),
-                "subtotal": existing.get("subtotal", 0),
-                "discount_amount": existing.get("discount_amount", 0),
-                "tax_rate": existing.get("tax_rate", 18),
-                "tax_amount": existing.get("tax_amount", 0),
-                "total_amount": existing.get("total_amount", 0),
-                "company_id": existing.get("company_id", "default_company"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
-            
-            await sales_orders_collection.insert_one(order_data)
+            # Merge existing data with updates for workflow
+            merged_data = {**existing, **payload}
+            order_data = await create_sales_order_from_quotation(quotation_id, merged_data)
             
             res = await sales_quotations_collection.update_one({"_id": existing["_id"]}, {"$set": payload})
             return {"success": True, "message": "Quotation updated and Sales Order created", "sales_order_id": order_data["id"], "modified": res.modified_count}
