@@ -5,6 +5,11 @@ from bson import ObjectId
 from pymongo import ASCENDING, DESCENDING
 
 from database import purchase_invoices_collection, suppliers_collection
+from validators import (
+    validate_required_fields, validate_items, validate_amounts,
+    validate_status_transition, validate_transaction_update,
+    PURCHASE_INVOICE_STATUS_TRANSITIONS
+)
 
 router = APIRouter(prefix="/api/purchase", tags=["purchase_invoices"])
 
