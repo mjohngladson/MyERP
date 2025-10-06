@@ -83,7 +83,7 @@ function AppContent() {
 
       // Sales Invoices
       case 'sales-invoice-list':
-        return <SalesInvoicesList onBack={() => setActiveModule('dashboard')} onViewInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceView: inv})); setActiveModule('sales-invoice-view'); }} onEditInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceEdit: inv})); setActiveModule('sales-invoice-form'); }} />;
+        return <SalesInvoicesList onBack={() => setActiveModule('dashboard')} onViewInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceView: inv})); setActiveModule('sales-invoice-view'); }} onEditInvoice={(inv)=>{ setPageState(ps=>({...ps, invoiceEdit: inv})); setActiveModule('sales-invoice-form'); }} onCreateInvoice={() => { setPageState(ps => ({...ps, invoiceEdit: null})); setActiveModule('sales-invoice-form'); }} />;
       case 'sales-invoice-form':
         return <SalesInvoiceForm invoiceId={pageState.invoiceEdit?.id} onBack={() => setActiveModule('sales-invoice-list')} onSave={() => setActiveModule('sales-invoice-list')} />;
       case 'sales-invoice-view':
