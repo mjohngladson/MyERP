@@ -3,6 +3,11 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 import uuid
 from database import db
+from validators import (
+    validate_required_fields, validate_items, validate_amounts,
+    validate_status_transition, validate_transaction_update, validate_transaction_delete,
+    DEBIT_NOTE_STATUS_TRANSITIONS
+)
 
 router = APIRouter(prefix="/api/buying", tags=["debit-notes"])
 
