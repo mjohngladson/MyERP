@@ -959,6 +959,84 @@ class BackendTester:
         except Exception as e:
             self.log_test("Sales Order Validations", False, f"Error during sales order validation testing: {str(e)}")
             return False
+
+    async def run_validation_tests(self):
+        """Run comprehensive validation system tests for Quotations and Sales Orders"""
+        print("🚀 Starting GiLi Validation System Testing Suite")
+        print(f"📡 Testing against: {self.base_url}")
+        print("🔒 VALIDATION SYSTEM COMPREHENSIVE TESTS:")
+        print("   QUOTATIONS:")
+        print("   1. Missing customer_name validation")
+        print("   2. Missing items validation")
+        print("   3. Empty items array validation")
+        print("   4. Zero quantity validation")
+        print("   5. Negative rate validation")
+        print("   6. Valid quotation creation")
+        print("   7. Invalid status transition (draft → won)")
+        print("   8. Valid status transition (draft → submitted)")
+        print("   9. Update restriction on submitted quotations")
+        print("   10. Delete restriction on submitted quotations")
+        print("   SALES ORDERS:")
+        print("   1. Missing customer_name validation")
+        print("   2. Missing items validation")
+        print("   3. Valid order creation")
+        print("   4. Invalid status transition (draft → fulfilled)")
+        print("   5. Valid status transition (draft → submitted)")
+        print("   6. Update restriction on submitted orders")
+        print("   7. Delete restriction on submitted orders")
+        print("=" * 80)
+        
+        # Tests to run
+        tests_to_run = [
+            self.test_health_check,                    # Basic API health check
+            self.test_quotation_validations,           # Comprehensive quotation validation tests
+            self.test_sales_order_validations,         # Comprehensive sales order validation tests
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        # Run tests
+        for test in tests_to_run:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        total = passed + failed
+        print("\n" + "=" * 80)
+        print("📊 VALIDATION SYSTEM TEST SUMMARY")
+        print("=" * 80)
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📈 Success Rate: {(passed/total*100):.1f}%" if total > 0 else "No tests run")
+        
+        # Detailed results
+        validation_tests = [r for r in self.test_results if "Validation" in r["test"] or "Status" in r["test"] or "Update" in r["test"] or "Delete" in r["test"]]
+        
+        if validation_tests:
+            print(f"\n🔍 DETAILED VALIDATION TEST RESULTS ({len(validation_tests)} tests):")
+            for result in validation_tests:
+                status = "✅ PASS" if result["success"] else "❌ FAIL"
+                print(f"   {status} - {result['test']}")
+                if not result["success"]:
+                    print(f"      └─ {result['details']}")
+        
+        if failed > 0:
+            print("\n🚨 FAILED TESTS SUMMARY:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"   ❌ {result['test']}: {result['details']}")
+        
+        print("\n" + "=" * 80)
+        return passed, failed
     
     async def test_sales_overview_report(self):
         """Test sales overview report endpoint"""
