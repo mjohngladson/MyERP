@@ -747,10 +747,217 @@ class BackendTester:
                     self.log_test("Quotation Validation - Negative rate", False, f"Expected HTTP 400, got {response.status}")
                     return False
 
+            # Test 6: Create valid quotation (should succeed with 200)
+            valid_payload = {
+                "customer_name": "Test Customer",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10
+            }
+            quotation_id = None
+            async with self.session.post(f"{self.base_url}/api/quotations", json=valid_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "quotation" in data:
+                        quotation_id = data["quotation"].get("id")
+                        self.log_test("Quotation Validation - Valid creation", True, f"Successfully created quotation {quotation_id}", {"id": quotation_id, "total": data["quotation"].get("total_amount")})
+                    else:
+                        self.log_test("Quotation Validation - Valid creation", False, f"Invalid response structure: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Validation - Valid creation", False, f"Expected HTTP 200, got {response.status}")
+                    return False
+
+            if not quotation_id:
+                self.log_test("Quotation Status Transitions", False, "Cannot test status transitions without valid quotation")
+                return False
+
+            # Test 7: Invalid status transition draft → won (should fail - must go through submitted)
+            invalid_status_payload = {"status": "won"}
+            async with self.session.put(f"{self.base_url}/api/quotations/{quotation_id}", json=invalid_status_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "cannot transition" in data.get("detail", "").lower() or "allowed transitions" in data.get("detail", "").lower():
+                        self.log_test("Quotation Status - Invalid transition draft→won", True, "Correctly rejected invalid status transition", data)
+                    else:
+                        self.log_test("Quotation Status - Invalid transition draft→won", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Status - Invalid transition draft→won", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 8: Update status to submitted (should succeed and create Sales Order)
+            submitted_payload = {"status": "submitted"}
+            async with self.session.put(f"{self.base_url}/api/quotations/{quotation_id}", json=submitted_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "sales_order_id" in data:
+                        self.log_test("Quotation Status - Valid transition to submitted", True, f"Successfully transitioned to submitted and created Sales Order {data.get('sales_order_id')}", data)
+                    else:
+                        self.log_test("Quotation Status - Valid transition to submitted", False, f"Expected sales_order_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Status - Valid transition to submitted", False, f"Expected HTTP 200, got {response.status}")
+                    return False
+
+            # Test 9: Try to update submitted quotation fields other than status (should fail with 400)
+            invalid_update_payload = {"customer_name": "Updated Customer", "items": [{"item_name": "New Item", "quantity": 1, "rate": 200}]}
+            async with self.session.put(f"{self.base_url}/api/quotations/{quotation_id}", json=invalid_update_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "only draft documents can be modified" in data.get("detail", "").lower() or "cannot update" in data.get("detail", "").lower():
+                        self.log_test("Quotation Update - Submitted quotation restriction", True, "Correctly prevented update of submitted quotation", data)
+                    else:
+                        self.log_test("Quotation Update - Submitted quotation restriction", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Update - Submitted quotation restriction", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 10: Try to delete submitted quotation (should fail with 400)
+            async with self.session.delete(f"{self.base_url}/api/quotations/{quotation_id}") as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "only draft or cancelled" in data.get("detail", "").lower() or "cannot delete" in data.get("detail", "").lower():
+                        self.log_test("Quotation Delete - Submitted quotation restriction", True, "Correctly prevented deletion of submitted quotation", data)
+                    else:
+                        self.log_test("Quotation Delete - Submitted quotation restriction", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Quotation Delete - Submitted quotation restriction", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
             return True
 
         except Exception as e:
             self.log_test("Quotation Validations", False, f"Error during quotation validation testing: {str(e)}")
+            return False
+
+    async def test_sales_order_validations(self):
+        """Test comprehensive sales order validation system"""
+        try:
+            # Test 1: Create order WITHOUT customer_name (should fail with 400)
+            invalid_payload = {
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}]
+            }
+            async with self.session.post(f"{self.base_url}/api/sales/orders", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "customer_name" in data.get("detail", "").lower():
+                        self.log_test("Sales Order Validation - Missing customer_name", True, "Correctly rejected missing customer_name", data)
+                    else:
+                        self.log_test("Sales Order Validation - Missing customer_name", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Validation - Missing customer_name", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 2: Create order WITHOUT items (should fail with 400)
+            invalid_payload = {
+                "customer_name": "Test Customer"
+            }
+            async with self.session.post(f"{self.base_url}/api/sales/orders", json=invalid_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "items" in data.get("detail", "").lower():
+                        self.log_test("Sales Order Validation - Missing items", True, "Correctly rejected missing items", data)
+                    else:
+                        self.log_test("Sales Order Validation - Missing items", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Validation - Missing items", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 3: Create valid order (should succeed with 200)
+            valid_payload = {
+                "customer_name": "Test Customer",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10
+            }
+            order_id = None
+            async with self.session.post(f"{self.base_url}/api/sales/orders", json=valid_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "order" in data:
+                        order_id = data["order"].get("id")
+                        self.log_test("Sales Order Validation - Valid creation", True, f"Successfully created order {order_id}", {"id": order_id, "total": data["order"].get("total_amount")})
+                    else:
+                        self.log_test("Sales Order Validation - Valid creation", False, f"Invalid response structure: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Validation - Valid creation", False, f"Expected HTTP 200, got {response.status}")
+                    return False
+
+            if not order_id:
+                self.log_test("Sales Order Status Transitions", False, "Cannot test status transitions without valid order")
+                return False
+
+            # Test 4: Invalid status transition draft → fulfilled (should fail - must go through submitted)
+            invalid_status_payload = {"status": "fulfilled"}
+            async with self.session.put(f"{self.base_url}/api/sales/orders/{order_id}", json=invalid_status_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "cannot transition" in data.get("detail", "").lower() or "allowed transitions" in data.get("detail", "").lower():
+                        self.log_test("Sales Order Status - Invalid transition draft→fulfilled", True, "Correctly rejected invalid status transition", data)
+                    else:
+                        self.log_test("Sales Order Status - Invalid transition draft→fulfilled", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Status - Invalid transition draft→fulfilled", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 5: Update status to submitted (should succeed and create Sales Invoice)
+            submitted_payload = {"status": "submitted"}
+            async with self.session.put(f"{self.base_url}/api/sales/orders/{order_id}", json=submitted_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice_id" in data:
+                        self.log_test("Sales Order Status - Valid transition to submitted", True, f"Successfully transitioned to submitted and created Sales Invoice {data.get('invoice_id')}", data)
+                    else:
+                        self.log_test("Sales Order Status - Valid transition to submitted", False, f"Expected invoice_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Status - Valid transition to submitted", False, f"Expected HTTP 200, got {response.status}")
+                    return False
+
+            # Test 6: Try to update submitted order (should fail with 400)
+            invalid_update_payload = {"customer_name": "Updated Customer", "items": [{"item_name": "New Item", "quantity": 1, "rate": 200}]}
+            async with self.session.put(f"{self.base_url}/api/sales/orders/{order_id}", json=invalid_update_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "only draft documents can be modified" in data.get("detail", "").lower() or "cannot update" in data.get("detail", "").lower():
+                        self.log_test("Sales Order Update - Submitted order restriction", True, "Correctly prevented update of submitted order", data)
+                    else:
+                        self.log_test("Sales Order Update - Submitted order restriction", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Update - Submitted order restriction", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            # Test 7: Try to delete submitted order (should fail with 400)
+            async with self.session.delete(f"{self.base_url}/api/sales/orders/{order_id}") as response:
+                if response.status == 400:
+                    data = await response.json()
+                    if "only draft or cancelled" in data.get("detail", "").lower() or "cannot delete" in data.get("detail", "").lower():
+                        self.log_test("Sales Order Delete - Submitted order restriction", True, "Correctly prevented deletion of submitted order", data)
+                    else:
+                        self.log_test("Sales Order Delete - Submitted order restriction", False, f"Wrong error message: {data}", data)
+                        return False
+                else:
+                    self.log_test("Sales Order Delete - Submitted order restriction", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+
+            return True
+
+        except Exception as e:
+            self.log_test("Sales Order Validations", False, f"Error during sales order validation testing: {str(e)}")
             return False
     
     async def test_sales_overview_report(self):
