@@ -22,7 +22,14 @@ class BackendTester:
         self.test_results = []
         
     async def __aenter__(self):
-        self.session = aiohttp.ClientSession()
+        # Configure session to not follow redirects for POST requests
+        connector = aiohttp.TCPConnector()
+        timeout = aiohttp.ClientTimeout(total=30)
+        self.session = aiohttp.ClientSession(
+            connector=connector,
+            timeout=timeout,
+            connector_owner=True
+        )
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
