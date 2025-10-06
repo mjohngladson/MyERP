@@ -124,12 +124,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=[
-        "*",  # Allow all origins for development
         "https://ui-production-ccf6.up.railway.app",  # Railway frontend
         "https://retail-erp.preview.emergentagent.com",  # Development frontend
+        "http://localhost:3000",  # Local development
+        "http://127.0.0.1:3000",  # Local development
     ],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Configure logging
