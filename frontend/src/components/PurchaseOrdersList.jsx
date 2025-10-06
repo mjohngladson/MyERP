@@ -252,14 +252,14 @@ const PurchaseOrdersList = ({ onBack, onViewOrder, onEditOrder, onCreateOrder })
                   <div className="col-span-1">
                     <div className="flex items-center space-x-2">
                       <button onClick={()=>onViewOrder && onViewOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button>
-                      <button onClick={()=>onEditOrder && onEditOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button>
-                      <button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button>
-                      {(order.sent_at || order.last_send_attempt_at) && (
+                      {order.status === 'draft' && <button onClick={()=>onEditOrder && onEditOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button>}
+                      {(order.status === 'submitted' || order.status === 'fulfilled') && <button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button>}
+                      {(order.sent_at || order.last_send_attempt_at) && (order.status === 'submitted' || order.status === 'fulfilled') && (
                         <button onClick={()=>openSend(order)} className="p-1 hover:bg-gray-100 rounded-md" title={`Resend${order.sent_at ? ` • last sent ${new Date(order.sent_at).toLocaleString()}`:''}${order.last_send_attempt_at ? ` • last attempt ${new Date(order.last_send_attempt_at).toLocaleString()}`:''}`}>
                           <RefreshCcw size={16} className="text-gray-600"/>
                         </button>
                       )}
-                      <button onClick={()=>deleteOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button>
+                      {order.status === 'draft' && <button onClick={()=>deleteOrder(order)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button>}
                     </div>
                   </div>
                 </div>
