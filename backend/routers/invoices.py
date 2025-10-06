@@ -154,6 +154,16 @@ async def get_sales_invoice(invoice_id: str):
 @router.post("/", response_model=dict)
 async def create_sales_invoice(invoice_data: dict):
     try:
+        # Validate required fields
+        validate_required_fields(
+            invoice_data,
+            ["customer_name", "items"],
+            "Sales Invoice"
+        )
+        
+        # Validate items
+        validate_items(invoice_data.get("items", []), "Sales Invoice")
+        
         if not invoice_data.get("invoice_number"):
             invoice_count = await sales_invoices_collection.count_documents({})
             invoice_data["invoice_number"] = f"INV-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{invoice_count + 1:04d}"
