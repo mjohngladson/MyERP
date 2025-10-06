@@ -237,6 +237,24 @@ async def update_sales_invoice(invoice_id: str, invoice_data: dict):
                 pass
         if not existing:
             raise HTTPException(status_code=404, detail="Invoice not found")
+        
+        # Check if updating a non-draft document
+        if existing.get("status") != "draft" and existing.get("status") != invoice_data.get("status"):
+            if set(invoice_data.keys()) - {"status", "updated_at"}:
+                validate_transaction_update(existing.get("status", "draft"), "Sales Invoice")
+        
+        # Validate status transition if status is changing
+        if "status" in invoice_data and invoice_data["status"] != existing.get("status"):
+            validate_status_transition(
+                existing.get("status", "draft"),
+                invoice_data["status"],
+                SALES_INVOICE_STATUS_TRANSITIONS,
+                "Sales Invoice"
+            )
+        
+        # Validate items if provided
+        if "items" in invoice_data:
+            validate_items(invoice_data["items"], "Sales Invoice")
 
         invoice_data["updated_at"] = datetime.now(timezone.utc)
         if "items" in invoice_data:
