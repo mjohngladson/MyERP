@@ -277,6 +277,25 @@ async def update_sales_order(order_id: str, order_data: dict):
                 pass
         if not existing:
             raise HTTPException(status_code=404, detail="Sales order not found")
+        
+        # Check if updating a non-draft document
+        if existing.get("status") != "draft" and existing.get("status") != order_data.get("status"):
+            if set(order_data.keys()) - {"status", "updated_at"}:
+                validate_transaction_update(existing.get("status", "draft"), "Sales Order")
+        
+        # Validate status transition if status is changing
+        if "status" in order_data and order_data["status"] != existing.get("status"):
+            validate_status_transition(
+                existing.get("status", "draft"),
+                order_data["status"],
+                SALES_ORDER_STATUS_TRANSITIONS,
+                "Sales Order"
+            )
+        
+        # Validate items if provided
+        if "items" in order_data:
+            validate_items(order_data["items"], "Sales Order")
+        
         order_data["updated_at"] = datetime.now(timezone.utc)
         # keep status as provided (draft/submitted/fulfilled/cancelled)
         # recalc totals when items provided or tax/discount fields present
