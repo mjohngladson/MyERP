@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-// Backend URL strictly from environment variables per platform rules
+// Backend URL strictly from environment variables per platform rules  
+// In development, use relative paths to avoid mixed content issues with webpack-dev-server
 const ENV_URL = process.env.REACT_APP_BACKEND_URL || '';
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
-const BACKEND_URL = ENV_URL;
+const BACKEND_URL = IS_DEVELOPMENT ? '' : ENV_URL;
 const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 if (!BACKEND_URL) {
