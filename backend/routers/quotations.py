@@ -2,6 +2,11 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from database import sales_quotations_collection, customers_collection, items_collection
 from models import Quotation, QuotationCreate
+from validators import (
+    validate_required_fields, validate_items, validate_amounts,
+    validate_status_transition, validate_transaction_update, validate_transaction_delete,
+    QUOTATION_STATUS_TRANSITIONS
+)
 import uuid
 from datetime import datetime, timezone
 from bson import ObjectId
