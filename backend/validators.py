@@ -196,10 +196,16 @@ def validate_status_transition(current_status: str, new_status: str, allowed_tra
     
     allowed = allowed_transitions.get(current_status, [])
     if new_status not in allowed:
-        raise HTTPException(
-            status_code=400,
-            detail=f"{document_type}: Cannot transition from '{current_status}' to '{new_status}'. Allowed transitions: {', '.join(allowed)}"
-        )
+        if allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot change status from '{current_status}' to '{new_status}'. Valid next status options: {', '.join(allowed)}"
+            )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot change status from '{current_status}' as it is a final state"
+            )
 
 
 def validate_dates(data: Dict[str, Any], document_type: str = "Document", check_future: bool = False):
