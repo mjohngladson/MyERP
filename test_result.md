@@ -345,11 +345,11 @@ test_plan:
 backend:
   - task: "Workflow Automation on Direct Submit - Extract and Apply Workflow Logic in CREATE Endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/quotations.py, backend/routers/sales.py, backend/routers/invoices.py, backend/routers/purchase.py, backend/routers/purchase_invoices.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py, backend/workflow_helpers.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
@@ -357,6 +357,9 @@ backend:
         - working: "NA"
           agent: "main"
           comment: "✅ IMPLEMENTATION COMPLETED: Successfully implemented workflow automation for direct submit across all modules. CHANGES MADE: (1) Created workflow_helpers.py with reusable functions for journal entry and payment creation (SI→JE+Payment, PI→JE+Payment, CN→JE, DN→JE). (2) Modified quotations.py - Added create_sales_order_from_quotation helper, triggers QTN→SO workflow in both CREATE (status='submitted') and UPDATE (draft→submitted). (3) Modified sales.py - Added create_sales_invoice_from_order helper, triggers SO→SI workflow in both CREATE and UPDATE. (4) Modified invoices.py - Integrated workflow helpers for SI→JE+Payment in both CREATE and UPDATE endpoints. (5) Modified purchase.py - Added create_purchase_invoice_from_order helper, triggers PO→PI workflow in both CREATE and UPDATE. (6) Modified purchase_invoices.py - Integrated workflow helpers for PI→JE+Payment in both CREATE and UPDATE endpoints. (7) Verified credit_notes.py and debit_notes.py already have complete workflow implementation with create_credit_note_accounting_entries and create_debit_note_accounting_entries helpers. Backend restarted successfully with no errors."
+        - working: true
+          agent: "testing"
+          comment: "✅ WORKFLOW AUTOMATION ON DIRECT SUBMIT TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of all 7 workflow automation scenarios when documents are created directly with status='submitted'. RESULTS: (1) ✅ QTN→SO Direct Submit: Quotation created with status='submitted' automatically creates Sales Order and returns sales_order_id in response (2) ✅ SO→SI Direct Submit: Sales Order created with status='submitted' automatically creates Sales Invoice and returns invoice_id in response (3) ✅ SI→JE+Payment Direct Submit: Sales Invoice created with status='submitted' automatically creates Journal Entry (debit Accounts Receivable, credit Sales + Tax) and Payment Entry (draft status, type='Receive') and returns both journal_entry_id and payment_entry_id (4) ✅ PO→PI Direct Submit: Purchase Order created with status='submitted' automatically creates Purchase Invoice and returns invoice_id in response (5) ✅ PI→JE+Payment Direct Submit: Purchase Invoice created with status='submitted' automatically creates Journal Entry (debit Purchases + Tax, credit Accounts Payable) and Payment Entry (draft status, type='Pay') and returns both journal_entry_id and payment_entry_id (6) ✅ CN→JE Direct Submit: Credit Note created with status='submitted' automatically creates Journal Entry (debit Sales Returns + Tax, credit Accounts Receivable) and returns success message about accounting entries (7) ✅ DN→JE Direct Submit: Debit Note created with status='submitted' automatically creates Journal Entry (debit Accounts Payable, credit Purchase Returns + Tax) and returns success message about accounting entries. CRITICAL FINDING: All workflow automation is working perfectly for direct submit scenarios. Fixed minor bug in credit_notes.py where 'items' variable was used before being defined. All 7 workflow tests passed with 100% success rate."
 
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
