@@ -280,7 +280,7 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice (Optional)</label>
                 <AutocompleteSearch
                   options={invoices}
                   value={form.reference_invoice}
