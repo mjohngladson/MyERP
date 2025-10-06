@@ -250,6 +250,10 @@ async def create_sales_order(order_data: dict):
             "discount_amount": discount_amount,
             "total_amount": total_amount
         })
+        
+        # Validate amounts after calculation
+        validate_amounts(order_data, "Sales Order")
+        
         # save
         result = await sales_orders_collection.insert_one(order_data)
         if result.inserted_id:
