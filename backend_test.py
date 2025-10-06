@@ -968,6 +968,185 @@ class BackendTester:
             self.log_test("Sales Order Validations", False, f"Error during sales order validation testing: {str(e)}")
             return False
 
+    async def test_workflow_automation_on_direct_submit(self):
+        """Test workflow automation for documents created directly with status='submitted'"""
+        try:
+            print("🔄 Testing Workflow Automation on Direct Submit")
+            
+            # Test 1: Quotation→Sales Order (QTN→SO)
+            quotation_payload = {
+                "customer_name": "Test Customer for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10,
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=quotation_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "sales_order_id" in data:
+                        self.log_test("Workflow QTN→SO Direct Submit", True, f"Quotation created with status='submitted' and Sales Order auto-created: {data.get('sales_order_id')}", data)
+                    else:
+                        self.log_test("Workflow QTN→SO Direct Submit", False, f"Expected sales_order_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow QTN→SO Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2: Sales Order→Sales Invoice (SO→SI)
+            sales_order_payload = {
+                "customer_name": "Test Customer for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10,
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/orders", json=sales_order_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice_id" in data:
+                        self.log_test("Workflow SO→SI Direct Submit", True, f"Sales Order created with status='submitted' and Sales Invoice auto-created: {data.get('invoice_id')}", data)
+                    else:
+                        self.log_test("Workflow SO→SI Direct Submit", False, f"Expected invoice_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow SO→SI Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Sales Invoice→Journal Entry + Payment (SI→JE+Payment)
+            sales_invoice_payload = {
+                "customer_name": "Test Customer for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10,
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=sales_invoice_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "journal_entry_id" in data and "payment_entry_id" in data:
+                        self.log_test("Workflow SI→JE+Payment Direct Submit", True, f"Sales Invoice created with status='submitted', Journal Entry and Payment Entry auto-created: JE={data.get('journal_entry_id')}, Payment={data.get('payment_entry_id')}", data)
+                    else:
+                        self.log_test("Workflow SI→JE+Payment Direct Submit", False, f"Expected journal_entry_id and payment_entry_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow SI→JE+Payment Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Purchase Order→Purchase Invoice (PO→PI)
+            purchase_order_payload = {
+                "supplier_name": "Test Supplier for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10,
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/orders", json=purchase_order_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice_id" in data:
+                        self.log_test("Workflow PO→PI Direct Submit", True, f"Purchase Order created with status='submitted' and Purchase Invoice auto-created: {data.get('invoice_id')}", data)
+                    else:
+                        self.log_test("Workflow PO→PI Direct Submit", False, f"Expected invoice_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow PO→PI Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 5: Purchase Invoice→Journal Entry + Payment (PI→JE+Payment)
+            purchase_invoice_payload = {
+                "supplier_name": "Test Supplier for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 2, "rate": 100},
+                    {"item_name": "Test Item B", "quantity": 1, "rate": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 10,
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=purchase_invoice_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "journal_entry_id" in data and "payment_entry_id" in data:
+                        self.log_test("Workflow PI→JE+Payment Direct Submit", True, f"Purchase Invoice created with status='submitted', Journal Entry and Payment Entry auto-created: JE={data.get('journal_entry_id')}, Payment={data.get('payment_entry_id')}", data)
+                    else:
+                        self.log_test("Workflow PI→JE+Payment Direct Submit", False, f"Expected journal_entry_id and payment_entry_id in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow PI→JE+Payment Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 6: Credit Note→Journal Entry (CN→JE)
+            credit_note_payload = {
+                "customer_name": "Test Customer for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 1, "rate": 100, "amount": 100}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Return",
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=credit_note_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "accounting entries generated" in data.get("message", ""):
+                        self.log_test("Workflow CN→JE Direct Submit", True, f"Credit Note created with status='submitted' and accounting entries generated", data)
+                    else:
+                        self.log_test("Workflow CN→JE Direct Submit", False, f"Expected accounting entries message in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow CN→JE Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 7: Debit Note→Journal Entry (DN→JE)
+            debit_note_payload = {
+                "supplier_name": "Test Supplier for Workflow",
+                "items": [
+                    {"item_name": "Test Item A", "quantity": 1, "rate": 100, "amount": 100}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Return",
+                "status": "submitted"  # Direct submit
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=debit_note_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "accounting entries generated" in data.get("message", ""):
+                        self.log_test("Workflow DN→JE Direct Submit", True, f"Debit Note created with status='submitted' and accounting entries generated", data)
+                    else:
+                        self.log_test("Workflow DN→JE Direct Submit", False, f"Expected accounting entries message in response: {data}", data)
+                        return False
+                else:
+                    self.log_test("Workflow DN→JE Direct Submit", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Workflow Automation Direct Submit", False, f"Error during workflow testing: {str(e)}")
+            return False
+
     async def run_validation_tests(self):
         """Run comprehensive validation system tests for Quotations and Sales Orders"""
         print("🚀 Starting GiLi Validation System Testing Suite")
