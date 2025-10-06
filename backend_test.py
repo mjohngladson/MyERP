@@ -818,7 +818,7 @@ class BackendTester:
                     return False
 
             # Test 10: Try to delete submitted quotation (should fail with 400)
-            async with self.session.delete(f"{self.base_url}/api/quotations/{quotation_id}") as response:
+            async with self.session.delete(f"{self.base_url}/api/quotations/{quotation_id}/") as response:
                 if response.status == 400:
                     data = await response.json()
                     if "only draft or cancelled" in data.get("detail", "").lower() or "cannot delete" in data.get("detail", "").lower():
