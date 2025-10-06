@@ -30,12 +30,14 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
     // Load master data
     const loadMasterData = async () => {
       try {
-        const [itemsRes, customersRes] = await Promise.all([
+        const [itemsRes, customersRes, invoicesRes] = await Promise.all([
           api.items.list('', 100),
-          api.master.customers.list('', 100)
+          api.master.customers.list('', 100),
+          api.get('/sales/invoices', { params: { limit: 200 } })
         ]);
         setMasterItems(itemsRes.data || []);
         setCustomers(customersRes.data || []);
+        setInvoices(invoicesRes.data || []);
       } catch (e) {
         console.error('Failed to load master data:', e);
       }
