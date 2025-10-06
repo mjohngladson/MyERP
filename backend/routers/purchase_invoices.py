@@ -127,6 +127,16 @@ async def get_purchase_invoice(invoice_id: str):
 @router.post("/invoices", response_model=dict)
 async def create_purchase_invoice(payload: dict):
     try:
+        # Validate required fields
+        validate_required_fields(
+            payload,
+            ["supplier_name", "items"],
+            "Purchase Invoice"
+        )
+        
+        # Validate items
+        validate_items(payload.get("items", []), "Purchase Invoice")
+        
         now = datetime.now(timezone.utc)
         payload.setdefault('status', 'draft')
         payload['id'] = payload.get('id') or str(ObjectId())
