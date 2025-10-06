@@ -407,13 +407,16 @@ const SalesInvoiceForm = ({ invoiceId, onBack, onSave }) => {
               {/* Selected Customer Info */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={invoice.customer_name}
                     onChange={(e) => setInvoice(prev => ({ ...prev, customer_name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter customer name"
+                    required
                   />
                 </div>
                 
