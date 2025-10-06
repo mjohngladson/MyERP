@@ -245,12 +245,21 @@ async def get_debit_note(debit_note_id: str):
 @router.put("/debit-notes/{debit_note_id}")
 async def update_debit_note(debit_note_id: str, body: Dict[str, Any]):
     """Update debit note"""
+    # Get existing debit note
+    existing = await debit_notes_collection.find_one({"id": debit_note_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Debit note not found")
+    
+    # Cannot edit submitted debit notes
+    if existing.get("status") == "submitted":
+        raise HTTPException(status_code=400, detail="Cannot edit submitted debit note")
+    
     # Calculate totals if items are provided or discount/tax fields are changed
     if "items" in body or "discount_amount" in body or "tax_rate" in body:
-        items = body.get("items", [])
+        items = body.get("items", existing.get("items", []))
         subtotal = sum(float(item.get("amount", 0)) for item in items)
-        discount_amount = float(body.get("discount_amount", 0))
-        tax_rate = float(body.get("tax_rate", 18))
+        discount_amount = float(body.get("discount_amount", existing.get("discount_amount", 0)))
+        tax_rate = float(body.get("tax_rate", existing.get("tax_rate", 18)))
         
         discounted_total = subtotal - discount_amount
         tax_amount = (discounted_total * tax_rate) / 100
@@ -258,13 +267,29 @@ async def update_debit_note(debit_note_id: str, body: Dict[str, Any]):
         
         body.update({
             "subtotal": subtotal,
-            "discount_amount": discount_amount,  # Ensure discount_amount is included
-            "tax_rate": tax_rate,  # Ensure tax_rate is included
+            "discount_amount": discount_amount,
+            "tax_rate": tax_rate,
             "tax_amount": tax_amount,
             "total_amount": total_amount
         })
     
     body["updated_at"] = now_utc()
+    
+    # If status changed to submitted, create accounting entries
+    if body.get("status") == "submitted" and existing.get("status") != "submitted":
+        # Merge with existing data for accounting
+        full_doc = {**existing, **body}
+        await create_debit_note_accounting_entries(full_doc)
+        
+        result = await debit_notes_collection.update_one(
+            {"id": debit_note_id},
+            {"$set": body}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Debit note not found")
+        
+        return {"success": True, "message": "Debit Note updated and accounting entries created"}
     
     result = await debit_notes_collection.update_one(
         {"id": debit_note_id},
