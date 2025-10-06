@@ -262,9 +262,23 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
     if not existing:
         raise HTTPException(status_code=404, detail="Credit note not found")
     
-    # Cannot edit submitted credit notes
-    if existing.get("status") == "submitted":
-        raise HTTPException(status_code=400, detail="Cannot edit submitted credit note")
+    # Check if updating a non-draft document
+    if existing.get("status") != "draft" and existing.get("status") != body.get("status"):
+        if set(body.keys()) - {"status", "updated_at"}:
+            validate_transaction_update(existing.get("status", "draft"), "Credit Note")
+    
+    # Validate status transition if status is changing
+    if "status" in body and body["status"] != existing.get("status"):
+        validate_status_transition(
+            existing.get("status", "draft"),
+            body["status"],
+            CREDIT_NOTE_STATUS_TRANSITIONS,
+            "Credit Note"
+        )
+    
+    # Validate items if provided
+    if "items" in body:
+        validate_items(body["items"], "Credit Note")
     
     # Calculate totals if items are provided or discount/tax fields are changed
     if "items" in body or "discount_amount" in body or "tax_rate" in body:
