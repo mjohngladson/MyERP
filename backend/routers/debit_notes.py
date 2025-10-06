@@ -256,9 +256,23 @@ async def update_debit_note(debit_note_id: str, body: Dict[str, Any]):
     if not existing:
         raise HTTPException(status_code=404, detail="Debit note not found")
     
-    # Cannot edit submitted debit notes
-    if existing.get("status") == "submitted":
-        raise HTTPException(status_code=400, detail="Cannot edit submitted debit note")
+    # Check if updating a non-draft document
+    if existing.get("status") != "draft" and existing.get("status") != body.get("status"):
+        if set(body.keys()) - {"status", "updated_at"}:
+            validate_transaction_update(existing.get("status", "draft"), "Debit Note")
+    
+    # Validate status transition if status is changing
+    if "status" in body and body["status"] != existing.get("status"):
+        validate_status_transition(
+            existing.get("status", "draft"),
+            body["status"],
+            DEBIT_NOTE_STATUS_TRANSITIONS,
+            "Debit Note"
+        )
+    
+    # Validate items if provided
+    if "items" in body:
+        validate_items(body["items"], "Debit Note")
     
     # Calculate totals if items are provided or discount/tax fields are changed
     if "items" in body or "discount_amount" in body or "tax_rate" in body:
