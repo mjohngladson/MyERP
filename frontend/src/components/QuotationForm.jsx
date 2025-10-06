@@ -148,7 +148,9 @@ const QuotationForm = ({ quotationId, onBack, onSave }) => {
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Items</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Items <span className="text-red-500">*</span>
+            </h3>
             <button onClick={addItem} className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"><Plus className="h-4 w-4" /><span>Add Item</span></button>
           </div>
           <div className="overflow-x-auto">
