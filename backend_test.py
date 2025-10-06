@@ -8638,6 +8638,190 @@ class BackendTester:
             self.log_test("Payment Entry Module", False, f"Critical error during testing: {str(e)}")
             return False
 
+    async def test_sales_invoices_api(self):
+        """Test Sales Invoices API endpoint - CRITICAL TEST for Credit Note autocomplete fix"""
+        try:
+            # Test 1: GET /api/invoices - List all invoices (basic endpoint test)
+            async with self.session.get(f"{self.base_url}/api/invoices") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            # Check first invoice structure for required fields
+                            invoice = data[0]
+                            required_fields = ["invoice_number", "customer_name", "total_amount", "status"]
+                            
+                            if all(field in invoice for field in required_fields):
+                                self.log_test("Sales Invoices API - Basic List", True, 
+                                            f"Retrieved {len(data)} invoices with required fields", 
+                                            {"count": len(data), "sample_fields": {k: invoice.get(k) for k in required_fields}})
+                            else:
+                                missing = [f for f in required_fields if f not in invoice]
+                                self.log_test("Sales Invoices API - Basic List", False, 
+                                            f"Missing required fields for autocomplete: {missing}", invoice)
+                                return False
+                        else:
+                            self.log_test("Sales Invoices API - Basic List", True, 
+                                        "Empty invoices list (valid but no data for autocomplete)", data)
+                    else:
+                        self.log_test("Sales Invoices API - Basic List", False, 
+                                    "Response is not a list - invalid format for autocomplete", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Sales Invoices API - Basic List", False, 
+                                f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # Test 2: GET /api/invoices?limit=5 - Test limit parameter for autocomplete
+            async with self.session.get(f"{self.base_url}/api/invoices?limit=5") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) <= 5:
+                            self.log_test("Sales Invoices API - Limit Parameter", True, 
+                                        f"Limit parameter working correctly, got {len(data)} invoices", 
+                                        {"requested_limit": 5, "actual_count": len(data)})
+                        else:
+                            self.log_test("Sales Invoices API - Limit Parameter", False, 
+                                        f"Limit not respected, got {len(data)} invoices instead of max 5", data)
+                            return False
+                    else:
+                        self.log_test("Sales Invoices API - Limit Parameter", False, 
+                                    "Response is not a list", data)
+                        return False
+                else:
+                    self.log_test("Sales Invoices API - Limit Parameter", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Verify response structure is correct for frontend autocomplete
+            async with self.session.get(f"{self.base_url}/api/invoices?limit=10") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list) and len(data) > 0:
+                        invoice = data[0]
+                        
+                        # Check autocomplete-specific fields
+                        autocomplete_fields = ["id", "invoice_number", "customer_name", "total_amount", "status"]
+                        missing_fields = [f for f in autocomplete_fields if f not in invoice]
+                        
+                        if not missing_fields:
+                            # Verify data types for autocomplete compatibility
+                            valid_types = True
+                            type_issues = []
+                            
+                            if not isinstance(invoice.get("invoice_number"), str):
+                                type_issues.append("invoice_number should be string")
+                                valid_types = False
+                            if not isinstance(invoice.get("customer_name"), str):
+                                type_issues.append("customer_name should be string")
+                                valid_types = False
+                            if not isinstance(invoice.get("total_amount"), (int, float)):
+                                type_issues.append("total_amount should be numeric")
+                                valid_types = False
+                            if not isinstance(invoice.get("status"), str):
+                                type_issues.append("status should be string")
+                                valid_types = False
+                            
+                            if valid_types:
+                                self.log_test("Sales Invoices API - Autocomplete Structure", True, 
+                                            "Response structure perfect for frontend autocomplete", 
+                                            {"sample_invoice": {k: invoice.get(k) for k in autocomplete_fields}})
+                            else:
+                                self.log_test("Sales Invoices API - Autocomplete Structure", False, 
+                                            f"Data type issues for autocomplete: {type_issues}", invoice)
+                                return False
+                        else:
+                            self.log_test("Sales Invoices API - Autocomplete Structure", False, 
+                                        f"Missing fields required for autocomplete: {missing_fields}", invoice)
+                            return False
+                    else:
+                        self.log_test("Sales Invoices API - Autocomplete Structure", True, 
+                                    "No invoices to test structure (acceptable)", data)
+                else:
+                    self.log_test("Sales Invoices API - Autocomplete Structure", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Check that at least some test invoices exist in the database
+            async with self.session.get(f"{self.base_url}/api/invoices?limit=1") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        if len(data) > 0:
+                            self.log_test("Sales Invoices API - Database Data", True, 
+                                        "Database contains invoice data for autocomplete testing", 
+                                        {"has_data": True, "sample_invoice_number": data[0].get("invoice_number")})
+                        else:
+                            self.log_test("Sales Invoices API - Database Data", False, 
+                                        "No invoices found in database - autocomplete will be empty", 
+                                        {"has_data": False})
+                            return False
+                    else:
+                        self.log_test("Sales Invoices API - Database Data", False, 
+                                    "Invalid response format", data)
+                        return False
+                else:
+                    self.log_test("Sales Invoices API - Database Data", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 5: Test search functionality for autocomplete filtering
+            async with self.session.get(f"{self.base_url}/api/invoices?search=INV&limit=5") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if isinstance(data, list):
+                        # Check if search results contain the search term
+                        search_working = True
+                        if len(data) > 0:
+                            for invoice in data:
+                                invoice_num = invoice.get("invoice_number", "").upper()
+                                customer_name = invoice.get("customer_name", "").upper()
+                                if "INV" not in invoice_num and "INV" not in customer_name:
+                                    search_working = False
+                                    break
+                        
+                        if search_working:
+                            self.log_test("Sales Invoices API - Search Filter", True, 
+                                        f"Search functionality working for autocomplete, found {len(data)} results", 
+                                        {"search_term": "INV", "results_count": len(data)})
+                        else:
+                            self.log_test("Sales Invoices API - Search Filter", False, 
+                                        "Search results don't match search term", data)
+                            return False
+                    else:
+                        self.log_test("Sales Invoices API - Search Filter", False, 
+                                    "Invalid response format for search", data)
+                        return False
+                else:
+                    self.log_test("Sales Invoices API - Search Filter", False, 
+                                f"HTTP {response.status}")
+                    return False
+            
+            # Test 6: Test endpoint accessibility (the main fix - no 404 error)
+            async with self.session.get(f"{self.base_url}/api/invoices") as response:
+                if response.status == 200:
+                    self.log_test("Sales Invoices API - Endpoint Accessibility", True, 
+                                "✅ CRITICAL FIX VERIFIED: /api/invoices endpoint is accessible (no 404 error)", 
+                                {"status_code": response.status, "endpoint": "/api/invoices"})
+                elif response.status == 404:
+                    self.log_test("Sales Invoices API - Endpoint Accessibility", False, 
+                                "❌ CRITICAL ISSUE: /api/invoices still returns 404 - fix not working", 
+                                {"status_code": response.status})
+                    return False
+                else:
+                    self.log_test("Sales Invoices API - Endpoint Accessibility", False, 
+                                f"Unexpected HTTP status: {response.status}", 
+                                {"status_code": response.status})
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Invoices API", False, f"Critical error during Sales Invoices API testing: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on PAYMENT ENTRY MODULE - COMPREHENSIVE TESTING"""
         print("🚀 Starting GiLi Backend API Testing Suite - PAYMENT ENTRY MODULE TESTING")
