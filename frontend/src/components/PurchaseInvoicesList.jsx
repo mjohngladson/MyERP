@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, FileText, TrendingUp } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, User, DollarSign, ChevronLeft, FileText, TrendingUp, Mail } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 
