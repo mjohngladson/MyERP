@@ -343,6 +343,18 @@ test_plan:
     - "Credit Notes and Debit Notes Frontend Timestamp Tracking Fix - User reported issue resolved, timestamps update correctly after send operations"
     - "Sales Invoices API Credit Note Autocomplete Fix - 404 error resolved, /api/invoices endpoint now accessible with proper autocomplete data structure"
 backend:
+  - task: "Workflow Automation on Direct Submit - Extract and Apply Workflow Logic in CREATE Endpoints"
+    implemented: false
+    working: "NA"
+    file: "backend/routers/quotations.py, backend/routers/sales.py, backend/routers/invoices.py, backend/routers/purchase.py, backend/routers/purchase_invoices.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Started implementation of workflow automation on direct submit. Extracting workflow logic from UPDATE endpoints to apply in CREATE endpoints when status='submitted'. This will enable automatic document conversions (QTN→SO, SO→SI, PO→PI) and journal entry creation (SI→JE, PI→JE, CN→JE, DN→JE) when documents are created directly with submitted status."
+
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
     working: true
