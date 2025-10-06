@@ -74,7 +74,7 @@ def validate_items(items: List[Dict[str, Any]], document_type: str = "Document")
     if not items or len(items) == 0:
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type} must have at least one item"
+            detail=f"Please add at least one item to the {document_type.lower()}"
         )
     
     for idx, item in enumerate(items):
@@ -82,7 +82,7 @@ def validate_items(items: List[Dict[str, Any]], document_type: str = "Document")
         if not item.get("item_name"):
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type} item #{idx + 1}: item_name is required"
+                detail=f"Item #{idx + 1}: Please select or enter an item name"
             )
         
         # Validate quantity
@@ -91,12 +91,12 @@ def validate_items(items: List[Dict[str, Any]], document_type: str = "Document")
             if quantity <= 0:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"{document_type} item '{item.get('item_name')}': quantity must be greater than 0"
+                    detail=f"Item '{item.get('item_name')}': Quantity must be greater than 0"
                 )
         except (TypeError, ValueError):
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type} item '{item.get('item_name')}': invalid quantity value"
+                detail=f"Item '{item.get('item_name')}': Please enter a valid quantity"
             )
         
         # Validate rate
@@ -105,12 +105,12 @@ def validate_items(items: List[Dict[str, Any]], document_type: str = "Document")
             if rate < 0:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"{document_type} item '{item.get('item_name')}': rate cannot be negative"
+                    detail=f"Item '{item.get('item_name')}': Rate cannot be negative"
                 )
         except (TypeError, ValueError):
             raise HTTPException(
                 status_code=400,
-                detail=f"{document_type} item '{item.get('item_name')}': invalid rate value"
+                detail=f"Item '{item.get('item_name')}': Please enter a valid rate"
             )
 
 
