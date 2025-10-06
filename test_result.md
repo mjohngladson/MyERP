@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Complete the integration of the GiLi Point of Sale (PoS) desktop application with the main GiLi backend system. This involves ensuring proper data synchronization between the offline-capable PoS system and the central GiLi web application for products, customers, and transactions."
+user_problem_statement: "Modify workflow so that automatic document conversions and journal entries (SQ→SO, SO→SI, SI→Payment+JE, PO→PI, PI→Payment+JE, DN→JE, CN→JE) happen when documents are created directly with status='submitted', not just when updating from draft to submitted."
 
 frontend:
   - task: "Financial Management System Frontend Integration"
