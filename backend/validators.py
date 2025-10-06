@@ -33,7 +33,8 @@ def validate_required_fields(data: Dict[str, Any], required_fields: List[str], d
         "payment_type": "Payment Type",
         "payment_method": "Payment Method",
         "payment_date": "Payment Date",
-        "amount": "Amount"
+        "amount": "Amount",
+        "reference_invoice": "Reference Invoice"
     }
     
     missing_fields = []
