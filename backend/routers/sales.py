@@ -186,6 +186,16 @@ async def get_sales_order(order_id: str):
 @router.post("/orders", response_model=dict)
 async def create_sales_order(order_data: dict):
     try:
+        # Validate required fields
+        validate_required_fields(
+            order_data,
+            ["customer_name", "items"],
+            "Sales Order"
+        )
+        
+        # Validate items
+        validate_items(order_data.get("items", []), "Sales Order")
+        
         # defaults
         order_data.setdefault("status", "draft")
         order_data["id"] = str(uuid.uuid4())
