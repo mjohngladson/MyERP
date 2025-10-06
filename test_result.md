@@ -344,9 +344,9 @@ test_plan:
     - "Sales Invoices API Credit Note Autocomplete Fix - 404 error resolved, /api/invoices endpoint now accessible with proper autocomplete data structure"
 backend:
   - task: "Workflow Automation on Direct Submit - Extract and Apply Workflow Logic in CREATE Endpoints"
-    implemented: false
+    implemented: true
     working: "NA"
-    file: "backend/routers/quotations.py, backend/routers/sales.py, backend/routers/invoices.py, backend/routers/purchase.py, backend/routers/purchase_invoices.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py"
+    file: "backend/routers/quotations.py, backend/routers/sales.py, backend/routers/invoices.py, backend/routers/purchase.py, backend/routers/purchase_invoices.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py, backend/workflow_helpers.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
@@ -354,6 +354,9 @@ backend:
         - working: "NA"
           agent: "main"
           comment: "Started implementation of workflow automation on direct submit. Extracting workflow logic from UPDATE endpoints to apply in CREATE endpoints when status='submitted'. This will enable automatic document conversions (QTN→SO, SO→SI, PO→PI) and journal entry creation (SI→JE, PI→JE, CN→JE, DN→JE) when documents are created directly with submitted status."
+        - working: "NA"
+          agent: "main"
+          comment: "✅ IMPLEMENTATION COMPLETED: Successfully implemented workflow automation for direct submit across all modules. CHANGES MADE: (1) Created workflow_helpers.py with reusable functions for journal entry and payment creation (SI→JE+Payment, PI→JE+Payment, CN→JE, DN→JE). (2) Modified quotations.py - Added create_sales_order_from_quotation helper, triggers QTN→SO workflow in both CREATE (status='submitted') and UPDATE (draft→submitted). (3) Modified sales.py - Added create_sales_invoice_from_order helper, triggers SO→SI workflow in both CREATE and UPDATE. (4) Modified invoices.py - Integrated workflow helpers for SI→JE+Payment in both CREATE and UPDATE endpoints. (5) Modified purchase.py - Added create_purchase_invoice_from_order helper, triggers PO→PI workflow in both CREATE and UPDATE. (6) Modified purchase_invoices.py - Integrated workflow helpers for PI→JE+Payment in both CREATE and UPDATE endpoints. (7) Verified credit_notes.py and debit_notes.py already have complete workflow implementation with create_credit_note_accounting_entries and create_debit_note_accounting_entries helpers. Backend restarted successfully with no errors."
 
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
