@@ -141,6 +141,16 @@ async def get_quotation(quotation_id: str):
 @router.post("/", response_model=dict)
 async def create_quotation(payload: dict):
     try:
+        # Validate required fields
+        validate_required_fields(
+            payload, 
+            ["customer_name", "items"], 
+            "Quotation"
+        )
+        
+        # Validate items
+        validate_items(payload.get("items", []), "Quotation")
+        
         now = datetime.now(timezone.utc)
         payload.setdefault("status", "draft")
         payload["id"] = str(uuid.uuid4())
