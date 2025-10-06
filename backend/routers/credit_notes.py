@@ -11,6 +11,9 @@ from validators import (
 
 router = APIRouter(prefix="/api/sales", tags=["credit-notes"])
 
+# Import workflow helpers
+from workflow_helpers import create_journal_entry_for_credit_note
+
 credit_notes_collection = db.credit_notes
 
 
