@@ -18,6 +18,8 @@ window.addEventListener('online', () => { isOnline = true; });
 window.addEventListener('offline', () => { isOnline = false; });
 
 // Create axios instance
+console.log('🔍 DEBUG - API_BASE being used for axios:', API_BASE);
+console.log('🔍 DEBUG - BACKEND_URL value:', BACKEND_URL);
 const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
