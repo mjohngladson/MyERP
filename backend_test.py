@@ -10789,17 +10789,82 @@ class BackendTester:
             print(f"\n💥 COMPARISON TEST CRASHED: {str(e)}")
             return False
 
-async def main():
-    """Main function to run CN vs DN Comparison Test"""
-    async with BackendTester() as tester:
-        # Run CN vs DN comparison test as requested in review
-        result = await tester.run_cn_vs_dn_comparison_test()
+    async def run_workflow_tests(self):
+        """Run workflow automation tests for direct submit"""
+        print("🚀 Starting GiLi Workflow Automation Testing Suite")
+        print(f"📡 Testing against: {self.base_url}")
+        print("🔄 WORKFLOW AUTOMATION TESTS:")
+        print("   1. Quotation→Sales Order (QTN→SO) - Direct Submit")
+        print("   2. Sales Order→Sales Invoice (SO→SI) - Direct Submit")
+        print("   3. Sales Invoice→Journal Entry + Payment (SI→JE+Payment) - Direct Submit")
+        print("   4. Purchase Order→Purchase Invoice (PO→PI) - Direct Submit")
+        print("   5. Purchase Invoice→Journal Entry + Payment (PI→JE+Payment) - Direct Submit")
+        print("   6. Credit Note→Journal Entry (CN→JE) - Direct Submit")
+        print("   7. Debit Note→Journal Entry (DN→JE) - Direct Submit")
+        print("=" * 80)
         
-        if result:
-            print("🎉 CN vs DN Comparison Test PASSED!")
+        # Tests to run
+        tests_to_run = [
+            self.test_health_check,                           # Basic API health check
+            self.test_workflow_automation_on_direct_submit,   # Workflow automation tests
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        # Run tests
+        for test in tests_to_run:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        total = passed + failed
+        print("\n" + "=" * 80)
+        print("📊 WORKFLOW AUTOMATION TEST SUMMARY")
+        print("=" * 80)
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📈 Success Rate: {(passed/total*100):.1f}%" if total > 0 else "No tests run")
+        
+        # Detailed results
+        workflow_tests = [r for r in self.test_results if "Workflow" in r["test"]]
+        
+        if workflow_tests:
+            print(f"\n🔍 DETAILED WORKFLOW TEST RESULTS ({len(workflow_tests)} tests):")
+            for result in workflow_tests:
+                status = "✅ PASS" if result["success"] else "❌ FAIL"
+                print(f"   {status} - {result['test']}")
+                if not result["success"]:
+                    print(f"      └─ {result['details']}")
+        
+        if failed > 0:
+            print("\n🚨 FAILED TESTS SUMMARY:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"   ❌ {result['test']}: {result['details']}")
+        
+        print("\n" + "=" * 80)
+        return passed, failed
+
+async def main():
+    """Main function to run Workflow Automation Tests"""
+    async with BackendTester() as tester:
+        # Run workflow automation tests as requested in review
+        passed, failed = await tester.run_workflow_tests()
+        
+        if failed == 0:
+            print("🎉 Workflow Automation Tests PASSED!")
             return 0
         else:
-            print("💥 CN vs DN Comparison Test detected critical issues!")
+            print("💥 Workflow Automation Tests detected critical issues!")
             return 1
 
 if __name__ == "__main__":
