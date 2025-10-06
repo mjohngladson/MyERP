@@ -1,18 +1,10 @@
 import axios from 'axios';
 
 // Backend URL strictly from environment variables per platform rules
-console.log('🔍 DEBUG - process.env.REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
-console.log('🔍 DEBUG - process.env.NODE_ENV:', process.env.NODE_ENV);
-console.log('🔍 DEBUG - All env vars:', Object.keys(process.env).filter(k => k.startsWith('REACT_APP')));
-
 const ENV_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 const BACKEND_URL = ENV_URL;
 const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
-
-console.log('🔍 DEBUG - ENV_URL:', ENV_URL);
-console.log('🔍 DEBUG - BACKEND_URL:', BACKEND_URL);
-console.log('🔍 DEBUG - API_BASE:', API_BASE);
 
 if (!BACKEND_URL) {
   console.warn('⚠️ REACT_APP_BACKEND_URL is not set. Falling back to relative /api.');
