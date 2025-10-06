@@ -271,6 +271,9 @@ async def update_purchase_order(order_id: str, payload: dict):
                 'discount_amount': discount_amount,
                 'total_amount': total_amount
             })
+            # Validate amounts after recalculation
+            validate_amounts(payload, "Purchase Order")
+        
         # If status changed to "submitted", create Purchase Invoice
         if payload.get('status') == 'submitted' and existing.get('status') != 'submitted':
             from database import purchase_invoices_collection
