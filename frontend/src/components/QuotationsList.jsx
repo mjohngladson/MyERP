@@ -187,7 +187,12 @@ const QuotationsList = ({ onBack, onViewQuotation, onEditQuotation, onCreateQuot
                   <div className="col-span-2"><div className="font-semibold text-gray-800">{formatCurrency(q.total_amount)}</div></div>
                   <div className="col-span-2"><div className="flex items-center space-x-1 text-gray-600"><Calendar size={16}/><span className="text-sm">{formatDate(q.quotation_date || q.created_at)}</span></div></div>
                   <div className="col-span-1"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(q.status)}`}>{(q.status||'draft').charAt(0).toUpperCase()+ (q.status||'draft').slice(1)}</span></div>
-                  <div className="col-span-1"><div className="flex items-center space-x-2"><button onClick={()=>onViewQuotation && onViewQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button><button onClick={()=>onEditQuotation && onEditQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button><button onClick={()=>openSend(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button><button onClick={()=>deleteQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button></div></div>
+                  <div className="col-span-1"><div className="flex items-center space-x-2">
+                    <button onClick={()=>onViewQuotation && onViewQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button>
+                    {q.status === 'draft' && <button onClick={()=>onEditQuotation && onEditQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button>}
+                    {(q.status === 'submitted' || q.status === 'won') && <button onClick={()=>openSend(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={16} className="text-gray-600"/></button>}
+                    {q.status === 'draft' && <button onClick={()=>deleteQuotation(q)} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button>}
+                  </div></div>
                 </div>
               </div>
             ))}
