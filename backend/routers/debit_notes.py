@@ -158,12 +158,34 @@ async def get_debit_notes(
 
 @router.post("/debit-notes")
 async def create_debit_note(body: Dict[str, Any]):
-    """Create new debit note"""
+    """Create new debit note with validation and linking"""
+    # Validations
     if not body or not body.get("supplier_name"):
         raise HTTPException(status_code=400, detail="supplier_name is required")
+    if not body.get("debit_note_date"):
+        raise HTTPException(status_code=400, detail="debit_note_date is required")
+    if not body.get("reason"):
+        raise HTTPException(status_code=400, detail="reason is required")
+    
+    items = body.get("items", [])
+    if not items or len(items) == 0:
+        raise HTTPException(status_code=400, detail="At least one item is required")
+    
+    # Validate and link to original purchase invoice if provided
+    reference_invoice_id = body.get("reference_invoice_id")
+    reference_invoice_number = body.get("reference_invoice")
+    
+    if reference_invoice_id:
+        from database import purchase_invoices_collection
+        original_invoice = await purchase_invoices_collection.find_one({"id": reference_invoice_id})
+        if not original_invoice:
+            raise HTTPException(status_code=404, detail="Referenced purchase invoice not found")
+        
+        # Auto-fill reference number if not provided
+        if not reference_invoice_number:
+            reference_invoice_number = original_invoice.get("invoice_number")
     
     # Calculate totals
-    items = body.get("items", [])
     subtotal = sum(float(item.get("amount", 0)) for item in items)
     discount_amount = float(body.get("discount_amount", 0))
     tax_rate = float(body.get("tax_rate", 18))
@@ -175,14 +197,16 @@ async def create_debit_note(body: Dict[str, Any]):
     doc = {
         "id": str(uuid.uuid4()),
         "debit_note_number": generate_debit_note_number(),
+        "supplier_id": body.get("supplier_id"),
         "supplier_name": body.get("supplier_name"),
         "supplier_email": body.get("supplier_email"),
         "supplier_phone": body.get("supplier_phone"),
         "supplier_address": body.get("supplier_address"),
         
         "debit_note_date": body.get("debit_note_date"),
-        "reference_invoice": body.get("reference_invoice"),  # Original purchase invoice number
-        "reason": body.get("reason", "Return"),  # Return, Quality Issue, Price Difference
+        "reference_invoice_id": reference_invoice_id,
+        "reference_invoice": reference_invoice_number,
+        "reason": body.get("reason", "Return"),
         
         "items": items,
         "subtotal": subtotal,
@@ -191,14 +215,21 @@ async def create_debit_note(body: Dict[str, Any]):
         "tax_amount": tax_amount,
         "total_amount": total_amount,
         
-        "status": body.get("status", "Draft"),  # Draft, Issued, Accepted
+        "status": body.get("status", "draft").lower(),
         "notes": body.get("notes"),
+        "company_id": body.get("company_id", "default_company"),
         
         "created_at": now_utc(),
         "updated_at": now_utc(),
     }
     
     await debit_notes_collection.insert_one(doc)
+    
+    # If created directly as submitted, create accounting entries
+    if doc["status"] == "submitted":
+        await create_debit_note_accounting_entries(doc)
+        return {"success": True, "message": "Debit Note created and accounting entries generated", "debit_note": sanitize(doc)}
+    
     return {"success": True, "debit_note": sanitize(doc)}
 
 
