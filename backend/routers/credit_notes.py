@@ -334,6 +334,14 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
 @router.delete("/credit-notes/{credit_note_id}")
 async def delete_credit_note(credit_note_id: str):
     """Delete credit note"""
+    # Get existing to check status
+    existing = await credit_notes_collection.find_one({"id": credit_note_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    # Validate deletion is allowed
+    validate_transaction_delete(existing.get("status", "draft"), "Credit Note")
+    
     result = await credit_notes_collection.delete_one({"id": credit_note_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Credit note not found")
