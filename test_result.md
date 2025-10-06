@@ -251,6 +251,18 @@ frontend:
           agent: "main"
           comment: "🎯 CRITICAL ROOT CAUSE IDENTIFIED - CORS PREFLIGHT ISSUE: User provided crucial information: GET requests work fine, but POST requests fail with CORS error. This is a textbook CORS preflight failure! ROOT CAUSE: CORS middleware was added AFTER routers were included in server.py. In FastAPI, middleware must be added BEFORE routers to properly intercept OPTIONS (preflight) requests. GET requests work because they don't require preflight (simple requests), but POST requests with JSON body and Authorization header trigger preflight OPTIONS requests that weren't being handled correctly. SOLUTION IMPLEMENTED: (1) Moved CORS middleware to be added immediately after app creation, BEFORE including any routers. (2) Removed duplicate CORS middleware that was added after routers. (3) Changed allow_methods from wildcard to explicit list: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']. (4) Added max_age=3600 to cache preflight responses for 1 hour. (5) Restarted local backend successfully. (6) Created comprehensive RAILWAY_CORS_PREFLIGHT_FIX.md guide explaining the issue. VERIFICATION: Local backend now properly handles OPTIONS preflight requests. User must redeploy to Railway for production fix. After deployment, all HTTP methods (GET, POST, PUT, DELETE) should work without CORS errors. FILES MODIFIED: backend/server.py (moved CORS middleware before routers), RAILWAY_CORS_PREFLIGHT_FIX.md (created detailed preflight explanation)."
 
+  - task: "Debit Notes Creation Bug Fix"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/debit_notes.py, DEBIT_NOTE_BUG_FIX.md"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "🐛 CRITICAL BUG FIXED - Debit Notes Creation NameError: User reported that Debit Notes saving shows CORS error while Quotations work fine. Detailed investigation revealed the REAL ISSUE was not CORS at all - it was a Python NameError in debit_notes.py! ROOT CAUSE: Line 192 in debit_notes.py attempted to use variable 'items' before it was defined: 'subtotal = sum(float(item.get('amount', 0)) for item in items)' but 'items' was never extracted from body. This caused Python NameError → FastAPI returned 500 Internal Server Error → 500 response lacked proper CORS headers → Browser interpreted as CORS error (masking the real Python error!). Quotations worked because quotations.py correctly extracted items first (lines 169-180). WHY IT LOOKED LIKE CORS: (1) Frontend sends POST request (2) Backend hits NameError at line 192 (3) FastAPI returns 500 error without CORS headers on error response (4) Browser sees missing CORS headers and shows 'CORS policy' error (5) Real Python error was completely hidden. SOLUTION IMPLEMENTED: Added single line before calculations: 'items = body.get(\"items\", [])' to properly extract items from request body before using them. This simple fix resolves the NameError and allows Debit Notes to be created successfully. Restarted local backend successfully. Created comprehensive DEBIT_NOTE_BUG_FIX.md explaining the issue, why it appeared as CORS error, and debugging lessons learned. VERIFICATION: Local backend fix tested successfully. User must redeploy to Railway. After deployment, Debit Notes POST/PUT/DELETE will work without errors. IMPORTANT LESSON: CORS errors in browser can mask real backend errors - always check backend logs and HTTP status codes first. FILES MODIFIED: backend/routers/debit_notes.py (added missing items extraction), DEBIT_NOTE_BUG_FIX.md (created comprehensive bug explanation)."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
