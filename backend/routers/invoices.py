@@ -282,6 +282,8 @@ async def update_sales_invoice(invoice_id: str, invoice_data: dict):
                 "tax_amount": tax_amount,
                 "total_amount": total_amount
             })
+            # Validate amounts after recalculation
+            validate_amounts(invoice_data, "Sales Invoice")
 
         # If status changed to "submitted", create Journal Entry and Payment Entry (as pending)
         if invoice_data.get("status") == "submitted" and existing.get("status") != "submitted":
