@@ -280,12 +280,24 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice</label>
-                <input
-                  value={form.reference_invoice}
-                  onChange={e => updateForm('reference_invoice', e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="Original purchase invoice number"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice *</label>
+                <AutocompleteSearch
+                  items={invoices}
+                  selectedValue={form.reference_invoice}
+                  onSelect={(invoice) => {
+                    updateForm('reference_invoice_id', invoice.id);
+                    updateForm('reference_invoice', invoice.invoice_number);
+                    // Auto-fill supplier if not set
+                    if (!form.supplier_name && invoice.supplier_name) {
+                      updateForm('supplier_id', invoice.supplier_id);
+                      updateForm('supplier_name', invoice.supplier_name);
+                      updateForm('supplier_email', invoice.supplier_email || '');
+                      updateForm('supplier_phone', invoice.supplier_phone || '');
+                    }
+                  }}
+                  displayField="invoice_number"
+                  placeholder="Search purchase invoice..."
+                  className="w-full"
                 />
               </div>
               <div>
