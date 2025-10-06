@@ -231,6 +231,79 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
           </div>
         </div>
       )}
+
+      {/* Send Modal */}
+      {sendModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSendModal(null)}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Send Purchase Invoice</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Invoice: {sendModal.invoice_number}</label>
+                <label className="block text-sm text-gray-600">Supplier: {sendModal.supplier_name}</label>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Send Method</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input type="radio" value="email" checked={sendMethod === 'email'} onChange={(e) => setSendMethod(e.target.value)} className="mr-2" />
+                    Email
+                  </label>
+                  <label className="flex items-center">
+                    <input type="radio" value="sms" checked={sendMethod === 'sms'} onChange={(e) => setSendMethod(e.target.value)} className="mr-2" />
+                    SMS
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {sendMethod === 'email' ? 'Email Address' : 'Phone Number'}
+                </label>
+                <input
+                  type={sendMethod === 'email' ? 'email' : 'tel'}
+                  value={sendContact}
+                  onChange={(e) => setSendContact(e.target.value)}
+                  placeholder={sendMethod === 'email' ? 'supplier@example.com' : '+91 9876543210'}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+
+              {sendMethod === 'email' && (
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sendAttachPdf}
+                      onChange={(e) => setSendAttachPdf(e.target.checked)}
+                      className="mr-2"
+                    />
+                    Attach PDF
+                  </label>
+                </div>
+              )}
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={handleSendInvoice}
+                  disabled={sending || !sendContact}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {sending ? 'Sending...' : 'Send'}
+                </button>
+                <button
+                  onClick={() => setSendModal(null)}
+                  disabled={sending}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
