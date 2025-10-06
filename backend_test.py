@@ -668,7 +668,7 @@ class BackendTester:
             invalid_payload = {
                 "items": [{"item_name": "Test Item", "quantity": 1, "rate": 100}]
             }
-            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=invalid_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "customer_name" in data.get("detail", "").lower():
@@ -684,7 +684,7 @@ class BackendTester:
             invalid_payload = {
                 "customer_name": "Test Customer"
             }
-            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=invalid_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "items" in data.get("detail", "").lower():
@@ -701,7 +701,7 @@ class BackendTester:
                 "customer_name": "Test Customer",
                 "items": []
             }
-            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=invalid_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "at least one item" in data.get("detail", "").lower():
@@ -718,7 +718,7 @@ class BackendTester:
                 "customer_name": "Test Customer",
                 "items": [{"item_name": "Test Item", "quantity": 0, "rate": 100}]
             }
-            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=invalid_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "quantity must be greater than 0" in data.get("detail", "").lower():
@@ -735,7 +735,7 @@ class BackendTester:
                 "customer_name": "Test Customer",
                 "items": [{"item_name": "Test Item", "quantity": 1, "rate": -50}]
             }
-            async with self.session.post(f"{self.base_url}/api/quotations", json=invalid_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/quotations/", json=invalid_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "rate cannot be negative" in data.get("detail", "").lower():
