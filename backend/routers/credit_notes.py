@@ -173,7 +173,7 @@ async def create_credit_note(body: Dict[str, Any]):
     # Validate required fields using centralized validator
     validate_required_fields(
         body,
-        ["customer_name", "items", "reference_invoice"],
+        ["customer_name", "items"],
         "Credit Note"
     )
     
