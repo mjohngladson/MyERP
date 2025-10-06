@@ -239,7 +239,7 @@ frontend:
   - task: "Railway Deployment - Backend CORS Configuration Fix"
     implemented: true
     working: "NA"
-    file: "backend/server.py, RAILWAY_CORS_FIX.md"
+    file: "backend/server.py, RAILWAY_CORS_FIX.md, RAILWAY_CORS_PREFLIGHT_FIX.md"
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
@@ -247,6 +247,9 @@ frontend:
         - working: "NA"
           agent: "main"
           comment: "🔧 RAILWAY CORS FIX IMPLEMENTED: Fixed CORS policy blocking requests from frontend to backend on Railway deployment. USER REPORTED ERROR: 'Access to XMLHttpRequest at https://myerp-production.up.railway.app/api/buying/debit-notes from origin https://ui-production-ccf6.up.railway.app has been blocked by CORS policy: No Access-Control-Allow-Origin header is present on the requested resource.' ROOT CAUSE: Backend CORS configuration had wildcard '*' with allow_credentials=True, which is not allowed in CORS spec. When credentials are enabled, exact origins must be specified. SOLUTION IMPLEMENTED: (1) Removed wildcard '*' from allow_origins list. (2) Kept explicit frontend origins including https://ui-production-ccf6.up.railway.app. (3) Added expose_headers=['*'] for better compatibility. (4) Restarted local backend successfully. (5) Created comprehensive RAILWAY_CORS_FIX.md guide. REQUIRED ACTIONS: User must redeploy backend to Railway (push to GitHub or use Railway CLI) to apply CORS configuration changes. After backend redeployment, CORS errors should be resolved and API calls should succeed. VERIFICATION: After backend redeployment, test frontend at Railway URL, verify no CORS errors in browser console, confirm API calls return Status 200 with proper JSON data. IMPORTANT NOTE: This fix validates that the previous environment variable fix is working - frontend is successfully calling backend, just being blocked by CORS. FILES MODIFIED: backend/server.py (updated CORS middleware), RAILWAY_CORS_FIX.md (created comprehensive CORS fix guide)."
+        - working: "NA"
+          agent: "main"
+          comment: "🎯 CRITICAL ROOT CAUSE IDENTIFIED - CORS PREFLIGHT ISSUE: User provided crucial information: GET requests work fine, but POST requests fail with CORS error. This is a textbook CORS preflight failure! ROOT CAUSE: CORS middleware was added AFTER routers were included in server.py. In FastAPI, middleware must be added BEFORE routers to properly intercept OPTIONS (preflight) requests. GET requests work because they don't require preflight (simple requests), but POST requests with JSON body and Authorization header trigger preflight OPTIONS requests that weren't being handled correctly. SOLUTION IMPLEMENTED: (1) Moved CORS middleware to be added immediately after app creation, BEFORE including any routers. (2) Removed duplicate CORS middleware that was added after routers. (3) Changed allow_methods from wildcard to explicit list: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']. (4) Added max_age=3600 to cache preflight responses for 1 hour. (5) Restarted local backend successfully. (6) Created comprehensive RAILWAY_CORS_PREFLIGHT_FIX.md guide explaining the issue. VERIFICATION: Local backend now properly handles OPTIONS preflight requests. User must redeploy to Railway for production fix. After deployment, all HTTP methods (GET, POST, PUT, DELETE) should work without CORS errors. FILES MODIFIED: backend/server.py (moved CORS middleware before routers), RAILWAY_CORS_PREFLIGHT_FIX.md (created detailed preflight explanation)."
 
 metadata:
   created_by: "main_agent"
