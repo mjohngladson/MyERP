@@ -180,6 +180,10 @@ async def create_purchase_invoice(payload: dict):
             'discount_amount': discount_amount,
             'total_amount': total_amount
         })
+        
+        # Validate amounts after calculation
+        validate_amounts(payload, "Purchase Invoice")
+        
         res = await purchase_invoices_collection.insert_one(payload)
         if res.inserted_id:
             payload['id'] = str(res.inserted_id)
