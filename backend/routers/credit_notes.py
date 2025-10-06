@@ -197,6 +197,9 @@ async def create_credit_note(body: Dict[str, Any]):
         if not reference_invoice_number:
             reference_invoice_number = original_invoice.get("invoice_number")
     
+    # Get items from body
+    items = body.get("items", [])
+    
     # Calculate totals
     subtotal = sum(float(item.get("amount", 0)) for item in items)
     discount_amount = float(body.get("discount_amount", 0))
