@@ -226,6 +226,9 @@ async def create_debit_note(body: Dict[str, Any]):
         "updated_at": now_utc(),
     }
     
+    # Validate amounts after calculation
+    validate_amounts(doc, "Debit Note")
+    
     await debit_notes_collection.insert_one(doc)
     
     # If created directly as submitted, create accounting entries
