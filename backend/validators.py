@@ -18,25 +18,45 @@ def validate_required_fields(data: Dict[str, Any], required_fields: List[str], d
     Raises:
         HTTPException: If any required field is missing or empty
     """
+    # Field name mapping for better error messages
+    field_labels = {
+        "customer_name": "Customer Name",
+        "customer_id": "Customer",
+        "supplier_name": "Supplier Name",
+        "supplier_id": "Supplier",
+        "items": "Items",
+        "invoice_number": "Invoice Number",
+        "quotation_number": "Quotation Number",
+        "order_number": "Order Number",
+        "party_name": "Party Name",
+        "party_id": "Party",
+        "payment_type": "Payment Type",
+        "payment_method": "Payment Method",
+        "payment_date": "Payment Date",
+        "amount": "Amount"
+    }
+    
     missing_fields = []
     empty_fields = []
     
     for field in required_fields:
         if field not in data:
-            missing_fields.append(field)
+            missing_fields.append(field_labels.get(field, field))
         elif data[field] is None or (isinstance(data[field], str) and not data[field].strip()):
-            empty_fields.append(field)
+            empty_fields.append(field_labels.get(field, field))
+        elif isinstance(data[field], list) and len(data[field]) == 0:
+            empty_fields.append(field_labels.get(field, field))
     
     if missing_fields:
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type} validation failed: Missing required fields: {', '.join(missing_fields)}"
+            detail=f"Please provide the following required field(s): {', '.join(missing_fields)}"
         )
     
     if empty_fields:
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type} validation failed: Empty required fields: {', '.join(empty_fields)}"
+            detail=f"The following field(s) cannot be empty: {', '.join(empty_fields)}"
         )
 
 
