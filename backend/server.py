@@ -136,21 +136,6 @@ app.include_router(debit_notes_router)
 app.include_router(get_financial_router())
 app.include_router(get_pos_router())
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=[
-        "https://ui-production-ccf6.up.railway.app",  # Railway frontend
-        "https://retail-erp.preview.emergentagent.com",  # Development frontend
-        "http://localhost:3000",  # Local development
-        "http://127.0.0.1:3000",  # Local development
-    ],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=3600,  # Cache preflight requests for 1 hour
-)
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
