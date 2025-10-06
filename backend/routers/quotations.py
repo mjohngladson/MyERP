@@ -227,6 +227,13 @@ async def create_quotation(payload: dict):
         res = await sales_quotations_collection.insert_one(payload)
         if res.inserted_id:
             payload["_id"] = str(res.inserted_id)
+            payload_id = payload.get("id")
+            
+            # If creating directly with submitted/accepted status, trigger workflow
+            if payload.get("status") in ["submitted", "accepted"]:
+                order_data = await create_sales_order_from_quotation(payload_id, payload)
+                return {"success": True, "quotation": payload, "message": "Quotation created and Sales Order created", "sales_order_id": order_data["id"]}
+            
             return {"success": True, "quotation": payload}
         raise HTTPException(status_code=500, detail="Failed to create quotation")
     except HTTPException:
