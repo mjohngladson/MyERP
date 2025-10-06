@@ -216,6 +216,26 @@ async def update_quotation(quotation_id: str, payload: dict):
                 pass
         if not existing:
             raise HTTPException(status_code=404, detail="Quotation not found")
+        
+        # Check if updating a non-draft document (only allow status changes)
+        if existing.get("status") != "draft" and existing.get("status") != payload.get("status"):
+            # Only allow status changes for non-draft documents
+            if set(payload.keys()) - {"status", "updated_at"}:
+                validate_transaction_update(existing.get("status", "draft"), "Quotation")
+        
+        # Validate status transition if status is changing
+        if "status" in payload and payload["status"] != existing.get("status"):
+            validate_status_transition(
+                existing.get("status", "draft"),
+                payload["status"],
+                QUOTATION_STATUS_TRANSITIONS,
+                "Quotation"
+            )
+        
+        # Validate items if provided
+        if "items" in payload:
+            validate_items(payload["items"], "Quotation")
+        
         payload["updated_at"] = datetime.now(timezone.utc)
         # recalc on items/tax/discount
         need_recalc = ("items" in payload) or ("tax_rate" in payload) or ("discount_amount" in payload)
