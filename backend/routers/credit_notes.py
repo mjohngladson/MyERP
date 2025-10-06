@@ -170,17 +170,15 @@ async def get_credit_notes(
 @router.post("/credit-notes")
 async def create_credit_note(body: Dict[str, Any]):
     """Create new credit note with validation and linking"""
-    # Validations
-    if not body or not body.get("customer_name"):
-        raise HTTPException(status_code=400, detail="customer_name is required")
-    if not body.get("credit_note_date"):
-        raise HTTPException(status_code=400, detail="credit_note_date is required")
-    if not body.get("reason"):
-        raise HTTPException(status_code=400, detail="reason is required")
+    # Validate required fields using centralized validator
+    validate_required_fields(
+        body,
+        ["customer_name", "items", "reference_invoice"],
+        "Credit Note"
+    )
     
-    items = body.get("items", [])
-    if not items or len(items) == 0:
-        raise HTTPException(status_code=400, detail="At least one item is required")
+    # Validate items using centralized validator
+    validate_items(body.get("items", []), "Credit Note")
     
     # Validate and link to original invoice if provided
     reference_invoice_id = body.get("reference_invoice_id")
