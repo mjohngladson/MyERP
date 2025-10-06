@@ -287,6 +287,13 @@ async def create_sales_order(order_data: dict):
         result = await sales_orders_collection.insert_one(order_data)
         if result.inserted_id:
             order_data["_id"] = str(result.inserted_id)
+            order_id = order_data.get("id")
+            
+            # If creating directly with submitted status, trigger workflow
+            if order_data.get("status") == "submitted":
+                invoice_data = await create_sales_invoice_from_order(order_id, order_data)
+                return {"success": True, "order": order_data, "message": "Sales Order created and Sales Invoice created", "invoice_id": invoice_data["id"]}
+            
             return {"success": True, "order": order_data}
         raise HTTPException(status_code=500, detail="Failed to create sales order")
     except HTTPException:
