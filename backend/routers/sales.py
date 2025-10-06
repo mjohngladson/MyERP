@@ -368,32 +368,10 @@ async def update_sales_order(order_id: str, order_data: dict):
         
         # If status changed to "submitted", create Sales Invoice
         if order_data.get("status") == "submitted" and existing.get("status") != "submitted":
-            from database import sales_invoices_collection
-            import uuid
+            # Merge existing data with updates for workflow
+            merged_data = {**existing, **order_data}
+            invoice_data = await create_sales_invoice_from_order(order_id, merged_data)
             
-            # Create Sales Invoice from Sales Order
-            invoice_data = {
-                "id": str(uuid.uuid4()),
-                "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{await sales_invoices_collection.count_documents({}) + 1:04d}",
-                "sales_order_id": order_id,
-                "order_number": existing.get("order_number", ""),
-                "customer_id": existing.get("customer_id"),
-                "customer_name": existing.get("customer_name"),
-                "invoice_date": datetime.now().strftime("%Y-%m-%d"),
-                "due_date": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
-                "status": "draft",
-                "items": order_data.get("items", existing.get("items", [])),
-                "subtotal": order_data.get("subtotal", existing.get("subtotal", 0)),
-                "discount_amount": order_data.get("discount_amount", existing.get("discount_amount", 0)),
-                "tax_rate": order_data.get("tax_rate", existing.get("tax_rate", 18)),
-                "tax_amount": order_data.get("tax_amount", existing.get("tax_amount", 0)),
-                "total_amount": order_data.get("total_amount", existing.get("total_amount", 0)),
-                "company_id": existing.get("company_id", "default_company"),
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc)
-            }
-            
-            await sales_invoices_collection.insert_one(invoice_data)
             result = await sales_orders_collection.update_one({"_id": existing["_id"]}, {"$set": order_data})
             return {"success": True, "message": "Sales Order updated and Sales Invoice created", "invoice_id": invoice_data["id"], "modified": result.modified_count}
         
