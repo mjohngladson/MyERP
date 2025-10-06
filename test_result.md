@@ -301,6 +301,18 @@ test_plan:
     - "Credit Notes and Debit Notes Frontend Timestamp Tracking Fix - User reported issue resolved, timestamps update correctly after send operations"
     - "Sales Invoices API Credit Note Autocomplete Fix - 404 error resolved, /api/invoices endpoint now accessible with proper autocomplete data structure"
 backend:
+  - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
+    implemented: true
+    working: true
+    file: "backend/routers/stock.py, backend/routers/master_data.py, backend/routers/invoices.py, backend/routers/purchase_invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ CREDIT NOTE VS DEBIT NOTE ENDPOINTS COMPARISON COMPLETED SUCCESSFULLY: Conducted comprehensive testing of all 6 endpoints used by Credit Note and Debit Note forms to identify why CN autocomplete fails but DN works. DETAILED RESULTS: (1) ✅ ITEMS ENDPOINT (SHARED): GET /api/stock/items?limit=100 returns HTTP 200 with 2 items - Working correctly for both CN and DN (2) ✅ CUSTOMERS ENDPOINT (CN): GET /api/master/customers?limit=100 returns HTTP 200 with 15 customers - Working correctly for Credit Note forms (3) ✅ SUPPLIERS ENDPOINT (DN): GET /api/master/suppliers?limit=100 returns HTTP 200 with 1 supplier - Working correctly for Debit Note forms (4) ✅ SALES INVOICES ENDPOINT (CN): GET /api/invoices?limit=200 returns HTTP 200 with 50 sales invoices - Working correctly for Credit Note forms (5) ✅ PURCHASE INVOICES ENDPOINT (DN): GET /api/purchase/invoices?limit=200 returns HTTP 200 with 4 purchase invoices - Working correctly for Debit Note forms (6) ✅ ALL ENDPOINTS IDENTICAL: No differences found in response status codes, data structure (all return arrays), CORS headers, or Content-Type headers (7) ✅ DATA AVAILABILITY: All endpoints return proper data with correct counts - Items: 2, Customers: 15, Suppliers: 1, Sales Invoices: 50, Purchase Invoices: 4. CRITICAL FINDING: ALL BACKEND ENDPOINTS ARE WORKING CORRECTLY - No backend issues found. The reported issue where Credit Note form does NOT load items, customers, and sales invoices while Debit Note form successfully loads items, suppliers, and purchase invoices is NOT a backend problem. Issue is likely frontend-specific, browser-related, or related to how the Credit Note form makes API calls compared to the Debit Note form. All 6 endpoints tested return HTTP 200 with proper JSON data structures."
+
   - task: "Payment Entry Module - Comprehensive CRUD Operations and Validations"
     implemented: true
     working: true
