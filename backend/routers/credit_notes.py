@@ -262,6 +262,10 @@ async def update_credit_note(credit_note_id: str, body: Dict[str, Any]):
     if not existing:
         raise HTTPException(status_code=404, detail="Credit note not found")
     
+    # Normalize status to lowercase if provided
+    if "status" in body:
+        body["status"] = body["status"].lower()
+    
     # Check if updating a non-draft document
     if existing.get("status") != "draft" and existing.get("status") != body.get("status"):
         if set(body.keys()) - {"status", "updated_at"}:
