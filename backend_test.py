@@ -10611,16 +10611,16 @@ class BackendTester:
             return False
 
 async def main():
-    """Main function to run Validation System Tests"""
+    """Main function to run CN vs DN Comparison Test"""
     async with BackendTester() as tester:
-        # Run validation system tests as requested in review
-        passed, failed = await tester.run_validation_tests()
+        # Run CN vs DN comparison test as requested in review
+        result = await tester.run_cn_vs_dn_comparison_test()
         
-        if failed == 0:
-            print("🎉 Validation System Tests PASSED!")
+        if result:
+            print("🎉 CN vs DN Comparison Test PASSED!")
             return 0
         else:
-            print("💥 Validation System Tests detected critical issues!")
+            print("💥 CN vs DN Comparison Test detected critical issues!")
             return 1
 
 if __name__ == "__main__":
