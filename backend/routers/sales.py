@@ -29,6 +29,35 @@ except Exception:
 
 router = APIRouter(prefix="/api/sales", tags=["sales"])
 
+# ============ WORKFLOW HELPER FUNCTIONS ============
+async def create_sales_invoice_from_order(order_id: str, order_data: dict):
+    """Create Sales Invoice from Sales Order when status changes to submitted"""
+    from database import sales_invoices_collection
+    
+    invoice_data = {
+        "id": str(uuid.uuid4()),
+        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{await sales_invoices_collection.count_documents({}) + 1:04d}",
+        "sales_order_id": order_id,
+        "order_number": order_data.get("order_number", ""),
+        "customer_id": order_data.get("customer_id"),
+        "customer_name": order_data.get("customer_name"),
+        "invoice_date": datetime.now().strftime("%Y-%m-%d"),
+        "due_date": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+        "status": "draft",
+        "items": order_data.get("items", []),
+        "subtotal": order_data.get("subtotal", 0),
+        "discount_amount": order_data.get("discount_amount", 0),
+        "tax_rate": order_data.get("tax_rate", 18),
+        "tax_amount": order_data.get("tax_amount", 0),
+        "total_amount": order_data.get("total_amount", 0),
+        "company_id": order_data.get("company_id", "default_company"),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    await sales_invoices_collection.insert_one(invoice_data)
+    return invoice_data
+
 # ============ LIST WITH FILTERS/PAGINATION ============
 @router.get("/orders", response_model=List[dict])
 async def get_sales_orders(
