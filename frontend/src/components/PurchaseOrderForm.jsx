@@ -109,7 +109,11 @@ const PurchaseOrderForm = ({ orderId, onBack, onSave }) => {
     // eslint-disable-next-line
   }, [po.items, po.discount_amount, po.tax_rate]);
 
-  const selectSupplier = (s)=> setPo(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
+  const selectSupplier = (s)=> {
+    if (s && s.name) {
+      setPo(prev=>({ ...prev, supplier_id: s.id, supplier_name: s.name }));
+    }
+  };
 
   const saveOrder = async (status='draft')=>{
     setSaving(true);
