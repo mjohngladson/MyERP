@@ -222,6 +222,25 @@ async def update_purchase_order(order_id: str, payload: dict):
                 pass
         if not existing:
             raise HTTPException(status_code=404, detail='Purchase order not found')
+        
+        # Check if updating a non-draft document
+        if existing.get("status") != "draft" and existing.get("status") != payload.get("status"):
+            if set(payload.keys()) - {"status", "updated_at"}:
+                validate_transaction_update(existing.get("status", "draft"), "Purchase Order")
+        
+        # Validate status transition if status is changing
+        if "status" in payload and payload["status"] != existing.get("status"):
+            validate_status_transition(
+                existing.get("status", "draft"),
+                payload["status"],
+                PURCHASE_ORDER_STATUS_TRANSITIONS,
+                "Purchase Order"
+            )
+        
+        # Validate items if provided
+        if "items" in payload:
+            validate_items(payload["items"], "Purchase Order")
+        
         payload['updated_at'] = datetime.now(timezone.utc)
         # recalc totals if items/tax/discount changed
         need_recalc = ('items' in payload) or ('tax_rate' in payload) or ('discount_amount' in payload)
