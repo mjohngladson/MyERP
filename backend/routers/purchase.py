@@ -142,6 +142,16 @@ async def get_purchase_order(order_id: str):
 @router.post("/orders", response_model=dict)
 async def create_purchase_order(payload: dict):
     try:
+        # Validate required fields
+        validate_required_fields(
+            payload,
+            ["supplier_name", "items"],
+            "Purchase Order"
+        )
+        
+        # Validate items
+        validate_items(payload.get("items", []), "Purchase Order")
+        
         now = datetime.now(timezone.utc)
         payload.setdefault('status', 'draft')
         payload['id'] = payload.get('id') or str(ObjectId())
