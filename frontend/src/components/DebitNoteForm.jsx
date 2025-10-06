@@ -287,21 +287,25 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Reference Invoice *</label>
                 <AutocompleteSearch
-                  items={invoices}
-                  selectedValue={form.reference_invoice}
+                  options={invoices}
+                  value={form.reference_invoice}
+                  onChange={(value) => updateForm('reference_invoice', value)}
                   onSelect={(invoice) => {
-                    updateForm('reference_invoice_id', invoice.id);
-                    updateForm('reference_invoice', invoice.invoice_number);
-                    // Auto-fill supplier if not set
-                    if (!form.supplier_name && invoice.supplier_name) {
-                      updateForm('supplier_id', invoice.supplier_id);
-                      updateForm('supplier_name', invoice.supplier_name);
-                      updateForm('supplier_email', invoice.supplier_email || '');
-                      updateForm('supplier_phone', invoice.supplier_phone || '');
+                    if (invoice && typeof invoice === 'object') {
+                      updateForm('reference_invoice_id', invoice.id);
+                      updateForm('reference_invoice', invoice.invoice_number);
+                      // Auto-fill supplier if not set
+                      if (!form.supplier_name && invoice.supplier_name) {
+                        updateForm('supplier_id', invoice.supplier_id);
+                        updateForm('supplier_name', invoice.supplier_name);
+                        updateForm('supplier_email', invoice.supplier_email || '');
+                        updateForm('supplier_phone', invoice.supplier_phone || '');
+                      }
                     }
                   }}
                   displayField="invoice_number"
-                  placeholder="Search purchase invoice..."
+                  searchFields={['invoice_number', 'supplier_name']}
+                  placeholder="Type to search purchase invoice..."
                   className="w-full"
                 />
               </div>
