@@ -325,7 +325,7 @@ def validate_transaction_delete(existing_status: str, document_type: str = "Docu
     if existing_status not in allowed_delete_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"{document_type}: Only draft or cancelled documents can be deleted. Current status: {existing_status}"
+            detail=f"This {document_type.lower()} cannot be deleted because it has been {existing_status}. Only draft or cancelled documents can be deleted."
         )
 
 
