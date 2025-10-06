@@ -292,6 +292,8 @@ async def update_debit_note(debit_note_id: str, body: Dict[str, Any]):
             "tax_amount": tax_amount,
             "total_amount": total_amount
         })
+        # Validate amounts after recalculation
+        validate_amounts(body, "Debit Note")
     
     body["updated_at"] = now_utc()
     
