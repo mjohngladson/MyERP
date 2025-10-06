@@ -223,15 +223,30 @@ frontend:
 
   - task: "Railway Deployment - Frontend Environment Variable Configuration Fix"
     implemented: true
-    working: "NA"
+    working: true
     file: "frontend/Dockerfile, RAILWAY_DEPLOYMENT_GUIDE.md"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "🔧 RAILWAY DEPLOYMENT FIX IMPLEMENTED - Environment Variable Configuration: Fixed critical deployment issue where frontend was receiving HTML instead of JSON during API calls. ROOT CAUSE: REACT_APP_BACKEND_URL environment variable was not available during Docker build process on Railway, causing React app to be built without the backend URL embedded in the JavaScript bundle. This resulted in API calls using relative paths that resolved to the frontend's own domain instead of the backend. SOLUTION IMPLEMENTED: (1) Modified /app/frontend/Dockerfile to accept REACT_APP_BACKEND_URL as a build argument (ARG) and set it as an environment variable (ENV) before the npm build step. (2) Created comprehensive RAILWAY_DEPLOYMENT_GUIDE.md with step-by-step instructions for configuring Railway environment variables. REQUIRED ACTIONS: User must configure Railway frontend service to pass REACT_APP_BACKEND_URL as a build-time environment variable with value 'https://retail-erp.preview.emergentagent.com', then trigger a new deployment. After deployment, login functionality should work correctly with JSON responses from backend API. VERIFICATION: Check Railway build logs to confirm environment variable is set during build, test login at frontend URL, verify API calls go to backend URL instead of frontend URL. FILES MODIFIED: frontend/Dockerfile (added ARG and ENV instructions), RAILWAY_DEPLOYMENT_GUIDE.md (created new deployment guide)."
+        - working: true
+          agent: "main"
+          comment: "✅ ENVIRONMENT VARIABLE FIX CONFIRMED WORKING: User reported CORS error which confirms the environment variable fix is working perfectly! Frontend is now correctly calling backend API (https://myerp-production.up.railway.app) instead of calling itself. This validates that REACT_APP_BACKEND_URL is properly embedded in the JavaScript bundle during Docker build process. The CORS error is a separate issue that indicates successful API communication attempt."
+
+  - task: "Railway Deployment - Backend CORS Configuration Fix"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py, RAILWAY_CORS_FIX.md"
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "🔧 RAILWAY DEPLOYMENT FIX IMPLEMENTED - Environment Variable Configuration: Fixed critical deployment issue where frontend was receiving HTML instead of JSON during API calls. ROOT CAUSE: REACT_APP_BACKEND_URL environment variable was not available during Docker build process on Railway, causing React app to be built without the backend URL embedded in the JavaScript bundle. This resulted in API calls using relative paths that resolved to the frontend's own domain instead of the backend. SOLUTION IMPLEMENTED: (1) Modified /app/frontend/Dockerfile to accept REACT_APP_BACKEND_URL as a build argument (ARG) and set it as an environment variable (ENV) before the npm build step. (2) Created comprehensive RAILWAY_DEPLOYMENT_GUIDE.md with step-by-step instructions for configuring Railway environment variables. REQUIRED ACTIONS: User must configure Railway frontend service to pass REACT_APP_BACKEND_URL as a build-time environment variable with value 'https://retail-erp.preview.emergentagent.com', then trigger a new deployment. After deployment, login functionality should work correctly with JSON responses from backend API. VERIFICATION: Check Railway build logs to confirm environment variable is set during build, test login at frontend URL, verify API calls go to backend URL instead of frontend URL. FILES MODIFIED: frontend/Dockerfile (added ARG and ENV instructions), RAILWAY_DEPLOYMENT_GUIDE.md (created new deployment guide)."
+          comment: "🔧 RAILWAY CORS FIX IMPLEMENTED: Fixed CORS policy blocking requests from frontend to backend on Railway deployment. USER REPORTED ERROR: 'Access to XMLHttpRequest at https://myerp-production.up.railway.app/api/buying/debit-notes from origin https://ui-production-ccf6.up.railway.app has been blocked by CORS policy: No Access-Control-Allow-Origin header is present on the requested resource.' ROOT CAUSE: Backend CORS configuration had wildcard '*' with allow_credentials=True, which is not allowed in CORS spec. When credentials are enabled, exact origins must be specified. SOLUTION IMPLEMENTED: (1) Removed wildcard '*' from allow_origins list. (2) Kept explicit frontend origins including https://ui-production-ccf6.up.railway.app. (3) Added expose_headers=['*'] for better compatibility. (4) Restarted local backend successfully. (5) Created comprehensive RAILWAY_CORS_FIX.md guide. REQUIRED ACTIONS: User must redeploy backend to Railway (push to GitHub or use Railway CLI) to apply CORS configuration changes. After backend redeployment, CORS errors should be resolved and API calls should succeed. VERIFICATION: After backend redeployment, test frontend at Railway URL, verify no CORS errors in browser console, confirm API calls return Status 200 with proper JSON data. IMPORTANT NOTE: This fix validates that the previous environment variable fix is working - frontend is successfully calling backend, just being blocked by CORS. FILES MODIFIED: backend/server.py (updated CORS middleware), RAILWAY_CORS_FIX.md (created comprehensive CORS fix guide)."
 
 metadata:
   created_by: "main_agent"
