@@ -72,6 +72,32 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
   const getStatusColor = (s) => ({ draft:'bg-gray-100 text-gray-800', submitted:'bg-blue-100 text-blue-800', paid:'bg-green-100 text-green-800', cancelled:'bg-red-100 text-red-800'})[s] || 'bg-gray-100 text-gray-800';
 
+  const handleSendInvoice = async () => {
+    if (!sendModal || !sendContact) {
+      alert('Please enter email or phone number');
+      return;
+    }
+    setSending(true);
+    try {
+      const payload = {
+        method: sendMethod,
+        [sendMethod === 'email' ? 'email' : 'phone']: sendContact,
+        attach_pdf: sendAttachPdf
+      };
+      await api.post(`/purchase/invoices/${sendModal.id}/send`, payload);
+      alert(`Purchase invoice sent via ${sendMethod}`);
+      setSendModal(null);
+      setSendContact('');
+      setSendMethod('email');
+      // Refresh list to update send status
+      setTimeout(() => refetch && refetch(), 500);
+    } catch (err) {
+      alert(err?.response?.data?.detail || err?.message || 'Failed to send');
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen"><div className="animate-pulse h-40 bg-gray-100 rounded"/></div>
