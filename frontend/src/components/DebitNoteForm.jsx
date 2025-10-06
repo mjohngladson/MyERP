@@ -136,6 +136,11 @@ const DebitNoteForm = ({ debitNoteId, onBack, onSave }) => {
       return;
     }
 
+    if (!form.reference_invoice_id || !form.reference_invoice) {
+      alert('Reference invoice is required');
+      return;
+    }
+
     if (!form.items.some(item => item.item_name.trim())) {
       alert('At least one item is required');
       return;
