@@ -167,7 +167,7 @@ async def create_debit_note(body: Dict[str, Any]):
     # Validate required fields using centralized validator
     validate_required_fields(
         body,
-        ["supplier_name", "items", "reference_invoice"],
+        ["supplier_name", "items"],
         "Debit Note"
     )
     
