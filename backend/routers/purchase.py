@@ -6,6 +6,11 @@ from pymongo import ASCENDING, DESCENDING
 import os
 
 from database import purchase_orders_collection, suppliers_collection, items_collection
+from validators import (
+    validate_required_fields, validate_items, validate_amounts,
+    validate_status_transition, validate_transaction_update, validate_transaction_delete,
+    PURCHASE_ORDER_STATUS_TRANSITIONS
+)
 
 # Optional email/SMS/PDF services (reused pattern from invoices/sales)
 try:
