@@ -173,7 +173,15 @@ const PurchaseInvoiceForm = ({ invoiceId, onBack, onSave }) => {
               </label>
               <select 
                 value={inv.supplier_id} 
-                onChange={(e)=>{ const s = supplierList.find(x=>x.id===e.target.value); if(s) selectSupplier(s); else setInv(prev=>({...prev, supplier_id: e.target.value})); }} 
+                onChange={(e)=>{ 
+                  const selectedSupplierId = e.target.value;
+                  const s = supplierList.find(x=>x.id===selectedSupplierId); 
+                  if(s) {
+                    selectSupplier(s);
+                  } else {
+                    setInv(prev=>({...prev, supplier_id: selectedSupplierId}));
+                  }
+                }} 
                 className="w-full px-3 py-2 border rounded-md"
                 required
               >
