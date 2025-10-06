@@ -212,7 +212,7 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
                   <div className="col-span-1"><div className="flex items-center space-x-2">
                     <button onClick={()=>onViewInvoice && onViewInvoice(inv)} className="p-1 hover:bg-gray-100 rounded-md" title="View"><Eye size={16} className="text-gray-600"/></button>
                     {inv.status === 'draft' && <button onClick={()=>onEditInvoice && onEditInvoice(inv)} className="p-1 hover:bg-gray-100 rounded-md" title="Edit"><Edit size={16} className="text-gray-600"/></button>}
-                    {(inv.status === 'submitted' || inv.status === 'paid') && <button onClick={()=>{ setSendModal(inv); setSendContact(inv.supplier_email || inv.supplier_phone || ''); }} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Mail size={16} className="text-blue-600"/></button>}
+                    {(inv.status === 'submitted' || inv.status === 'paid') && <button onClick={()=>{ setSendModal(inv); setSendContact(inv.supplier_email || inv.supplier_phone || ''); }} className="p-1 hover:bg-gray-100 rounded-md" title="Send"><Send size={14} className="text-blue-600"/></button>}
                     {inv.status === 'draft' && <button onClick={async()=>{ if (!window.confirm(`Delete ${inv.invoice_number}?`)) return; try { await api.delete(`/purchase/invoices/${inv.id}`); refetch && refetch(); } catch (err) { alert(err?.response?.data?.detail || err?.message || 'Failed to delete'); } }} className="p-1 hover:bg-gray-100 rounded-md" title="Delete"><Trash2 size={16} className="text-red-600"/></button>}
                   </div></div>
                 </div>
