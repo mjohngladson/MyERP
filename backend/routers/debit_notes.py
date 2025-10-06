@@ -164,17 +164,15 @@ async def get_debit_notes(
 @router.post("/debit-notes")
 async def create_debit_note(body: Dict[str, Any]):
     """Create new debit note with validation and linking"""
-    # Validations
-    if not body or not body.get("supplier_name"):
-        raise HTTPException(status_code=400, detail="supplier_name is required")
-    if not body.get("debit_note_date"):
-        raise HTTPException(status_code=400, detail="debit_note_date is required")
-    if not body.get("reason"):
-        raise HTTPException(status_code=400, detail="reason is required")
+    # Validate required fields using centralized validator
+    validate_required_fields(
+        body,
+        ["supplier_name", "items", "reference_invoice"],
+        "Debit Note"
+    )
     
-    items = body.get("items", [])
-    if not items or len(items) == 0:
-        raise HTTPException(status_code=400, detail="At least one item is required")
+    # Validate items using centralized validator
+    validate_items(body.get("items", []), "Debit Note")
     
     # Validate and link to original purchase invoice if provided
     reference_invoice_id = body.get("reference_invoice_id")
