@@ -326,6 +326,9 @@ async def delete_purchase_order(order_id: str):
         if not order:
             raise HTTPException(status_code=404, detail='Purchase order not found')
         
+        # Validate deletion is allowed
+        validate_transaction_delete(order.get("status", "draft"), "Purchase Order")
+        
         # Check if order is linked to any purchase invoices
         from database import purchase_invoices_collection
         linked_invoice = await purchase_invoices_collection.find_one({"purchase_order_id": order_id})
@@ -333,13 +336,6 @@ async def delete_purchase_order(order_id: str):
             raise HTTPException(
                 status_code=400, 
                 detail=f"Cannot delete purchase order. It is linked to invoice {linked_invoice.get('invoice_number', 'N/A')}"
-            )
-        
-        # Only allow deletion of draft or cancelled orders
-        if order.get("status") not in ["draft", "cancelled"]:
-            raise HTTPException(
-                status_code=400, 
-                detail="Only draft or cancelled purchase orders can be deleted"
             )
         
         res = await purchase_orders_collection.delete_one({'id': order_id})
