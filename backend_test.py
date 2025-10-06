@@ -777,7 +777,7 @@ class BackendTester:
 
             # Test 7: Invalid status transition draft → won (should fail - must go through submitted)
             invalid_status_payload = {"status": "won"}
-            async with self.session.put(f"{self.base_url}/api/quotations/{quotation_id}", json=invalid_status_payload) as response:
+            async with self.session.put(f"{self.base_url}/api/quotations/{quotation_id}/", json=invalid_status_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     if "cannot transition" in data.get("detail", "").lower() or "allowed transitions" in data.get("detail", "").lower():
