@@ -10325,6 +10325,291 @@ class BackendTester:
             print(f"\n❌ Stability test suite failed: {str(e)}")
             return 0, 1
 
+    async def test_credit_note_vs_debit_note_endpoints(self):
+        """Test Credit Note vs Debit Note endpoints comparison - CRITICAL AUTOCOMPLETE ISSUE INVESTIGATION"""
+        try:
+            print("\n🔍 CREDIT NOTE VS DEBIT NOTE ENDPOINTS COMPARISON")
+            print("=" * 80)
+            print("📋 TESTING ENDPOINTS:")
+            print("   CREDIT NOTE (CN) - Reported as NOT WORKING:")
+            print("   1. GET /api/stock/items?limit=100 (Items)")
+            print("   2. GET /api/master/customers?limit=100 (Customers)")
+            print("   3. GET /api/invoices?limit=200 (Sales Invoices)")
+            print("   DEBIT NOTE (DN) - Reported as WORKING:")
+            print("   1. GET /api/stock/items?limit=100 (Items)")
+            print("   2. GET /api/master/suppliers?limit=100 (Suppliers)")
+            print("   3. GET /api/purchase/invoices?limit=200 (Purchase Invoices)")
+            print("=" * 80)
+            
+            # Store all endpoint results for comparison
+            endpoint_results = {}
+            
+            # Test 1: Items endpoint (used by both CN and DN)
+            print("\n🔧 TESTING ITEMS ENDPOINT (SHARED BY BOTH CN AND DN)")
+            try:
+                async with self.session.get(f"{self.base_url}/api/stock/items?limit=100") as response:
+                    status_code = response.status
+                    headers = dict(response.headers)
+                    
+                    if status_code == 200:
+                        data = await response.json()
+                        endpoint_results["items"] = {
+                            "status": status_code,
+                            "success": True,
+                            "data_type": type(data).__name__,
+                            "data_count": len(data) if isinstance(data, list) else "N/A",
+                            "headers": headers,
+                            "sample_data": data[:2] if isinstance(data, list) and len(data) > 0 else data
+                        }
+                        self.log_test("Items Endpoint", True, f"HTTP {status_code} - Retrieved {len(data) if isinstance(data, list) else 'N/A'} items", endpoint_results["items"])
+                    else:
+                        response_text = await response.text()
+                        endpoint_results["items"] = {
+                            "status": status_code,
+                            "success": False,
+                            "error": response_text,
+                            "headers": headers
+                        }
+                        self.log_test("Items Endpoint", False, f"HTTP {status_code} - {response_text}", endpoint_results["items"])
+            except Exception as e:
+                endpoint_results["items"] = {"status": "ERROR", "success": False, "error": str(e)}
+                self.log_test("Items Endpoint", False, f"Connection error: {str(e)}")
+            
+            # Test 2: Customers endpoint (used by CN)
+            print("\n👥 TESTING CUSTOMERS ENDPOINT (CREDIT NOTE)")
+            try:
+                async with self.session.get(f"{self.base_url}/api/master/customers?limit=100") as response:
+                    status_code = response.status
+                    headers = dict(response.headers)
+                    
+                    if status_code == 200:
+                        data = await response.json()
+                        endpoint_results["customers"] = {
+                            "status": status_code,
+                            "success": True,
+                            "data_type": type(data).__name__,
+                            "data_count": len(data) if isinstance(data, list) else "N/A",
+                            "headers": headers,
+                            "sample_data": data[:2] if isinstance(data, list) and len(data) > 0 else data
+                        }
+                        self.log_test("Customers Endpoint (CN)", True, f"HTTP {status_code} - Retrieved {len(data) if isinstance(data, list) else 'N/A'} customers", endpoint_results["customers"])
+                    else:
+                        response_text = await response.text()
+                        endpoint_results["customers"] = {
+                            "status": status_code,
+                            "success": False,
+                            "error": response_text,
+                            "headers": headers
+                        }
+                        self.log_test("Customers Endpoint (CN)", False, f"HTTP {status_code} - {response_text}", endpoint_results["customers"])
+            except Exception as e:
+                endpoint_results["customers"] = {"status": "ERROR", "success": False, "error": str(e)}
+                self.log_test("Customers Endpoint (CN)", False, f"Connection error: {str(e)}")
+            
+            # Test 3: Suppliers endpoint (used by DN)
+            print("\n🏭 TESTING SUPPLIERS ENDPOINT (DEBIT NOTE)")
+            try:
+                async with self.session.get(f"{self.base_url}/api/master/suppliers?limit=100") as response:
+                    status_code = response.status
+                    headers = dict(response.headers)
+                    
+                    if status_code == 200:
+                        data = await response.json()
+                        endpoint_results["suppliers"] = {
+                            "status": status_code,
+                            "success": True,
+                            "data_type": type(data).__name__,
+                            "data_count": len(data) if isinstance(data, list) else "N/A",
+                            "headers": headers,
+                            "sample_data": data[:2] if isinstance(data, list) and len(data) > 0 else data
+                        }
+                        self.log_test("Suppliers Endpoint (DN)", True, f"HTTP {status_code} - Retrieved {len(data) if isinstance(data, list) else 'N/A'} suppliers", endpoint_results["suppliers"])
+                    else:
+                        response_text = await response.text()
+                        endpoint_results["suppliers"] = {
+                            "status": status_code,
+                            "success": False,
+                            "error": response_text,
+                            "headers": headers
+                        }
+                        self.log_test("Suppliers Endpoint (DN)", False, f"HTTP {status_code} - {response_text}", endpoint_results["suppliers"])
+            except Exception as e:
+                endpoint_results["suppliers"] = {"status": "ERROR", "success": False, "error": str(e)}
+                self.log_test("Suppliers Endpoint (DN)", False, f"Connection error: {str(e)}")
+            
+            # Test 4: Sales Invoices endpoint (used by CN)
+            print("\n📄 TESTING SALES INVOICES ENDPOINT (CREDIT NOTE)")
+            try:
+                async with self.session.get(f"{self.base_url}/api/invoices?limit=200") as response:
+                    status_code = response.status
+                    headers = dict(response.headers)
+                    
+                    if status_code == 200:
+                        data = await response.json()
+                        endpoint_results["sales_invoices"] = {
+                            "status": status_code,
+                            "success": True,
+                            "data_type": type(data).__name__,
+                            "data_count": len(data) if isinstance(data, list) else "N/A",
+                            "headers": headers,
+                            "sample_data": data[:2] if isinstance(data, list) and len(data) > 0 else data
+                        }
+                        self.log_test("Sales Invoices Endpoint (CN)", True, f"HTTP {status_code} - Retrieved {len(data) if isinstance(data, list) else 'N/A'} sales invoices", endpoint_results["sales_invoices"])
+                    else:
+                        response_text = await response.text()
+                        endpoint_results["sales_invoices"] = {
+                            "status": status_code,
+                            "success": False,
+                            "error": response_text,
+                            "headers": headers
+                        }
+                        self.log_test("Sales Invoices Endpoint (CN)", False, f"HTTP {status_code} - {response_text}", endpoint_results["sales_invoices"])
+            except Exception as e:
+                endpoint_results["sales_invoices"] = {"status": "ERROR", "success": False, "error": str(e)}
+                self.log_test("Sales Invoices Endpoint (CN)", False, f"Connection error: {str(e)}")
+            
+            # Test 5: Purchase Invoices endpoint (used by DN)
+            print("\n📋 TESTING PURCHASE INVOICES ENDPOINT (DEBIT NOTE)")
+            try:
+                async with self.session.get(f"{self.base_url}/api/purchase/invoices?limit=200") as response:
+                    status_code = response.status
+                    headers = dict(response.headers)
+                    
+                    if status_code == 200:
+                        data = await response.json()
+                        endpoint_results["purchase_invoices"] = {
+                            "status": status_code,
+                            "success": True,
+                            "data_type": type(data).__name__,
+                            "data_count": len(data) if isinstance(data, list) else "N/A",
+                            "headers": headers,
+                            "sample_data": data[:2] if isinstance(data, list) and len(data) > 0 else data
+                        }
+                        self.log_test("Purchase Invoices Endpoint (DN)", True, f"HTTP {status_code} - Retrieved {len(data) if isinstance(data, list) else 'N/A'} purchase invoices", endpoint_results["purchase_invoices"])
+                    else:
+                        response_text = await response.text()
+                        endpoint_results["purchase_invoices"] = {
+                            "status": status_code,
+                            "success": False,
+                            "error": response_text,
+                            "headers": headers
+                        }
+                        self.log_test("Purchase Invoices Endpoint (DN)", False, f"HTTP {status_code} - {response_text}", endpoint_results["purchase_invoices"])
+            except Exception as e:
+                endpoint_results["purchase_invoices"] = {"status": "ERROR", "success": False, "error": str(e)}
+                self.log_test("Purchase Invoices Endpoint (DN)", False, f"Connection error: {str(e)}")
+            
+            # COMPREHENSIVE COMPARISON ANALYSIS
+            print("\n📊 COMPREHENSIVE ENDPOINT COMPARISON ANALYSIS")
+            print("=" * 80)
+            
+            # Check if items endpoint works for both (should be identical)
+            items_working = endpoint_results.get("items", {}).get("success", False)
+            
+            # Check Credit Note endpoints
+            cn_customers_working = endpoint_results.get("customers", {}).get("success", False)
+            cn_invoices_working = endpoint_results.get("sales_invoices", {}).get("success", False)
+            
+            # Check Debit Note endpoints
+            dn_suppliers_working = endpoint_results.get("suppliers", {}).get("success", False)
+            dn_invoices_working = endpoint_results.get("purchase_invoices", {}).get("success", False)
+            
+            # Summary analysis
+            print(f"🔧 ITEMS ENDPOINT (SHARED): {'✅ WORKING' if items_working else '❌ FAILING'}")
+            print(f"👥 CREDIT NOTE - CUSTOMERS: {'✅ WORKING' if cn_customers_working else '❌ FAILING'}")
+            print(f"📄 CREDIT NOTE - SALES INVOICES: {'✅ WORKING' if cn_invoices_working else '❌ FAILING'}")
+            print(f"🏭 DEBIT NOTE - SUPPLIERS: {'✅ WORKING' if dn_suppliers_working else '❌ FAILING'}")
+            print(f"📋 DEBIT NOTE - PURCHASE INVOICES: {'✅ WORKING' if dn_invoices_working else '❌ FAILING'}")
+            
+            # Identify differences
+            differences_found = []
+            
+            if items_working:
+                print("\n✅ ITEMS ENDPOINT: Working correctly for both CN and DN")
+            else:
+                differences_found.append("Items endpoint failing - affects both CN and DN")
+            
+            if cn_customers_working != dn_suppliers_working:
+                differences_found.append(f"Master data mismatch: Customers {'working' if cn_customers_working else 'failing'} vs Suppliers {'working' if dn_suppliers_working else 'failing'}")
+            
+            if cn_invoices_working != dn_invoices_working:
+                differences_found.append(f"Invoice data mismatch: Sales Invoices {'working' if cn_invoices_working else 'failing'} vs Purchase Invoices {'working' if dn_invoices_working else 'failing'}")
+            
+            # Check for CORS, Content-Type, or other header differences
+            headers_analysis = {}
+            for endpoint_name, result in endpoint_results.items():
+                if result.get("success") and "headers" in result:
+                    headers_analysis[endpoint_name] = {
+                        "content_type": result["headers"].get("content-type", "N/A"),
+                        "cors": result["headers"].get("access-control-allow-origin", "N/A"),
+                        "server": result["headers"].get("server", "N/A")
+                    }
+            
+            # Final assessment
+            print("\n🎯 ROOT CAUSE ANALYSIS:")
+            if not differences_found:
+                if all([items_working, cn_customers_working, cn_invoices_working, dn_suppliers_working, dn_invoices_working]):
+                    print("✅ ALL ENDPOINTS WORKING - No backend issues found")
+                    print("🔍 Issue may be frontend-specific or browser-related")
+                    self.log_test("CN vs DN Endpoints Comparison", True, "All endpoints working correctly - issue likely frontend", endpoint_results)
+                else:
+                    print("❌ BOTH CN AND DN HAVE ISSUES - Systematic backend problem")
+                    failing_endpoints = [name for name, result in endpoint_results.items() if not result.get("success")]
+                    print(f"   Failing endpoints: {', '.join(failing_endpoints)}")
+                    self.log_test("CN vs DN Endpoints Comparison", False, f"Multiple endpoints failing: {failing_endpoints}", endpoint_results)
+            else:
+                print("❌ DIFFERENCES FOUND BETWEEN CN AND DN:")
+                for diff in differences_found:
+                    print(f"   • {diff}")
+                self.log_test("CN vs DN Endpoints Comparison", False, f"Differences found: {differences_found}", endpoint_results)
+            
+            # Header comparison
+            print(f"\n📋 HEADERS COMPARISON:")
+            for endpoint, headers in headers_analysis.items():
+                print(f"   {endpoint.upper()}: Content-Type={headers['content_type']}, CORS={headers['cors']}")
+            
+            # Data structure comparison
+            print(f"\n📊 DATA STRUCTURE COMPARISON:")
+            for endpoint_name, result in endpoint_results.items():
+                if result.get("success"):
+                    print(f"   {endpoint_name.upper()}: {result['data_type']} with {result['data_count']} items")
+                else:
+                    print(f"   {endpoint_name.upper()}: FAILED - {result.get('error', 'Unknown error')}")
+            
+            print("=" * 80)
+            
+            # Return success if no critical differences found
+            return len(differences_found) == 0 and items_working
+            
+        except Exception as e:
+            self.log_test("CN vs DN Endpoints Comparison", False, f"Critical error during endpoint comparison: {str(e)}")
+            return False
+
+    async def run_cn_vs_dn_comparison_test(self):
+        """Run Credit Note vs Debit Note endpoints comparison test"""
+        print("🚀 Starting Credit Note vs Debit Note Endpoints Comparison")
+        print(f"📡 Testing against: {self.base_url}")
+        print("🎯 FOCUS: Identify why CN autocomplete fails but DN works")
+        print("=" * 80)
+        
+        # Run the specific comparison test
+        try:
+            result = await self.test_credit_note_vs_debit_note_endpoints()
+            
+            if result:
+                print("\n✅ COMPARISON TEST COMPLETED SUCCESSFULLY")
+                print("📋 All endpoints working correctly - issue likely frontend-specific")
+            else:
+                print("\n❌ COMPARISON TEST FOUND ISSUES")
+                print("📋 Backend differences identified between CN and DN endpoints")
+            
+            return result
+            
+        except Exception as e:
+            self.log_test("CN vs DN Comparison", False, f"Test crashed: {str(e)}")
+            print(f"\n💥 COMPARISON TEST CRASHED: {str(e)}")
+            return False
+
 async def main():
     """Main function to run Validation System Tests"""
     async with BackendTester() as tester:
