@@ -232,6 +232,9 @@ async def create_credit_note(body: Dict[str, Any]):
         "updated_at": now_utc(),
     }
     
+    # Validate amounts after calculation
+    validate_amounts(doc, "Credit Note")
+    
     await credit_notes_collection.insert_one(doc)
     
     # If created directly as submitted, create reversal entries
