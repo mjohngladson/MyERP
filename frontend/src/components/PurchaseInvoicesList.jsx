@@ -13,6 +13,11 @@ const PurchaseInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateIn
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [showStats, setShowStats] = useState(false);
+  const [sendModal, setSendModal] = useState(null);
+  const [sendMethod, setSendMethod] = useState('email');
+  const [sendContact, setSendContact] = useState('');
+  const [sendAttachPdf, setSendAttachPdf] = useState(true);
+  const [sending, setSending] = useState(false);
 
   // Debounce search for smoother typing (500ms)
   const [debouncedSearch, setDebouncedSearch] = useState('');
