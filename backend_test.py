@@ -768,14 +768,21 @@ class BackendTester:
             async with self.session.post(f"{self.base_url}/api/quotations/", json=valid_payload) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if data.get("success") and "quotation" in data:
+                    # Debug: Check the actual response structure
+                    print(f"DEBUG: Response type: {type(data)}")
+                    if isinstance(data, list):
+                        print(f"DEBUG: Got list response, length: {len(data)}")
+                        self.log_test("Quotation Validation - Valid creation", False, f"Got list response instead of dict: {len(data)} items", {"response_type": "list"})
+                        return False
+                    elif isinstance(data, dict) and data.get("success") and "quotation" in data:
                         quotation_id = data["quotation"].get("id")
                         self.log_test("Quotation Validation - Valid creation", True, f"Successfully created quotation {quotation_id}", {"id": quotation_id, "total": data["quotation"].get("total_amount")})
                     else:
                         self.log_test("Quotation Validation - Valid creation", False, f"Invalid response structure: {data}", data)
                         return False
                 else:
-                    self.log_test("Quotation Validation - Valid creation", False, f"Expected HTTP 200, got {response.status}")
+                    response_text = await response.text()
+                    self.log_test("Quotation Validation - Valid creation", False, f"Expected HTTP 200, got {response.status}: {response_text}")
                     return False
 
             if not quotation_id:
