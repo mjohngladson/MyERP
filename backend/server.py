@@ -33,6 +33,22 @@ db = client[os.environ['DB_NAME']]
 # Create the main app without a prefix
 app = FastAPI(title="GiLi API", version="1.0.0")
 
+# Add CORS middleware BEFORE including routers (critical for proper preflight handling)
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=[
+        "https://ui-production-ccf6.up.railway.app",  # Railway frontend
+        "https://retail-erp.preview.emergentagent.com",  # Development frontend  
+        "http://localhost:3000",  # Local development
+        "http://127.0.0.1:3000",  # Local development
+    ],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
+)
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
