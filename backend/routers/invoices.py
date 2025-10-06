@@ -224,6 +224,22 @@ async def create_sales_invoice(invoice_data: dict):
         result = await sales_invoices_collection.insert_one(invoice_data)
         if result.inserted_id:
             invoice_data["_id"] = str(result.inserted_id)
+            invoice_id = invoice_data.get("id")
+            
+            # If creating directly with submitted status, trigger workflow
+            if invoice_data.get("status") == "submitted":
+                from database import journal_entries_collection, payments_collection, accounts_collection
+                
+                # Create Journal Entry and Payment Entry
+                je_id = await create_journal_entry_for_sales_invoice(
+                    invoice_id, invoice_data, journal_entries_collection, accounts_collection
+                )
+                payment_id = await create_payment_entry_for_sales_invoice(
+                    invoice_data, payments_collection
+                )
+                
+                return {"success": True, "message": "Invoice created, Journal Entry and Payment Entry created", "invoice": invoice_data, "journal_entry_id": je_id, "payment_entry_id": payment_id}
+            
             return {"success": True, "message": "Invoice created successfully", "invoice": invoice_data}
         else:
             raise HTTPException(status_code=500, detail="Failed to create invoice")
