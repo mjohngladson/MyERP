@@ -336,7 +336,7 @@ const DebitNotesList = ({ onBack, onViewDebitNote, onEditDebitNote, onCreateDebi
                       </button>
                     </>
                   )}
-                  {note.status === 'submitted' && (
+                  {(note.status === 'submitted' || note.status === 'issued' || note.status === 'applied' || note.status === 'accepted') && (
                     <button 
                       onClick={() => openSendModal(note)} 
                       className="p-1 hover:bg-gray-100 rounded" 
