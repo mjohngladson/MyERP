@@ -508,8 +508,10 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
               className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
             >
               <option value="Draft">Draft</option>
+              <option value="Submitted">Submitted</option>
               <option value="Issued">Issued</option>
               <option value="Applied">Applied</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
         </div>
