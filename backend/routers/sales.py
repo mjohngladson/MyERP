@@ -327,6 +327,9 @@ async def update_sales_order(order_id: str, order_data: dict):
                 "discount_amount": discount_amount,
                 "total_amount": total_amount
             })
+            # Validate amounts after recalculation
+            validate_amounts(order_data, "Sales Order")
+        
         # If status changed to "submitted", create Sales Invoice
         if order_data.get("status") == "submitted" and existing.get("status") != "submitted":
             from database import sales_invoices_collection
