@@ -30,6 +30,9 @@ const apiClient = axios.create({
 
 // Request interceptor for auth and network checking
 apiClient.interceptors.request.use((config) => {
+  console.log('🔍 DEBUG - Interceptor - Full URL being requested:', config.url);
+  console.log('🔍 DEBUG - Interceptor - BaseURL:', config.baseURL);
+  
   // Check if user is offline
   if (!isOnline) {
     throw new axios.Cancel('You are currently offline. Please check your internet connection.');
