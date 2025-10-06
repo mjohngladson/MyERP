@@ -271,17 +271,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Quotations and Sales Orders Validation System Testing - COMPLETED ✅"
-    - "Sales Invoices API Credit Note Autocomplete Fix Testing - COMPLETED ✅"
-    - "Payment Entry Module Comprehensive Testing - COMPLETED ✅"
-    - "Financial Management System Integration Testing - COMPLETED ✅"
-    - "Login Functionality Testing - COMPLETED ✅"
-    - "Frontend Login Functionality UI Testing - COMPLETED ✅"
-    - "AuthContext URL Fix Verification - COMPLETED ✅"
-    - "CRITICAL FIXES TESTING - COMPLETED ✅"
-    - "Sales Invoice Send Button Fix - COMPLETED ✅"
-    - "Individual Email/SMS Status Tracking - COMPLETED ✅"
-    - "SendGrid Email Delivery Issue - COMPLETED ✅"
+    - "Workflow Automation on Direct Submit Testing - COMPLETED ✅"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
