@@ -333,9 +333,9 @@ const SalesInvoicesList = ({ onBack, onViewInvoice, onEditInvoice, onCreateInvoi
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button onClick={() => onViewInvoice && onViewInvoice(invoice)} className="text-blue-600 hover:text-blue-900 p-1" title="View Invoice"><Eye className="h-4 w-4" /></button>
-                        <button onClick={() => onEditInvoice && onEditInvoice(invoice)} className="text-green-600 hover:text-green-900 p-1" title="Edit Invoice"><Edit className="h-4 w-4" /></button>
-                        <button onClick={() => openSend(invoice)} className="text-purple-600 hover:text-purple-900 p-1" title="Send Invoice"><Send className="h-4 w-4" /></button>
-                        <button onClick={() => { if (confirm(`Delete invoice ${invoice.invoice_number}?`)) {/* TODO: hook delete */} }} className="text-red-600 hover:text-red-900 p-1" title="Delete Invoice"><Trash2 className="h-4 w-4" /></button>
+                        {invoice.status === 'draft' && <button onClick={() => onEditInvoice && onEditInvoice(invoice)} className="text-green-600 hover:text-green-900 p-1" title="Edit Invoice"><Edit className="h-4 w-4" /></button>}
+                        {(invoice.status === 'submitted' || invoice.status === 'paid') && <button onClick={() => openSend(invoice)} className="text-purple-600 hover:text-purple-900 p-1" title="Send Invoice"><Send className="h-4 w-4" /></button>}
+                        {invoice.status === 'draft' && <button onClick={() => { if (confirm(`Delete invoice ${invoice.invoice_number}?`)) {/* TODO: hook delete */} }} className="text-red-600 hover:text-red-900 p-1" title="Delete Invoice"><Trash2 className="h-4 w-4" /></button>}
                       </div>
                     </td>
                   </tr>
