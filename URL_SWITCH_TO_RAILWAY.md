@@ -29,7 +29,9 @@ Switched frontend and API URLs from Preview (Emergent Platform) to Railway Produ
 
 ## Current Status
 - **Frontend:** RUNNING with Railway backend URL
-- **Backend:** RUNNING (unchanged)
+  - Accessible at: https://ui-production-ccf6.up.railway.app
+- **Backend:** RUNNING 
+  - API endpoint: https://myerp-production.up.railway.app
 - **MongoDB:** RUNNING (unchanged)
 - **Code-Server:** RUNNING (unchanged)
 
