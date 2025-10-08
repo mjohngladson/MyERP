@@ -34,8 +34,8 @@ Switched frontend and API URLs from Preview (Emergent Platform) to Railway Produ
 - **Code-Server:** RUNNING (unchanged)
 
 ## URLs in Use
-- **Frontend URL:** https://erp-nextgen.preview.emergentagent.com (Preview UI)
-- **Backend API URL:** https://myerp-production.up.railway.app (Railway Production)
+- **Frontend URL:** https://ui-production-ccf6.up.railway.app (Railway Production UI)
+- **Backend API URL:** https://myerp-production.up.railway.app (Railway Production API)
 
 ## How to Switch Back to Preview
 Run the following command:
