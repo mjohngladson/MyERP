@@ -33,7 +33,38 @@ const endpoint = isCustomer
 - Routes to `/api/purchase/invoices` for supplier payments (purchase invoices)
 - Both endpoints now correctly filter by party_id
 
-### 2. Bank Reconciliation - Report Modal Error
+### 2. Payment Allocation - Undefined State Error
+
+**Problem**: "setAllocatingPayment is not defined" error when clicking Allocate Payment button
+
+**Root Cause**: 
+- PaymentViewModal component was directly calling state setters from parent component
+- State functions were not passed as props to the modal component
+
+**Solution**:
+```javascript
+// Before: Direct state access in modal (not available)
+onClick={() => {
+  setAllocatingPayment(payment);
+  setShowAllocationForm(true);
+}}
+
+// After: Use callback prop
+onClick={() => onAllocate(payment)}
+```
+
+**Files Modified**:
+- `/app/frontend/src/components/PaymentEntry.jsx` 
+  - Line 823: Added `onAllocate` prop to PaymentViewModal signature
+  - Lines 540-547: Passed `onAllocate` callback to PaymentViewModal
+  - Lines 964-971: Updated button to use `onAllocate` prop instead of direct state calls
+
+**Fix Applied**:
+- Added `onAllocate` callback prop to PaymentViewModal
+- PaymentEntry passes handler that sets allocation state
+- Modal now properly triggers allocation form via callback
+
+### 3. Bank Reconciliation - Report Modal Error
 
 **Problem**: Report button throwing error when clicked
 
