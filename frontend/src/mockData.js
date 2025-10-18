@@ -34,7 +34,7 @@ export const mockModules = [
     name: 'Financial',
     icon: 'Calculator',
     color: '#dc2626',
-    items: ['Financial Dashboard', 'Chart of Accounts', 'Journal Entry', 'Payment Entry', 'Financial Reports']
+    items: ['Financial Dashboard', 'Chart of Accounts', 'Journal Entry', 'Payment Entry', 'Bank Reconciliation', 'Financial Reports']
   },
   {
     id: 'crm',
