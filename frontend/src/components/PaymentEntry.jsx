@@ -941,7 +941,17 @@ const PaymentViewModal = ({ payment, onClose, formatCurrency, formatDate }) => {
           </div>
         </div>
         
-        <div className="p-6 border-t border-gray-200 flex justify-end">
+        <div className="p-6 border-t border-gray-200 flex justify-between">
+          <button
+            onClick={() => {
+              setAllocatingPayment(payment);
+              setShowAllocationForm(true);
+            }}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <DollarSign size={16} />
+            <span>Allocate Payment</span>
+          </button>
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
