@@ -303,12 +303,14 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
-  run_ui: false
+  test_sequence: 3
+  run_ui: true
 
 test_plan:
   current_focus:
-    - "All Payment Allocation and Bank Reconciliation tests completed successfully"
+    - "Bank Reconciliation Frontend Testing"
+    - "Payment Allocation Frontend Testing"
+    - "Navigation and Integration Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
