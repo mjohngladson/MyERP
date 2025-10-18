@@ -576,15 +576,18 @@ backend:
 
   - task: "General Settings - Extended for Bank Reconciliation & Payment Allocation"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/general_settings.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Extended financial settings in general_settings.py to include bank_reconciliation settings (supported_statement_formats, date_tolerance_days, amount_tolerance_percent, enable_auto_matching, enable_notifications) and payment_allocation settings (allow_partial_allocation, require_allocation_approval, auto_allocate_to_oldest). These settings control the behavior of both new modules."
+        - working: true
+          agent: "testing"
+          comment: "✅ GENERAL SETTINGS EXTENDED TESTING COMPLETED SUCCESSFULLY: Verified general settings API includes financial settings for Bank Reconciliation and Payment Allocation as requested in review. RESULTS: (1) ✅ BANK RECONCILIATION SETTINGS: GET /api/settings/general returns financial.bank_reconciliation with all required fields: supported_statement_formats=['CSV', 'Excel'], date_tolerance_days=3, amount_tolerance_percent=0.01, enable_auto_matching=True, enable_notifications=True. (2) ✅ PAYMENT ALLOCATION SETTINGS: GET /api/settings/general returns financial.payment_allocation with all required fields: allow_partial_allocation=True, require_allocation_approval=False, auto_allocate_to_oldest=True. (3) ✅ SETTINGS STRUCTURE: Verified complete financial settings structure exists in general settings response with proper nesting and data types. CRITICAL FINDING: General settings successfully extended with Bank Reconciliation and Payment Allocation configurations. Both Payment Allocation and Bank Reconciliation APIs correctly read and use these settings for their operations (date tolerance, amount tolerance, partial allocation rules)."
 
   - task: "Login Functionality - Authentication Endpoint Testing"
     implemented: true
