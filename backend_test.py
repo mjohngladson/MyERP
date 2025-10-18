@@ -10986,8 +10986,8 @@ class BackendTester:
             async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice2_payload) as response:
                 if response.status == 200:
                     invoice2_data = await response.json()
-                    invoice2_id = invoice2_data.get("id")
-                    self.log_test("Payment Allocation - Create Invoice ₹6000", True, f"Invoice created: {invoice2_data.get('invoice_number')}")
+                    invoice2_id = invoice2_data.get("invoice", {}).get("id")  # Invoice ID is nested
+                    self.log_test("Payment Allocation - Create Invoice ₹6000", True, f"Invoice created: {invoice2_data.get('message')}")
                 else:
                     self.log_test("Payment Allocation - Create Invoice ₹6000", False, f"HTTP {response.status}")
                     return False
@@ -11004,8 +11004,8 @@ class BackendTester:
             async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice3_payload) as response:
                 if response.status == 200:
                     invoice3_data = await response.json()
-                    invoice3_id = invoice3_data.get("id")
-                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice3_data.get('invoice_number')}")
+                    invoice3_id = invoice3_data.get("invoice", {}).get("id")  # Invoice ID is nested
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice3_data.get('message')}")
                 else:
                     self.log_test("Payment Allocation - Create Invoice ₹5000", False, f"HTTP {response.status}")
                     return False
