@@ -10854,17 +10854,700 @@ class BackendTester:
         print("\n" + "=" * 80)
         return passed, failed
 
+    async def test_payment_allocation_api(self):
+        """Test Payment Allocation API - Comprehensive CRUD and validation testing"""
+        try:
+            # First, login to get auth token
+            login_payload = {"email": "admin@gili.com", "password": "admin123"}
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=login_payload) as response:
+                if response.status != 200:
+                    self.log_test("Payment Allocation - Login", False, f"Login failed with HTTP {response.status}")
+                    return False
+                login_data = await response.json()
+                token = login_data.get("token")
+            
+            # Create test customer for payment and invoice
+            customer_payload = {
+                "name": "Test Customer Payment Allocation",
+                "email": "payment.test@example.com",
+                "phone": "+91 9876543210",
+                "company_id": "default_company"
+            }
+            async with self.session.post(f"{self.base_url}/api/sales/customers", json=customer_payload) as response:
+                if response.status == 200:
+                    customer_data = await response.json()
+                    customer_id = customer_data.get("id")
+                    self.log_test("Payment Allocation - Create Test Customer", True, f"Customer created: {customer_id}")
+                else:
+                    self.log_test("Payment Allocation - Create Test Customer", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1a: Create Payment (Receive, ₹5000)
+            payment_payload = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": customer_id,
+                "party_name": "Test Customer Payment Allocation",
+                "amount": 5000.0,
+                "payment_date": datetime.now(timezone.utc).isoformat(),
+                "payment_method": "Bank Transfer",
+                "status": "paid"
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment_payload) as response:
+                if response.status == 200:
+                    payment_data = await response.json()
+                    payment_id = payment_data.get("id")
+                    self.log_test("Payment Allocation - Create Payment ₹5000", True, f"Payment created: {payment_data.get('payment_number')}", payment_data)
+                else:
+                    self.log_test("Payment Allocation - Create Payment ₹5000", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1b: Create Invoice (₹5000)
+            invoice_payload = {
+                "customer_id": customer_id,
+                "customer_name": "Test Customer Payment Allocation",
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 5000}],
+                "tax_rate": 0,
+                "discount_amount": 0,
+                "status": "submitted"
+            }
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice_payload) as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    invoice_id = invoice_data.get("id")
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice_data.get('invoice_number')}", invoice_data)
+                else:
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1c: Allocate full amount (₹5000 to ₹5000 invoice)
+            allocation_payload = {
+                "payment_id": payment_id,
+                "allocations": [
+                    {"invoice_id": invoice_id, "allocated_amount": 5000.0, "notes": "Full payment allocation"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=allocation_payload) as response:
+                if response.status == 200:
+                    alloc_data = await response.json()
+                    if alloc_data.get("success") and alloc_data.get("unallocated_amount") == 0:
+                        allocation_id = alloc_data.get("allocations", [{}])[0].get("id")
+                        self.log_test("Payment Allocation - Full Allocation", True, f"Full allocation successful, unallocated: ₹{alloc_data.get('unallocated_amount')}", alloc_data)
+                    else:
+                        self.log_test("Payment Allocation - Full Allocation", False, f"Unexpected response: {alloc_data}", alloc_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Full Allocation", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 1d: Verify invoice status updated to Paid
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_check = await response.json()
+                    if invoice_check.get("payment_status") == "Paid":
+                        self.log_test("Payment Allocation - Invoice Status Update", True, f"Invoice status correctly updated to Paid", invoice_check)
+                    else:
+                        self.log_test("Payment Allocation - Invoice Status Update", False, f"Expected 'Paid', got '{invoice_check.get('payment_status')}'", invoice_check)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Invoice Status Update", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2a: Create Payment (Receive, ₹10000) for partial allocation test
+            payment2_payload = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": customer_id,
+                "party_name": "Test Customer Payment Allocation",
+                "amount": 10000.0,
+                "payment_date": datetime.now(timezone.utc).isoformat(),
+                "payment_method": "Cash",
+                "status": "paid"
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment2_payload) as response:
+                if response.status == 200:
+                    payment2_data = await response.json()
+                    payment2_id = payment2_data.get("id")
+                    self.log_test("Payment Allocation - Create Payment ₹10000", True, f"Payment created: {payment2_data.get('payment_number')}")
+                else:
+                    self.log_test("Payment Allocation - Create Payment ₹10000", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2b: Create Invoice 1 (₹6000)
+            invoice2_payload = {
+                "customer_id": customer_id,
+                "customer_name": "Test Customer Payment Allocation",
+                "items": [{"item_name": "Test Item A", "quantity": 1, "rate": 6000}],
+                "tax_rate": 0,
+                "discount_amount": 0,
+                "status": "submitted"
+            }
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice2_payload) as response:
+                if response.status == 200:
+                    invoice2_data = await response.json()
+                    invoice2_id = invoice2_data.get("id")
+                    self.log_test("Payment Allocation - Create Invoice ₹6000", True, f"Invoice created: {invoice2_data.get('invoice_number')}")
+                else:
+                    self.log_test("Payment Allocation - Create Invoice ₹6000", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2c: Create Invoice 2 (₹5000)
+            invoice3_payload = {
+                "customer_id": customer_id,
+                "customer_name": "Test Customer Payment Allocation",
+                "items": [{"item_name": "Test Item B", "quantity": 1, "rate": 5000}],
+                "tax_rate": 0,
+                "discount_amount": 0,
+                "status": "submitted"
+            }
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice3_payload) as response:
+                if response.status == 200:
+                    invoice3_data = await response.json()
+                    invoice3_id = invoice3_data.get("id")
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice3_data.get('invoice_number')}")
+                else:
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2d: Partial allocation (₹4000 to first invoice)
+            partial_alloc_payload = {
+                "payment_id": payment2_id,
+                "allocations": [
+                    {"invoice_id": invoice2_id, "allocated_amount": 4000.0, "notes": "Partial payment"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=partial_alloc_payload) as response:
+                if response.status == 200:
+                    partial_data = await response.json()
+                    if partial_data.get("success") and partial_data.get("unallocated_amount") == 6000.0:
+                        allocation2_id = partial_data.get("allocations", [{}])[0].get("id")
+                        self.log_test("Payment Allocation - Partial Allocation", True, f"Partial allocation successful, unallocated: ₹{partial_data.get('unallocated_amount')}", partial_data)
+                    else:
+                        self.log_test("Payment Allocation - Partial Allocation", False, f"Unexpected unallocated amount: {partial_data.get('unallocated_amount')}", partial_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Partial Allocation", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 2e: Verify invoice status updated to Partially Paid
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice2_id}") as response:
+                if response.status == 200:
+                    invoice2_check = await response.json()
+                    if invoice2_check.get("payment_status") == "Partially Paid":
+                        self.log_test("Payment Allocation - Partial Payment Status", True, f"Invoice status correctly updated to Partially Paid")
+                    else:
+                        self.log_test("Payment Allocation - Partial Payment Status", False, f"Expected 'Partially Paid', got '{invoice2_check.get('payment_status')}'")
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Partial Payment Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: Multiple allocations (allocate remaining ₹6000 to two invoices)
+            multi_alloc_payload = {
+                "payment_id": payment2_id,
+                "allocations": [
+                    {"invoice_id": invoice2_id, "allocated_amount": 2000.0, "notes": "Complete first invoice"},
+                    {"invoice_id": invoice3_id, "allocated_amount": 4000.0, "notes": "Partial second invoice"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=multi_alloc_payload) as response:
+                if response.status == 200:
+                    multi_data = await response.json()
+                    if multi_data.get("success") and len(multi_data.get("allocations", [])) == 2:
+                        allocation3_id = multi_data.get("allocations", [{}])[1].get("id")
+                        self.log_test("Payment Allocation - Multiple Allocations", True, f"Multiple allocations successful, allocated to 2 invoices", multi_data)
+                    else:
+                        self.log_test("Payment Allocation - Multiple Allocations", False, f"Expected 2 allocations, got {len(multi_data.get('allocations', []))}", multi_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Multiple Allocations", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Validation - Allocation exceeds payment amount
+            exceed_payment_payload = {
+                "payment_id": payment2_id,
+                "allocations": [
+                    {"invoice_id": invoice3_id, "allocated_amount": 5000.0, "notes": "Should fail - exceeds available"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=exceed_payment_payload) as response:
+                if response.status == 400:
+                    error_data = await response.json()
+                    if "exceed" in error_data.get("detail", "").lower():
+                        self.log_test("Payment Allocation - Validation: Exceeds Payment", True, f"Correctly rejected allocation exceeding payment amount", error_data)
+                    else:
+                        self.log_test("Payment Allocation - Validation: Exceeds Payment", False, f"Wrong error message: {error_data.get('detail')}", error_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Validation: Exceeds Payment", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+            
+            # Test 5: Validation - Allocation exceeds invoice outstanding
+            exceed_invoice_payload = {
+                "payment_id": payment_id,  # Already fully allocated
+                "allocations": [
+                    {"invoice_id": invoice_id, "allocated_amount": 1000.0, "notes": "Should fail - invoice already paid"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=exceed_invoice_payload) as response:
+                if response.status == 400:
+                    error_data = await response.json()
+                    if "exceed" in error_data.get("detail", "").lower() or "outstanding" in error_data.get("detail", "").lower():
+                        self.log_test("Payment Allocation - Validation: Exceeds Invoice Outstanding", True, f"Correctly rejected allocation exceeding invoice outstanding", error_data)
+                    else:
+                        self.log_test("Payment Allocation - Validation: Exceeds Invoice Outstanding", False, f"Wrong error message: {error_data.get('detail')}", error_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Validation: Exceeds Invoice Outstanding", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+            
+            # Test 6: Validation - Party mismatch (create different customer)
+            customer2_payload = {
+                "name": "Different Customer",
+                "email": "different.customer@example.com",
+                "phone": "+91 9876543211",
+                "company_id": "default_company"
+            }
+            async with self.session.post(f"{self.base_url}/api/sales/customers", json=customer2_payload) as response:
+                if response.status == 200:
+                    customer2_data = await response.json()
+                    customer2_id = customer2_data.get("id")
+                else:
+                    self.log_test("Payment Allocation - Create Different Customer", False, f"HTTP {response.status}")
+                    return False
+            
+            invoice4_payload = {
+                "customer_id": customer2_id,
+                "customer_name": "Different Customer",
+                "items": [{"item_name": "Test Item", "quantity": 1, "rate": 1000}],
+                "tax_rate": 0,
+                "discount_amount": 0,
+                "status": "submitted"
+            }
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice4_payload) as response:
+                if response.status == 200:
+                    invoice4_data = await response.json()
+                    invoice4_id = invoice4_data.get("id")
+                else:
+                    self.log_test("Payment Allocation - Create Invoice for Different Customer", False, f"HTTP {response.status}")
+                    return False
+            
+            mismatch_payload = {
+                "payment_id": payment_id,  # Payment for customer 1
+                "allocations": [
+                    {"invoice_id": invoice4_id, "allocated_amount": 1000.0, "notes": "Should fail - different customer"}
+                ]
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=mismatch_payload) as response:
+                if response.status == 400:
+                    error_data = await response.json()
+                    if "customer" in error_data.get("detail", "").lower() or "party" in error_data.get("detail", "").lower() or "match" in error_data.get("detail", "").lower():
+                        self.log_test("Payment Allocation - Validation: Party Mismatch", True, f"Correctly rejected party mismatch", error_data)
+                    else:
+                        self.log_test("Payment Allocation - Validation: Party Mismatch", False, f"Wrong error message: {error_data.get('detail')}", error_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Validation: Party Mismatch", False, f"Expected HTTP 400, got {response.status}")
+                    return False
+            
+            # Test 7: GET /api/financial/payment-allocation/payments/{id}/allocations
+            async with self.session.get(f"{self.base_url}/api/financial/payment-allocation/payments/{payment2_id}/allocations") as response:
+                if response.status == 200:
+                    alloc_list = await response.json()
+                    if "allocations" in alloc_list and len(alloc_list.get("allocations", [])) == 3:
+                        self.log_test("Payment Allocation - Get Payment Allocations", True, f"Retrieved {len(alloc_list.get('allocations', []))} allocations for payment", alloc_list)
+                    else:
+                        self.log_test("Payment Allocation - Get Payment Allocations", False, f"Expected 3 allocations, got {len(alloc_list.get('allocations', []))}", alloc_list)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Get Payment Allocations", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 8: GET /api/financial/payment-allocation/invoices/{id}/payments
+            async with self.session.get(f"{self.base_url}/api/financial/payment-allocation/invoices/{invoice2_id}/payments") as response:
+                if response.status == 200:
+                    invoice_payments = await response.json()
+                    if "allocations" in invoice_payments and invoice_payments.get("outstanding_amount") == 0:
+                        self.log_test("Payment Allocation - Get Invoice Payments", True, f"Retrieved payments for invoice, outstanding: ₹{invoice_payments.get('outstanding_amount')}", invoice_payments)
+                    else:
+                        self.log_test("Payment Allocation - Get Invoice Payments", False, f"Unexpected outstanding amount: {invoice_payments.get('outstanding_amount')}", invoice_payments)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Get Invoice Payments", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 9: PUT /api/financial/payment-allocation/allocations/{id} - Update allocation
+            update_alloc_payload = {
+                "allocated_amount": 3000.0  # Decrease from 4000 to 3000
+            }
+            async with self.session.put(f"{self.base_url}/api/financial/payment-allocation/allocations/{allocation3_id}", json=update_alloc_payload) as response:
+                if response.status == 200:
+                    update_data = await response.json()
+                    if update_data.get("success"):
+                        self.log_test("Payment Allocation - Update Allocation", True, f"Allocation updated successfully", update_data)
+                    else:
+                        self.log_test("Payment Allocation - Update Allocation", False, f"Update failed: {update_data}", update_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Update Allocation", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 10: DELETE /api/financial/payment-allocation/allocations/{id}
+            async with self.session.delete(f"{self.base_url}/api/financial/payment-allocation/allocations/{allocation2_id}") as response:
+                if response.status == 200:
+                    delete_data = await response.json()
+                    if delete_data.get("success"):
+                        self.log_test("Payment Allocation - Delete Allocation", True, f"Allocation deleted successfully", delete_data)
+                    else:
+                        self.log_test("Payment Allocation - Delete Allocation", False, f"Delete failed: {delete_data}", delete_data)
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Delete Allocation", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 11: Verify invoice status reverted after deletion
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice2_id}") as response:
+                if response.status == 200:
+                    invoice_revert = await response.json()
+                    if invoice_revert.get("payment_status") == "Partially Paid":
+                        self.log_test("Payment Allocation - Invoice Status Revert", True, f"Invoice status correctly reverted to Partially Paid after deletion")
+                    else:
+                        self.log_test("Payment Allocation - Invoice Status Revert", False, f"Expected 'Partially Paid', got '{invoice_revert.get('payment_status')}'")
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Invoice Status Revert", False, f"HTTP {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Payment Allocation API", False, f"Critical error: {str(e)}")
+            return False
+    
+    async def test_bank_reconciliation_api(self):
+        """Test Bank Reconciliation API - Comprehensive testing"""
+        try:
+            # Test 1: POST /api/financial/bank/upload-statement - Upload CSV
+            csv_content = """Date,Description,Reference,Debit,Credit,Balance
+2024-01-15,Payment received,REF001,0,5000.00,15000.00
+2024-01-16,Supplier payment,REF002,3000.00,0,12000.00
+2024-01-17,Cash deposit,REF003,0,2000.00,14000.00"""
+            
+            # Create a file-like object
+            csv_file = io.BytesIO(csv_content.encode('utf-8'))
+            
+            # Create form data
+            form_data = aiohttp.FormData()
+            form_data.add_field('file', csv_file, filename='test_statement.csv', content_type='text/csv')
+            form_data.add_field('bank_account_id', 'test_bank_account')
+            form_data.add_field('bank_name', 'Test Bank')
+            
+            async with self.session.post(f"{self.base_url}/api/financial/bank/upload-statement", data=form_data) as response:
+                if response.status == 200:
+                    upload_data = await response.json()
+                    if upload_data.get("success") and "statement" in upload_data:
+                        statement_id = upload_data.get("statement", {}).get("id")
+                        total_transactions = upload_data.get("statement", {}).get("total_transactions")
+                        if total_transactions == 3:
+                            self.log_test("Bank Reconciliation - Upload Statement", True, f"Statement uploaded with {total_transactions} transactions", upload_data)
+                        else:
+                            self.log_test("Bank Reconciliation - Upload Statement", False, f"Expected 3 transactions, got {total_transactions}", upload_data)
+                            return False
+                    else:
+                        self.log_test("Bank Reconciliation - Upload Statement", False, f"Unexpected response structure", upload_data)
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Bank Reconciliation - Upload Statement", False, f"HTTP {response.status}: {error_text}")
+                    return False
+            
+            # Test 2: GET /api/financial/bank/statements - List statements
+            async with self.session.get(f"{self.base_url}/api/financial/bank/statements") as response:
+                if response.status == 200:
+                    statements_data = await response.json()
+                    if "statements" in statements_data and len(statements_data.get("statements", [])) > 0:
+                        self.log_test("Bank Reconciliation - List Statements", True, f"Retrieved {len(statements_data.get('statements', []))} statements", statements_data)
+                    else:
+                        self.log_test("Bank Reconciliation - List Statements", False, f"No statements found", statements_data)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - List Statements", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 3: GET /api/financial/bank/statements/{id} - Get statement details
+            async with self.session.get(f"{self.base_url}/api/financial/bank/statements/{statement_id}") as response:
+                if response.status == 200:
+                    statement_details = await response.json()
+                    if "transactions" in statement_details and len(statement_details.get("transactions", [])) == 3:
+                        self.log_test("Bank Reconciliation - Get Statement Details", True, f"Retrieved statement with {len(statement_details.get('transactions', []))} transactions", statement_details)
+                    else:
+                        self.log_test("Bank Reconciliation - Get Statement Details", False, f"Expected 3 transactions, got {len(statement_details.get('transactions', []))}", statement_details)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - Get Statement Details", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 4: Create matching payment entry for auto-match
+            payment_date = datetime(2024, 1, 15, tzinfo=timezone.utc)
+            payment_payload = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": "test_customer_id",
+                "party_name": "Test Customer",
+                "amount": 5000.0,
+                "payment_date": payment_date.isoformat(),
+                "payment_method": "Bank Transfer",
+                "status": "paid"
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment_payload) as response:
+                if response.status == 200:
+                    payment_data = await response.json()
+                    payment_id = payment_data.get("id")
+                    self.log_test("Bank Reconciliation - Create Matching Payment", True, f"Payment created for auto-match test", payment_data)
+                else:
+                    self.log_test("Bank Reconciliation - Create Matching Payment", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 5: POST /api/financial/bank/auto-match - Auto-match transactions
+            auto_match_payload = {
+                "statement_id": statement_id
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/bank/auto-match", json=auto_match_payload) as response:
+                if response.status == 200:
+                    match_data = await response.json()
+                    if match_data.get("success") and match_data.get("matched_count") >= 0:
+                        self.log_test("Bank Reconciliation - Auto Match", True, f"Auto-matched {match_data.get('matched_count')} transactions", match_data)
+                    else:
+                        self.log_test("Bank Reconciliation - Auto Match", False, f"Unexpected response: {match_data}", match_data)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - Auto Match", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 6: GET /api/financial/bank/unmatched - List unmatched transactions
+            async with self.session.get(f"{self.base_url}/api/financial/bank/unmatched?statement_id={statement_id}") as response:
+                if response.status == 200:
+                    unmatched_data = await response.json()
+                    if "transactions" in unmatched_data:
+                        unmatched_count = len(unmatched_data.get("transactions", []))
+                        self.log_test("Bank Reconciliation - Get Unmatched", True, f"Retrieved {unmatched_count} unmatched transactions", unmatched_data)
+                        
+                        # Get first unmatched transaction for manual match test
+                        if unmatched_count > 0:
+                            unmatched_txn_id = unmatched_data.get("transactions", [{}])[0].get("id")
+                        else:
+                            unmatched_txn_id = None
+                    else:
+                        self.log_test("Bank Reconciliation - Get Unmatched", False, f"Invalid response structure", unmatched_data)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - Get Unmatched", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 7: POST /api/financial/bank/manual-match - Manual match
+            if unmatched_txn_id:
+                manual_match_payload = {
+                    "transaction_id": unmatched_txn_id,
+                    "entry_id": payment_id,
+                    "entry_type": "payment"
+                }
+                async with self.session.post(f"{self.base_url}/api/financial/bank/manual-match", json=manual_match_payload) as response:
+                    if response.status == 200:
+                        manual_match_data = await response.json()
+                        if manual_match_data.get("success"):
+                            self.log_test("Bank Reconciliation - Manual Match", True, f"Transaction manually matched", manual_match_data)
+                        else:
+                            self.log_test("Bank Reconciliation - Manual Match", False, f"Manual match failed: {manual_match_data}", manual_match_data)
+                            return False
+                    else:
+                        self.log_test("Bank Reconciliation - Manual Match", False, f"HTTP {response.status}")
+                        return False
+            else:
+                self.log_test("Bank Reconciliation - Manual Match", True, f"Skipped - no unmatched transactions available")
+            
+            # Test 8: GET /api/financial/bank/reconciliation-report - Get reconciliation report
+            async with self.session.get(f"{self.base_url}/api/financial/bank/reconciliation-report?statement_id={statement_id}") as response:
+                if response.status == 200:
+                    report_data = await response.json()
+                    if "summary" in report_data and "matched_transactions" in report_data and "unmatched_transactions" in report_data:
+                        summary = report_data.get("summary", {})
+                        self.log_test("Bank Reconciliation - Reconciliation Report", True, f"Report generated: {summary.get('matched_count')} matched, {summary.get('unmatched_count')} unmatched", report_data)
+                    else:
+                        self.log_test("Bank Reconciliation - Reconciliation Report", False, f"Invalid report structure", report_data)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - Reconciliation Report", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 9: POST /api/financial/bank/unmatch - Unmatch transaction
+            if unmatched_txn_id:
+                unmatch_payload = {
+                    "transaction_id": unmatched_txn_id
+                }
+                async with self.session.post(f"{self.base_url}/api/financial/bank/unmatch", json=unmatch_payload) as response:
+                    if response.status == 200:
+                        unmatch_data = await response.json()
+                        if unmatch_data.get("success"):
+                            self.log_test("Bank Reconciliation - Unmatch Transaction", True, f"Transaction unmatched successfully", unmatch_data)
+                        else:
+                            self.log_test("Bank Reconciliation - Unmatch Transaction", False, f"Unmatch failed: {unmatch_data}", unmatch_data)
+                            return False
+                    else:
+                        self.log_test("Bank Reconciliation - Unmatch Transaction", False, f"HTTP {response.status}")
+                        return False
+            else:
+                self.log_test("Bank Reconciliation - Unmatch Transaction", True, f"Skipped - no matched transactions available")
+            
+            # Test 10: DELETE /api/financial/bank/statements/{id} - Delete statement
+            async with self.session.delete(f"{self.base_url}/api/financial/bank/statements/{statement_id}") as response:
+                if response.status == 200:
+                    delete_data = await response.json()
+                    if delete_data.get("success"):
+                        self.log_test("Bank Reconciliation - Delete Statement", True, f"Statement deleted successfully", delete_data)
+                    else:
+                        self.log_test("Bank Reconciliation - Delete Statement", False, f"Delete failed: {delete_data}", delete_data)
+                        return False
+                else:
+                    self.log_test("Bank Reconciliation - Delete Statement", False, f"HTTP {response.status}")
+                    return False
+            
+            # Test 11: Verify transactions removed after statement deletion
+            async with self.session.get(f"{self.base_url}/api/financial/bank/statements/{statement_id}") as response:
+                if response.status == 404:
+                    self.log_test("Bank Reconciliation - Verify Statement Deleted", True, f"Statement correctly deleted (404)")
+                else:
+                    self.log_test("Bank Reconciliation - Verify Statement Deleted", False, f"Expected HTTP 404, got {response.status}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Bank Reconciliation API", False, f"Critical error: {str(e)}")
+            return False
+    
+    async def test_general_settings_extended(self):
+        """Test General Settings API - Verify financial settings exist"""
+        try:
+            # Test: GET /api/settings/general
+            async with self.session.get(f"{self.base_url}/api/settings/general") as response:
+                if response.status == 200:
+                    settings_data = await response.json()
+                    
+                    # Check if financial settings exist
+                    if "financial" in settings_data:
+                        financial_settings = settings_data.get("financial", {})
+                        
+                        # Check bank_reconciliation settings
+                        if "bank_reconciliation" in financial_settings:
+                            bank_recon = financial_settings.get("bank_reconciliation", {})
+                            if "date_tolerance_days" in bank_recon and "amount_tolerance_percent" in bank_recon:
+                                self.log_test("General Settings - Bank Reconciliation Settings", True, f"Bank reconciliation settings exist: date_tolerance={bank_recon.get('date_tolerance_days')}, amount_tolerance={bank_recon.get('amount_tolerance_percent')}", bank_recon)
+                            else:
+                                self.log_test("General Settings - Bank Reconciliation Settings", False, f"Missing bank reconciliation settings fields", bank_recon)
+                                return False
+                        else:
+                            self.log_test("General Settings - Bank Reconciliation Settings", False, f"bank_reconciliation settings not found in financial settings")
+                            return False
+                        
+                        # Check payment_allocation settings
+                        if "payment_allocation" in financial_settings:
+                            payment_alloc = financial_settings.get("payment_allocation", {})
+                            if "allow_partial_allocation" in payment_alloc:
+                                self.log_test("General Settings - Payment Allocation Settings", True, f"Payment allocation settings exist: allow_partial={payment_alloc.get('allow_partial_allocation')}", payment_alloc)
+                            else:
+                                self.log_test("General Settings - Payment Allocation Settings", False, f"Missing payment allocation settings fields", payment_alloc)
+                                return False
+                        else:
+                            self.log_test("General Settings - Payment Allocation Settings", False, f"payment_allocation settings not found in financial settings")
+                            return False
+                        
+                        return True
+                    else:
+                        self.log_test("General Settings - Financial Settings", False, f"financial settings not found in general settings", settings_data)
+                        return False
+                else:
+                    self.log_test("General Settings Extended", False, f"HTTP {response.status}")
+                    return False
+        
+        except Exception as e:
+            self.log_test("General Settings Extended", False, f"Critical error: {str(e)}")
+            return False
+    
+    async def run_payment_allocation_bank_reconciliation_tests(self):
+        """Run Payment Allocation and Bank Reconciliation API tests"""
+        print("\n" + "=" * 80)
+        print("🧪 PAYMENT ALLOCATION & BANK RECONCILIATION API TESTING")
+        print("=" * 80)
+        print("Testing comprehensive backend APIs for:")
+        print("   1. Payment Allocation API (/api/financial/payment-allocation)")
+        print("   2. Bank Reconciliation API (/api/financial/bank)")
+        print("   3. General Settings Extended Testing")
+        print("=" * 80)
+        
+        # Tests to run
+        tests_to_run = [
+            self.test_health_check,                           # Basic API health check
+            self.test_payment_allocation_api,                 # Payment Allocation comprehensive tests
+            self.test_bank_reconciliation_api,                # Bank Reconciliation comprehensive tests
+            self.test_general_settings_extended,              # General Settings extended tests
+        ]
+        
+        passed = 0
+        failed = 0
+        
+        # Run tests
+        for test in tests_to_run:
+            try:
+                result = await test()
+                if result:
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                self.log_test(test.__name__, False, f"Test crashed: {str(e)}")
+                failed += 1
+            print("-" * 40)
+        
+        # Print summary
+        total = passed + failed
+        print("\n" + "=" * 80)
+        print("📊 PAYMENT ALLOCATION & BANK RECONCILIATION TEST SUMMARY")
+        print("=" * 80)
+        print(f"✅ Passed: {passed}")
+        print(f"❌ Failed: {failed}")
+        print(f"📈 Success Rate: {(passed/total*100):.1f}%" if total > 0 else "No tests run")
+        
+        # Detailed results
+        payment_tests = [r for r in self.test_results if "Payment Allocation" in r["test"] or "Bank Reconciliation" in r["test"] or "General Settings" in r["test"]]
+        
+        if payment_tests:
+            print(f"\n🔍 DETAILED TEST RESULTS ({len(payment_tests)} tests):")
+            for result in payment_tests:
+                status = "✅ PASS" if result["success"] else "❌ FAIL"
+                print(f"   {status} - {result['test']}")
+                if not result["success"]:
+                    print(f"      └─ {result['details']}")
+        
+        if failed > 0:
+            print("\n🚨 FAILED TESTS SUMMARY:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"   ❌ {result['test']}: {result['details']}")
+        
+        print("\n" + "=" * 80)
+        return passed, failed
+
 async def main():
-    """Main function to run Workflow Automation Tests"""
+    """Main function to run Payment Allocation and Bank Reconciliation Tests"""
     async with BackendTester() as tester:
-        # Run workflow automation tests as requested in review
-        passed, failed = await tester.run_workflow_tests()
+        # Run payment allocation and bank reconciliation tests as requested in review
+        passed, failed = await tester.run_payment_allocation_bank_reconciliation_tests()
         
         if failed == 0:
-            print("🎉 Workflow Automation Tests PASSED!")
+            print("🎉 Payment Allocation & Bank Reconciliation Tests PASSED!")
             return 0
         else:
-            print("💥 Workflow Automation Tests detected critical issues!")
+            print("💥 Payment Allocation & Bank Reconciliation Tests detected critical issues!")
             return 1
 
 if __name__ == "__main__":
