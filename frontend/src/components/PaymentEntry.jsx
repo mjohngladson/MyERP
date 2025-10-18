@@ -9,9 +9,11 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Filter,
-  Download
+  Download,
+  DollarSign
 } from 'lucide-react';
 import { api } from '../services/api';
+import PaymentAllocationForm from './PaymentAllocationForm';
 
 const PaymentEntry = ({ onNavigate }) => {
   const [payments, setPayments] = useState([]);
