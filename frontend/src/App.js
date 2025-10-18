@@ -230,6 +230,8 @@ function AppContent() {
             setActiveModule('financial');
           }
         }} />;
+      case 'financial-bank-reconciliation':
+        return <BankReconciliation onBack={() => setActiveModule('financial')} />;
 
       default:
         return <Dashboard />;
