@@ -10915,8 +10915,8 @@ class BackendTester:
             async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice_payload) as response:
                 if response.status == 200:
                     invoice_data = await response.json()
-                    invoice_id = invoice_data.get("id")
-                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice_data.get('invoice_number')}", invoice_data)
+                    invoice_id = invoice_data.get("invoice", {}).get("id")  # Invoice ID is nested in invoice object
+                    self.log_test("Payment Allocation - Create Invoice ₹5000", True, f"Invoice created: {invoice_data.get('message')}", invoice_data)
                 else:
                     self.log_test("Payment Allocation - Create Invoice ₹5000", False, f"HTTP {response.status}")
                     return False
