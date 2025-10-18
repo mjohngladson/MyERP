@@ -194,6 +194,7 @@ function AppContent() {
             '/financial/journal-entries': 'financial-journal-entries',
             '/financial/payments': 'financial-payments',
             '/financial/reports': 'financial-reports',
+            '/financial/bank-reconciliation': 'financial-bank-reconciliation',
             '/financial/settings': 'financial-settings'
           };
           const key = routes[path];
