@@ -10874,7 +10874,7 @@ class BackendTester:
                 "phone": "+91 9876543210",
                 "company_id": "default_company"
             }
-            async with self.session.post(f"{self.base_url}/api/sales/customers", json=customer_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/master/customers", json=customer_payload) as response:
                 if response.status == 200:
                     customer_data = await response.json()
                     customer_id = customer_data.get("id")
