@@ -541,6 +541,10 @@ const PaymentEntry = ({ onNavigate }) => {
         <PaymentViewModal
           payment={viewingPayment}
           onClose={() => setViewingPayment(null)}
+          onAllocate={(payment) => {
+            setAllocatingPayment(payment);
+            setShowAllocationForm(true);
+          }}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
         />
