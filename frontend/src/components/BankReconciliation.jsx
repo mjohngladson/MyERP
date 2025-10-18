@@ -178,10 +178,17 @@ const BankReconciliation = ({ onBack }) => {
       const res = await fetch(`${base}/api/financial/bank/reconciliation-report?statement_id=${selectedStatement.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Failed to load report');
+      }
+      
       const data = await res.json();
       setReport(data);
     } catch (err) {
       console.error('Failed to load report:', err);
+      alert(`Error loading report: ${err.message}`);
     } finally {
       setLoading(false);
     }
