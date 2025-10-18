@@ -43,7 +43,7 @@ app.add_middleware(
     allow_origins=[
         "*",  # ❌ Doesn't work with allow_credentials=True
         "https://ui-production-ccf6.up.railway.app",
-        "https://erp-nextgen.preview.emergentagent.com",
+        "https://retail-nexus-18.preview.emergentagent.com",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,7 +57,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_origins=[
         "https://ui-production-ccf6.up.railway.app",  # ✅ Your Railway frontend
-        "https://erp-nextgen.preview.emergentagent.com",  # Development frontend
+        "https://retail-nexus-18.preview.emergentagent.com",  # Development frontend
         "http://localhost:3000",  # Local development
         "http://127.0.0.1:3000",  # Local development
     ],

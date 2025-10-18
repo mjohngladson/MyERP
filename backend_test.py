@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 # Get backend URL from environment - Use the same URL as frontend
-BACKEND_URL = "https://erp-nextgen.preview.emergentagent.com"
+BACKEND_URL = "https://retail-nexus-18.preview.emergentagent.com"
 
 class BackendTester:
     def __init__(self):

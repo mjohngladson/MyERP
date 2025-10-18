@@ -10,13 +10,13 @@ Switched frontend and API URLs from Preview (Emergent Platform) to Railway Produ
 ### 1. Frontend .env File
 **File:** `/app/frontend/.env`
 **Change:** 
-- **Before:** `REACT_APP_BACKEND_URL=https://erp-nextgen.preview.emergentagent.com`
+- **Before:** `REACT_APP_BACKEND_URL=https://retail-nexus-18.preview.emergentagent.com`
 - **After:** `REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app`
 
 ### 2. Supervisor Configuration
 **File:** `/etc/supervisor/conf.d/supervisord.conf`
 **Change:** Line 15 environment variable
-- **Before:** `REACT_APP_BACKEND_URL="https://erp-nextgen.preview.emergentagent.com"`
+- **Before:** `REACT_APP_BACKEND_URL="https://retail-nexus-18.preview.emergentagent.com"`
 - **After:** `REACT_APP_BACKEND_URL="https://myerp-production.up.railway.app"`
 
 ## Verification Steps Completed
