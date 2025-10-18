@@ -1,0 +1,9 @@
+Date,Description,Reference,Debit,Credit,Balance
+2024-01-15,Payment received from customer,REF001,0,5000.00,15000.00
+2024-01-16,Supplier payment,REF002,3000.00,0,12000.00
+2024-01-17,Cash deposit,REF003,0,2000.00,14000.00
+2024-01-18,Office rent payment,REF004,1500.00,0,12500.00
+2024-01-19,Customer payment,REF005,0,3500.00,16000.00
+2024-01-20,Utility bill,REF006,800.00,0,15200.00
+2024-01-21,Sales revenue,REF007,0,4200.00,19400.00
+2024-01-22,Equipment purchase,REF008,2500.00,0,16900.00
