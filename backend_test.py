@@ -11102,7 +11102,7 @@ class BackendTester:
                     self.log_test("Payment Allocation - Validation: Exceeds Invoice Outstanding", False, f"Expected HTTP 400, got {response.status}")
                     return False
             
-            # Test 6: Validation - Party mismatch (create different customer)
+            # Test 6: Validation - Party mismatch (create different customer and new payment)
             customer2_payload = {
                 "name": "Different Customer",
                 "email": "different.customer@example.com",
@@ -11117,8 +11117,27 @@ class BackendTester:
                     self.log_test("Payment Allocation - Create Different Customer", False, f"HTTP {response.status}")
                     return False
             
+            # Create a new payment for customer 1 to test party mismatch
+            payment3_payload = {
+                "payment_type": "Receive",
+                "party_type": "Customer",
+                "party_id": customer_id,  # Customer 1
+                "party_name": "Test Customer Payment Allocation",
+                "amount": 2000.0,
+                "payment_date": datetime.now(timezone.utc).isoformat(),
+                "payment_method": "Cash",
+                "status": "paid"
+            }
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment3_payload) as response:
+                if response.status == 200:
+                    payment3_data = await response.json()
+                    payment3_id = payment3_data.get("payment_id")
+                else:
+                    self.log_test("Payment Allocation - Create Payment for Party Mismatch Test", False, f"HTTP {response.status}")
+                    return False
+            
             invoice4_payload = {
-                "customer_id": customer2_id,
+                "customer_id": customer2_id,  # Customer 2
                 "customer_name": "Different Customer",
                 "items": [{"item_name": "Test Item", "quantity": 1, "rate": 1000}],
                 "tax_rate": 0,
@@ -11134,7 +11153,7 @@ class BackendTester:
                     return False
             
             mismatch_payload = {
-                "payment_id": payment_id,  # Payment for customer 1
+                "payment_id": payment3_id,  # Payment for customer 1
                 "allocations": [
                     {"invoice_id": invoice4_id, "allocated_amount": 1000.0, "notes": "Should fail - different customer"}
                 ]
