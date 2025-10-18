@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Upload, RefreshCw, FileText, CheckCircle, XCircle, AlertCircle, 
-  ChevronLeft, Download, Trash2, Eye, Filter 
+  ChevronLeft, Download, Trash2, Eye, Filter, X 
 } from 'lucide-react';
 
 const BankReconciliation = ({ onBack }) => {
