@@ -545,6 +545,22 @@ const PaymentEntry = ({ onNavigate }) => {
           formatDate={formatDate}
         />
       )}
+
+      {/* Payment Allocation Modal */}
+      {showAllocationForm && allocatingPayment && (
+        <PaymentAllocationForm
+          payment={allocatingPayment}
+          onClose={() => {
+            setShowAllocationForm(false);
+            setAllocatingPayment(null);
+          }}
+          onSuccess={() => {
+            setShowAllocationForm(false);
+            setAllocatingPayment(null);
+            loadData(); // Reload payments to reflect updated allocations
+          }}
+        />
+      )}
     </div>
   );
 };
