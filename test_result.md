@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Modify workflow so that automatic document conversions and journal entries (SQ→SO, SO→SI, SI→Payment+JE, PO→PI, PI→Payment+JE, DN→JE, CN→JE) happen when documents are created directly with status='submitted', not just when updating from draft to submitted."
+user_problem_statement: "Implement Payment-Invoice Allocation feature and Bank Reconciliation module with settings-based configuration."
 
 frontend:
   - task: "Financial Management System Frontend Integration"
