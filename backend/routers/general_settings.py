@@ -41,7 +41,19 @@ DEFAULTS: Dict[str, Any] = {
         "gst_categories": ["Taxable", "Exempt", "Zero Rated", "Nil Rated"],
         "gstin": "",
         "auto_create_accounts": True,
-        "default_payment_terms": "Net 30"
+        "default_payment_terms": "Net 30",
+        "bank_reconciliation": {
+            "supported_statement_formats": ["CSV", "Excel"],
+            "date_tolerance_days": 3,
+            "amount_tolerance_percent": 0.01,
+            "enable_auto_matching": True,
+            "enable_notifications": True
+        },
+        "payment_allocation": {
+            "allow_partial_allocation": True,
+            "require_allocation_approval": False,
+            "auto_allocate_to_oldest": True
+        }
     },
     "currencies": [
         {"code": "INR", "name": "Indian Rupee", "symbol": "₹", "rate": 1.0, "is_base": True},
