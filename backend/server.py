@@ -136,6 +136,8 @@ app.include_router(master_data_router)
 app.include_router(credit_notes_router)
 app.include_router(debit_notes_router)
 app.include_router(get_financial_router())
+app.include_router(payment_allocation_router)
+app.include_router(bank_reconciliation_router)
 app.include_router(get_pos_router())
 
 # Configure logging
