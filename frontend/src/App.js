@@ -39,6 +39,7 @@ import ChartOfAccounts from './components/ChartOfAccounts';
 import JournalEntries from './components/JournalEntries';
 import PaymentEntry from './components/PaymentEntry';
 import FinancialReports from './components/FinancialReports';
+import BankReconciliation from './components/BankReconciliation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
