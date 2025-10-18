@@ -541,6 +541,43 @@ backend:
           agent: "testing"
           comment: "✅ ENHANCED SEARCH NAVIGATION TESTING COMPLETED SUCCESSFULLY: Conducted comprehensive testing of enhanced search suggestions endpoint to verify it includes suggestions from all relevant collections as requested in review. RESULTS: (1) ✅ Suggestions Structure: Search suggestions return proper structure with text, type, and category fields (2) ✅ Multiple Collections: Successfully retrieves suggestions from multiple collections: Customers, Suppliers, Items (3) ✅ Category Support: Properly categorizes suggestions (Customers, Suppliers, Items categories found) (4) ✅ Query Support: Supports various query types (Customer, Supplier, Product, Item) with appropriate results (5) ✅ Collection Types: Returns suggestions with proper types: customer, supplier, item (6) ✅ Response Quality: Suggestions working correctly with proper count limits and structure. CRITICAL FINDING: Enhanced search suggestions successfully include suggestions from all relevant collections and provide proper navigation support as requested."
 
+
+  - task: "Payment Allocation API - Allocate payments to invoices"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/payment_allocation.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented Payment Allocation API with endpoints: POST /api/financial/payment-allocation/allocate (allocate payment to invoices), GET /api/financial/payment-allocation/payments/{id}/allocations (view payment allocations), GET /api/financial/payment-allocation/invoices/{id}/payments (view invoice payments), DELETE /api/financial/payment-allocation/allocations/{id} (delete allocation), PUT /api/financial/payment-allocation/allocations/{id} (update allocation). Features: validates allocation amounts don't exceed payment or invoice totals, updates invoice payment status (Paid/Partially Paid/Unpaid), tracks unallocated amount on payments, respects settings for partial allocation and multi-currency support."
+
+  - task: "Bank Reconciliation API - Upload and match bank statements"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/bank_reconciliation.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented Bank Reconciliation API with endpoints: POST /api/financial/bank/upload-statement (upload CSV bank statement), GET /api/financial/bank/statements (list statements), GET /api/financial/bank/statements/{id} (view statement details), POST /api/financial/bank/auto-match (auto-match transactions with payments/journal entries), POST /api/financial/bank/manual-match (manually match transaction), GET /api/financial/bank/unmatched (list unmatched transactions), GET /api/financial/bank/reconciliation-report (reconciliation summary), DELETE /api/financial/bank/statements/{id} (delete statement), POST /api/financial/bank/unmatch (unmatch transaction). Features: parses CSV with multiple date/amount formats, auto-matching uses date and amount tolerance from settings, tracks matched/unmatched counts, supports manual matching with payments or journal entries."
+
+  - task: "General Settings - Extended for Bank Reconciliation & Payment Allocation"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/general_settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Extended financial settings in general_settings.py to include bank_reconciliation settings (supported_statement_formats, date_tolerance_days, amount_tolerance_percent, enable_auto_matching, enable_notifications) and payment_allocation settings (allow_partial_allocation, require_allocation_approval, auto_allocate_to_oldest). These settings control the behavior of both new modules."
+
   - task: "Login Functionality - Authentication Endpoint Testing"
     implemented: true
     working: true
