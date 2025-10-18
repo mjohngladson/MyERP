@@ -19,11 +19,17 @@ const PaymentAllocationForm = ({ payment, onClose, onSuccess }) => {
     try {
       const token = localStorage.getItem('token');
       // Fetch unpaid/partially paid invoices for the same party
-      const partyQuery = payment.party_type === 'Customer' 
+      const isCustomer = payment.party_type === 'Customer';
+      const partyQuery = isCustomer 
         ? `customer_id=${payment.party_id}` 
         : `supplier_id=${payment.party_id}`;
       
-      const res = await fetch(`${base}/api/invoices?${partyQuery}&limit=100`, {
+      // Use correct endpoint based on party type
+      const endpoint = isCustomer 
+        ? `${base}/api/invoices?${partyQuery}&limit=100`
+        : `${base}/api/purchase/invoices?${partyQuery}&limit=100`;
+      
+      const res = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
