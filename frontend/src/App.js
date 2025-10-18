@@ -267,6 +267,7 @@ function AppContent() {
         'Chart of Accounts': 'financial-accounts',
         'Journal Entry': 'financial-journal-entries',
         'Payment Entry': 'financial-payments',
+        'Bank Reconciliation': 'financial-bank-reconciliation',
         'Financial Reports': 'financial-reports'
       }
     };
