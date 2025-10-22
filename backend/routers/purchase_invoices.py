@@ -149,6 +149,16 @@ async def create_purchase_invoice(payload: dict):
         # Validate items
         validate_items(payload.get("items", []), "Purchase Invoice")
         
+        # CRITICAL: Validate line item quantities are integers only (no decimals)
+        items_to_validate = payload.get("items", [])
+        for idx, item in enumerate(items_to_validate):
+            qty = item.get("quantity", 0)
+            if not isinstance(qty, int) and (isinstance(qty, float) and not qty.is_integer()):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Line item {idx + 1}: Quantity must be a whole number (integer), not decimal. Received: {qty}"
+                )
+        
         now = datetime.now(timezone.utc)
         payload.setdefault('status', 'draft')
         payload['id'] = payload.get('id') or str(ObjectId())
