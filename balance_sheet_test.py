@@ -283,8 +283,14 @@ class BalanceSheetTester:
                     return False
                 supplier = suppliers[0]
             
-            async with self.session.get(f"{self.base_url}/api/master/items", headers=headers) as response:
-                items = await response.json()
+            async with self.session.get(f"{self.base_url}/api/stock/items", headers=headers) as response:
+                items_data = await response.json()
+                # items_data might be a dict with 'items' key or a list
+                if isinstance(items_data, dict):
+                    items = items_data.get('items', items_data.get('data', []))
+                else:
+                    items = items_data
+                
                 if not items or len(items) == 0:
                     self.log_test("Scenario 2 - Prerequisites", False, "No items found")
                     return False
