@@ -57,8 +57,8 @@
 ##   test_priority: "high_first"  # or "sequential" or "stuck_first"
 ##
 ## agent_communication:
-##     -agent: "main"  # or "testing" or "user"
-##     -message: "Communication message between agents"
+##     - agent: "main"
+##       message: "USER REQUEST: Comprehensive P&L statement verification. TASK: Clean database and create fresh test dataset. Test comprehensive scenarios: (1) Net Purchases = Purchases - Purchase Returns (2) Sales Returns showing as POSITIVE values (3) Tax accounts (Input Tax Credit, Output Tax Payable) excluded from P&L (4) Mix of Sales Invoices, Purchase Invoices, Credit Notes, Debit Notes with various amounts and tax rates (5) Date range filtering. Expected P&L Structure: Revenue (Sales Revenue, -Sales Returns, =Net Sales), COGS (Purchases, -Purchase Returns, =Net Purchases), Gross Profit = Net Sales - Net Purchases, Operating Expenses, Net Profit, Profit Margin. All calculations must be mathematically correct per accounting principles. This is FINAL verification before production approval."
 
 # Protocol Guidelines for Main agent
 #
