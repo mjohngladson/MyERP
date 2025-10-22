@@ -154,6 +154,9 @@ async def create_purchase_invoice(payload: dict):
         payload['id'] = payload.get('id') or str(ObjectId())
         payload['created_at'] = now
         payload['updated_at'] = now
+        # Set invoice_date to today if not provided (required for journal entry posting_date)
+        if not payload.get('invoice_date'):
+            payload['invoice_date'] = now.strftime('%Y-%m-%d')
         # invoice number
         if not payload.get('invoice_number'):
             count = await purchase_invoices_collection.count_documents({})
