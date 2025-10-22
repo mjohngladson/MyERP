@@ -470,6 +470,17 @@ backend:
           agent: "testing"
           comment: "✅ COMPREHENSIVE P&L STATEMENT VERIFICATION COMPLETED SUCCESSFULLY - 100% PASS RATE: Conducted exhaustive testing of all requested P&L scenarios with complete success. CORE FUNCTIONALITY VERIFIED: (1) ✅ Net Purchases Calculation: Mathematically correct (Purchases - Purchase Returns) across all scenarios (2) ✅ Sales Returns Display: Consistently show as POSITIVE values (₹300, ₹600) as required by accounting standards (3) ✅ Tax Accounts Exclusion: Input Tax Credit and Output Tax Payable properly excluded from P&L statement (4) ✅ Mathematical Accuracy: All calculations verified - Net Sales = Sales Revenue - Sales Returns, Gross Profit = Net Sales - Net Purchases, Profit Margin calculations accurate. COMPREHENSIVE SCENARIOS TESTED: (1) ✅ Basic Mixed Transactions: SI ₹1,000+18%, PI ₹600+18%, CN ₹300+18%, DN ₹200+18% - all created successfully and reflected correctly in P&L (2) ✅ Zero Tax Scenario: SI ₹2,000+0%, PI ₹1,200+0%, CN ₹500+0% - zero tax transactions processed correctly (3) ✅ Different Tax Rates: SI ₹1,000+12%, PI ₹800+28% - mixed tax rates handled accurately (4) ✅ Large Amounts: SI ₹100,000+18%, PI ₹75,000+18% - large amounts processed without precision issues (5) ✅ Date Range Filtering: Current month vs previous month filtering working correctly. EDGE CASES VERIFIED: All edge cases passed with 100% accuracy including zero tax scenarios, different tax rates (12%, 18%, 28%), large amounts (₹100,000+), and date range filtering. FINAL P&L ANALYSIS: Sales Revenue ₹106,000, Sales Returns ₹600 (POSITIVE), Net Sales ₹105,400, Purchases ₹78,800, Purchase Returns ₹400 (POSITIVE), Net Purchases ₹78,400, Gross Profit ₹27,000, Net Profit ₹27,000, Profit Margin 25.62%. CRITICAL FINDINGS: (1) All accounting principles correctly implemented (2) Tax accounts properly excluded from P&L (3) Returns show as positive values as required (4) Mathematical calculations 100% accurate (5) Date filtering functional (6) Large amounts handled correctly (7) All transaction types (SI, PI, CN, DN) working perfectly. PRODUCTION READINESS: P&L Statement functionality is PRODUCTION-READY with all verification requirements met at 100% success rate."
 
+  - task: "Balance Sheet Verification - Correct Debit Note Tax Accounting"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/debit_notes.py, backend/routers/financial.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "USER REQUESTED: Verify Balance Sheet shows correct accounting after Purchase Invoice and Debit Note. ISSUE FOUND: Debit Note was using 'Input Tax Credit' account for tax component, but correct accounting requires using 'Output Tax Payable' or 'Tax Payable (GST Reversal)' account. When returning goods to supplier, we must reverse the GST input tax credit we claimed, which creates a LIABILITY to pay back that tax, not a reduction in the Input Tax Credit ASSET. FIX APPLIED: Changed debit_notes.py lines 46-47 and 74-81 to use 'Output Tax Payable' account instead of 'Input Tax Credit' for DN tax reversal. Backend restarted. EXPECTED BALANCE SHEET after PI (₹118) and DN (₹106.20): ASSETS: Input Tax Credit ₹18.00 | LIABILITIES: Accounts Payable ₹11.80, Tax Payable (GST Reversal) ₹16.20 | EQUITY: Net Loss (₹10.00). Total Assets = Total Liabilities + Equity = ₹18.00. Need to verify with testing agent."
 
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
