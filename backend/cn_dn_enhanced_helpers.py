@@ -419,7 +419,7 @@ async def adjust_invoice_for_debit_note(
     invoice_outstanding = new_invoice_total - total_allocated
     
     # Scenario 1: Invoice fully paid - Receive refund from supplier
-    if total_allocated >= invoice_total:
+    if total_allocated >= new_invoice_total:
         # Create refund receipt entry
         refund_entry_id = str(uuid.uuid4())
         refund_payment = {
@@ -430,12 +430,12 @@ async def adjust_invoice_for_debit_note(
             "party_id": debit_note.get("supplier_id"),
             "party_name": debit_note.get("supplier_name"),
             "payment_date": debit_note.get("debit_note_date") or now_utc(),
-            "amount": min(dn_amount, invoice_total),
+            "amount": min(dn_amount, original_invoice_total),
             "payment_method": "Bank Transfer",
             "reference_number": f"DN-{debit_note.get('debit_note_number')}",
             "currency": "INR",
             "exchange_rate": 1.0,
-            "base_amount": min(dn_amount, invoice_total),
+            "base_amount": min(dn_amount, original_invoice_total),
             "status": "draft",
             "description": f"Refund for Debit Note {debit_note.get('debit_note_number')}",
             "unallocated_amount": 0.0,
