@@ -13,11 +13,17 @@ async def create_journal_entry_for_sales_invoice(
     journal_entries_collection,
     accounts_collection
 ) -> Optional[str]:
-    """Create Journal Entry for Sales Invoice"""
+    """
+    Create Journal Entry for Sales Invoice
+    Dr: Accounts Receivable (total)
+    Cr: Sales Revenue (subtotal)
+    Cr: Output Tax Payable (tax amount)
+    """
     # Get accounts
     receivables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
     sales_account = await accounts_collection.find_one({"account_name": {"$regex": "Sales", "$options": "i"}})
-    tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Tax", "$options": "i"}})
+    # Use Output Tax Payable for sales tax (liability account)
+    output_tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Output Tax", "$options": "i"}})
     
     total_amt = invoice_data.get("total_amount", 0)
     tax_amt = invoice_data.get("tax_amount", 0)
@@ -41,13 +47,13 @@ async def create_journal_entry_for_sales_invoice(
             "credit_amount": sales_amt,
             "description": f"Sales for Invoice {invoice_data.get('invoice_number', '')}"
         })
-    if tax_account and tax_amt > 0:
+    if output_tax_account and tax_amt > 0:
         je_accounts.append({
-            "account_id": tax_account["id"],
-            "account_name": tax_account["account_name"],
+            "account_id": output_tax_account["id"],
+            "account_name": output_tax_account["account_name"],
             "debit_amount": 0,
             "credit_amount": tax_amt,
-            "description": f"Tax on Invoice {invoice_data.get('invoice_number', '')}"
+            "description": f"Output Tax on Invoice {invoice_data.get('invoice_number', '')}"
         })
     
     if je_accounts:
