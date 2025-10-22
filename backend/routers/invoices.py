@@ -172,6 +172,16 @@ async def create_sales_invoice(invoice_data: dict):
         # Validate items
         validate_items(invoice_data.get("items", []), "Sales Invoice")
         
+        # CRITICAL: Validate line item quantities are integers only (no decimals)
+        items = invoice_data.get("items", [])
+        for idx, item in enumerate(items):
+            qty = item.get("quantity", 0)
+            if not isinstance(qty, int) and (isinstance(qty, float) and not qty.is_integer()):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Line item {idx + 1}: Quantity must be a whole number (integer), not decimal. Received: {qty}"
+                )
+        
         if not invoice_data.get("invoice_number"):
             invoice_count = await sales_invoices_collection.count_documents({})
             invoice_data["invoice_number"] = f"INV-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{invoice_count + 1:04d}"
