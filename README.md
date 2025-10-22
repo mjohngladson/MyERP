@@ -36,6 +36,20 @@ Expected output:
 
 ---
 
+## Check Configuration
+
+Before troubleshooting, run the checker to verify everything is configured correctly:
+
+```bash
+./check-config.sh
+```
+
+This will show you:
+- ✅ Backend URL configuration
+- ✅ Service status  
+- ✅ Backend connectivity
+- ⚠️  Any configuration issues
+
 ## Troubleshooting
 
 ### Can't Login?
@@ -43,6 +57,15 @@ Expected output:
 2. Wait 60 seconds for services to restart
 3. Hard refresh browser (Ctrl+Shift+R)
 4. Try login again
+
+### Configuration Issues?
+```bash
+# Check your configuration
+./check-config.sh
+
+# If issues found, run fix
+./fix-backend-url.sh
+```
 
 ### Services Not Running?
 ```bash
