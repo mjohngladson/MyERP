@@ -585,14 +585,17 @@ class BalanceSheetTester:
         if not await self.clean_database():
             print("⚠️ Database cleanup failed. Proceeding anyway...")
         
-        # Run Scenario 1
-        await self.test_scenario_1_single_sales_invoice()
+        # Run Scenario 1 and store invoice data
+        scenario1_result = await self.test_scenario_1_single_sales_invoice()
         
         # Run Scenario 2
         await self.test_scenario_2_sales_and_purchase()
         
-        # Run Scenario 3
-        await self.test_scenario_3_with_credit_note()
+        # Run Scenario 3 (skip if Scenario 1 failed)
+        if scenario1_result:
+            await self.test_scenario_3_with_credit_note()
+        else:
+            self.log_test("Scenario 3", False, "Skipped due to Scenario 1 failure")
         
         # Print summary
         print("\n" + "="*80)
