@@ -213,16 +213,28 @@ async def adjust_invoice_for_credit_note(
     # Scenario 2: Invoice partially/not paid - Reduce outstanding
     else:
         # Reduce invoice total amount
-        new_invoice_total = max(0, invoice_total - cn_amount)
+        new_invoice_total = max(0, current_invoice_total - cn_amount)
         
-        # Update invoice
+        # STEP 3: Update invoice with cumulative tracking
+        existing_credit_notes = invoice.get("credit_notes", [])
+        existing_credit_notes.append(credit_note.get("id"))
+        
         update_data = {
             "total_amount": new_invoice_total,
+            "original_total_amount": original_invoice_total,  # Preserve original
+            "total_credit_notes_amount": total_cn_after_this,
+            "credit_notes": existing_credit_notes,
             "updated_at": now_utc(),
             "credit_note_applied": True,
-            "credit_note_id": credit_note.get("id"),
-            "credit_note_amount": cn_amount
+            "last_credit_note_id": credit_note.get("id"),
+            "last_credit_note_amount": cn_amount
         }
+        
+        # Add reversal tracking if any allocations were reversed
+        if reversed_allocations:
+            update_data["payment_allocations_reversed"] = True
+            update_data["reversed_allocations_count"] = len(reversed_allocations)
+            update_data["total_amount_reversed"] = sum(r["amount_reversed"] for r in reversed_allocations)
         
         # Recalculate payment status
         if total_allocated >= new_invoice_total and new_invoice_total > 0:
