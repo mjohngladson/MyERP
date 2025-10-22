@@ -95,9 +95,12 @@ async def list_purchase_invoices(
 
         transformed = []
         for inv in invoices:
+            # Remove MongoDB _id but preserve UUID id field
             if '_id' in inv:
-                inv['id'] = str(inv['_id'])
                 del inv['_id']
+            # Only set fallback id if no id field exists
+            if 'id' not in inv or not inv['id']:
+                inv['id'] = f"pinv-{str(uuid.uuid4())[:8]}"
             inv.setdefault('invoice_number', '')
             inv.setdefault('supplier_name', '')
             inv.setdefault('status', 'draft')
