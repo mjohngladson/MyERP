@@ -103,27 +103,33 @@ user_problem_statement: "Fix two critical issues: (1) Prevent DN creation when a
 backend:
   - task: "Debit Note Over-Credit Prevention - Draft + Submitted"
     implemented: true
-    working: "NA"
+    working: false
     file: "backend/routers/debit_notes.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "USER REPORTED ISSUE 1: When DN amount exceeds Purchase Invoice amount, alert shows but DN is still created in draft status. Expected: DN should NOT be created at all (even in draft). ROOT CAUSE: The over-credit validation in cn_dn_enhanced_helpers.py (lines 298-310) was only executed when status='submitted' (via create_debit_note_accounting_entries). Draft DNs bypassed this validation entirely. FIX IMPLEMENTED: (1) Moved over-credit validation from helper to create_debit_note endpoint (debit_notes.py lines 230-244). (2) Validation now runs BEFORE DN document is created in database, for both draft and submitted status. (3) Raises HTTPException 400 with clear error message: 'Debit Note creation rejected: Amount (₹X) exceeds available balance. Invoice original total: ₹Y, Already debited: ₹Z, Available for debit: ₹W. Cannot create Debit Note (even in draft) that exceeds invoice amount.' (4) Same fix applied to Credit Notes (credit_notes.py lines 235-248). EXPECTED: Creating DN with amount > available PI balance should fail with HTTP 400 error, no DN created in database."
+        - working: false
+          agent: "testing"
+          comment: "TESTING RESULTS (13 sub-tests): ✅ PASSED 6/7 core tests, ❌ FAILED 1/7 cumulative tracking test. PASSED TESTS: (1) PI Creation ₹118 - SUCCESS. (2) Reject DN Draft ₹177 > ₹118 - CORRECTLY REJECTED with error 'Debit Note creation rejected: Amount (₹177.00) exceeds available balance'. (3) Verify NO DN created in DB - CONFIRMED 0 DNs. (4) Reject DN Submitted ₹177 > ₹118 - CORRECTLY REJECTED. (5) Create Valid DN ₹59 - SUCCESS. (6) Verify 1 DN created - CONFIRMED. FAILED TEST: (7) Reject Second DN ₹118 when only ₹59 remaining - INCORRECTLY ALLOWED, second DN was created with HTTP 200. ROOT CAUSE: Cumulative DN tracking NOT working. The validation at debit_notes.py lines 240-258 checks invoice.get('total_debit_notes_amount', 0) but this field is ONLY updated when DN status='submitted' (via adjust_invoice_for_debit_note helper in cn_dn_enhanced_helpers.py line 465). Draft DNs are NOT tracked in this field. REQUIRED FIX: Instead of relying on 'total_debit_notes_amount' field, the validation should query debit_notes_collection to calculate total amount of ALL DNs (both draft and submitted) linked to this PI: existing_dns = await debit_notes_collection.find({'reference_invoice_id': reference_invoice_id}).to_list(length=1000); existing_dn_amount = sum(float(dn.get('total_amount', 0)) for dn in existing_dns). SEVERITY: HIGH - Multiple draft DNs can exceed PI amount."
   
   - task: "Line Item Quantity Integer Validation"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/debit_notes.py, credit_notes.py, invoices.py, purchase_invoices.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "USER REPORTED ISSUE 2: Line item quantities should not allow decimal/float values, only integers. FIX IMPLEMENTED: Added quantity validation in all transaction endpoints: (1) Debit Notes (debit_notes.py lines 222-228). (2) Credit Notes (credit_notes.py lines 221-227). (3) Sales Invoices (invoices.py lines 176-182). (4) Purchase Invoices (purchase_invoices.py lines 153-159). Validation logic: For each line item, check if quantity is integer or (if float) whether it represents whole number using is_integer(). If decimal detected, raise HTTPException 400: 'Line item X: Quantity must be a whole number (integer), not decimal. Received: Y'. Validation runs BEFORE any calculations or database insertion. EXPECTED: Creating any transaction with decimal quantity (e.g., 1.5, 2.3) should fail with HTTP 400 error."
+        - working: true
+          agent: "testing"
+          comment: "TESTING RESULTS: ✅ ALL 7 TESTS PASSED PERFECTLY. (1) SI with qty=1.5 - CORRECTLY REJECTED with error 'Line item 1: Quantity must be a whole number (integer), not decimal. Received: 1.5'. (2) Verified NO SI created in DB - CONFIRMED 0 SIs. (3) PI with qty=2.3 - CORRECTLY REJECTED with error 'Received: 2.3'. (4) CN with qty=0.5 - CORRECTLY REJECTED with error 'Received: 0.5'. (5) DN with qty=3.7 - CORRECTLY REJECTED with error 'Received: 3.7'. (6) SI with qty=5 (integer) - CORRECTLY ACCEPTED, created INV-20251022-0001. (7) Verified 1 SI created in DB - CONFIRMED. VALIDATION: All transaction types (SI, PI, CN, DN) correctly reject decimal quantities and accept integer quantities. Error messages are clear and helpful. No invalid documents created in database. FIX IS WORKING 100% AS EXPECTED."
 
 frontend: []
 
