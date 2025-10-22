@@ -214,6 +214,9 @@ async def create_credit_note(body: Dict[str, Any]):
         "Credit Note"
     )
     
+    # Validate items using centralized validator
+    validate_items(body.get("items", []), "Credit Note")
+    
     # Get items from body
     items = body.get("items", [])
     
