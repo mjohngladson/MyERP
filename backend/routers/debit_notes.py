@@ -224,6 +224,11 @@ async def create_debit_note(body: Dict[str, Any]):
     tax_amount = (discounted_total * tax_rate) / 100
     total_amount = discounted_total + tax_amount
     
+    # Set debit_note_date to today if not provided (required for journal entry posting_date)
+    debit_note_date = body.get("debit_note_date")
+    if not debit_note_date:
+        debit_note_date = now_utc().strftime('%Y-%m-%d')
+    
     doc = {
         "id": str(uuid.uuid4()),
         "debit_note_number": generate_debit_note_number(),
@@ -233,7 +238,7 @@ async def create_debit_note(body: Dict[str, Any]):
         "supplier_phone": body.get("supplier_phone"),
         "supplier_address": body.get("supplier_address"),
         
-        "debit_note_date": body.get("debit_note_date"),
+        "debit_note_date": debit_note_date,
         "reference_invoice_id": reference_invoice_id,
         "reference_invoice": reference_invoice_number,
         "reason": body.get("reason", "Return"),
