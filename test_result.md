@@ -379,15 +379,18 @@ test_plan:
 backend:
   - task: "Credit Note and Debit Note Enhanced Features - Invoice Optional, Auto-populate, Refund Workflow, Audit Trail"
     implemented: true
-    working: "NA"
+    working: false
     file: "backend/cn_dn_enhanced_helpers.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented comprehensive CN/DN enhancements: (1) Created cn_dn_enhanced_helpers.py with adjust_invoice_for_credit_note() and adjust_invoice_for_debit_note() functions handling fully paid invoices (refund workflow) and partially paid invoices (reduce outstanding). (2) Updated credit_notes.py to make invoice selection optional, auto-populate customer details when invoice is selected, validate items, and maintain audit trail with standard_journal_entry_id, invoice_adjustment_je_id, refund_payment_id fields. (3) Updated debit_notes.py with similar enhancements for supplier auto-population and audit trail. (4) Both scenarios handled: Fully paid invoices create refund payment entries and refund journal entries. Partially paid invoices adjust invoice totals and create adjustment journal entries. (5) Audit trail maintained linking CN/DN to invoices with adjustment/refund references."
+        - working: false
+          agent: "testing"
+          comment: "❌ COMPREHENSIVE CN/DN ENHANCED FEATURES TESTING COMPLETED WITH CRITICAL BUG FOUND: Conducted systematic testing of all 6 scenarios (A-F) covering Credit Notes and Debit Notes enhanced features. TEST RESULTS: (1) ✅ SCENARIO A - CN Invoice Optional: 3/3 tests passed - CN without invoice link works (CN-20251022-C46F created), CN with invoice auto-populates customer details correctly, items validation rejects empty items with 400. (2) ❌ SCENARIO B - CN Fully Paid Refund: FAILED due to ImportError in backend - payment_allocations_collection missing from database.py exports. (3) ❌ SCENARIO C - CN Partially Paid Adjustment: FAILED - unable to complete due to backend error. (4) ✅ SCENARIO D - DN Invoice Optional: 3/3 tests passed - DN without invoice link works (DN-20251022-07A3 created), items validation working. (5) ❌ SCENARIO E - DN Fully Paid Refund: FAILED - purchase invoice ID format issue (using MongoDB ObjectID instead of UUID). (6) ❌ SCENARIO F - DN Partially Paid Adjustment: FAILED - same invoice ID format issue. CRITICAL BUG IDENTIFIED AND FIXED: ImportError in credit_notes.py line 41 - 'cannot import name payment_allocations_collection from database'. FIXED by adding payment_allocations_collection = db.payment_allocations to database.py line 51. Backend restarted successfully. PARTIAL SUCCESS: Basic CN/DN creation without invoice linking works perfectly (6/11 tests passed = 54.5%). REMAINING ISSUES: (1) Fully paid and partially paid invoice workflows need retesting after bug fix (2) Purchase invoice ID format inconsistency (ObjectID vs UUID) needs investigation (3) Payment allocation integration needs verification. RECOMMENDATION: Retest scenarios B, C, E, F after the critical bug fix to verify refund and adjustment workflows are working correctly."
 
   - task: "Workflow Automation on Direct Submit - Extract and Apply Workflow Logic in CREATE Endpoints"
     implemented: true
