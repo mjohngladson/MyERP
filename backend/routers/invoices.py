@@ -30,8 +30,7 @@ router = APIRouter(prefix="/api/invoices", tags=["invoices"])
 
 # Import workflow helpers
 from workflow_helpers import (
-    create_journal_entry_for_sales_invoice,
-    create_payment_entry_for_sales_invoice
+    create_journal_entry_for_sales_invoice
 )
 
 @router.get("/", response_model=List[dict])
