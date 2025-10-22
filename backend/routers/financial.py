@@ -878,21 +878,31 @@ async def get_profit_loss_statement(
 async def get_balance_sheet(
     as_of_date: Optional[str] = Query(None, description="As of date (YYYY-MM-DD)")
 ):
-    """Generate Balance Sheet - includes all posted journal entries and payments"""
+    """
+    Generate Balance Sheet - includes all posted journal entries and payments
+    
+    Balance Sheet equation: Assets = Liabilities + Equity
+    
+    Equity includes:
+    - Capital accounts
+    - Retained Earnings (accumulated profits from previous periods)
+    - Current Period Net Profit/Loss (calculated from P&L up to target date)
+    """
     try:
         target_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
         
         # Get asset, liability, and equity accounts
+        # Note: Using {"$ne": True} to include accounts where is_group is False or None
         asset_accounts = await accounts_collection.find({
-            "root_type": "Asset", "is_active": True, "is_group": False
+            "root_type": "Asset", "is_active": True, "is_group": {"$ne": True}
         }).to_list(length=None)
         
         liability_accounts = await accounts_collection.find({
-            "root_type": "Liability", "is_active": True, "is_group": False
+            "root_type": "Liability", "is_active": True, "is_group": {"$ne": True}
         }).to_list(length=None)
         
         equity_accounts = await accounts_collection.find({
-            "root_type": "Equity", "is_active": True, "is_group": False
+            "root_type": "Equity", "is_active": True, "is_group": {"$ne": True}
         }).to_list(length=None)
         
         # Initialize balances
@@ -907,6 +917,10 @@ async def get_balance_sheet(
         }).to_list(length=None)
         
         # Aggregate balances from journal entries
+        # Also calculate net profit/loss from income and expense accounts
+        income_total = 0.0
+        expense_total = 0.0
+        
         for entry in journal_entries:
             for acc in entry.get("accounts", []):
                 account_id = acc.get("account_id")
@@ -924,11 +938,46 @@ async def get_balance_sheet(
                 # Equity accounts: credit increases, debit decreases
                 elif account_id in equity_balances:
                     equity_balances[account_id]["amount"] += (credit - debit)
+                
+                # Calculate P&L for current period net profit
+                else:
+                    # Find account to determine if it's income or expense
+                    account_doc = await accounts_collection.find_one({"id": account_id})
+                    if account_doc:
+                        root_type = account_doc.get("root_type", "")
+                        account_name = account_doc.get("account_name", "").lower()
+                        
+                        # Skip tax accounts from P&L calculation
+                        if "input tax" in account_name or "output tax" in account_name or "tax credit" in account_name:
+                            continue
+                        
+                        # Income: credit increases, debit decreases
+                        if root_type == "Income":
+                            income_total += (credit - debit)
+                        # Expense: debit increases, credit decreases
+                        elif root_type == "Expense":
+                            expense_total += (debit - credit)
+        
+        # Calculate current period net profit/loss
+        current_period_profit = income_total - expense_total
         
         # Filter out zero balances
         asset_list = [acc for acc in asset_balances.values() if abs(acc["amount"]) > 0.01]
         liability_list = [acc for acc in liability_balances.values() if abs(acc["amount"]) > 0.01]
         equity_list = [acc for acc in equity_balances.values() if abs(acc["amount"]) > 0.01]
+        
+        # Add current period profit/loss to equity section
+        if abs(current_period_profit) > 0.01:
+            if current_period_profit > 0:
+                equity_list.append({
+                    "account_name": "Current Period Net Profit",
+                    "amount": round(current_period_profit, 2)
+                })
+            else:
+                equity_list.append({
+                    "account_name": "Current Period Net Loss",
+                    "amount": round(current_period_profit, 2)
+                })
         
         total_assets = sum(acc["amount"] for acc in asset_list)
         total_liabilities = sum(acc["amount"] for acc in liability_list)
@@ -936,13 +985,15 @@ async def get_balance_sheet(
         
         return {
             "as_of_date": target_date,
-            "assets": asset_list,
-            "liabilities": liability_list,
-            "equity": equity_list,
-            "total_assets": total_assets,
-            "total_liabilities": total_liabilities,
-            "total_equity": total_equity,
-            "total_liabilities_equity": total_liabilities + total_equity
+            "assets": [{"account_name": acc["account_name"], "amount": round(acc["amount"], 2)} for acc in asset_list],
+            "liabilities": [{"account_name": acc["account_name"], "amount": round(acc["amount"], 2)} for acc in liability_list],
+            "equity": [{"account_name": acc["account_name"], "amount": round(acc["amount"], 2)} for acc in equity_list],
+            "total_assets": round(total_assets, 2),
+            "total_liabilities": round(total_liabilities, 2),
+            "total_equity": round(total_equity, 2),
+            "total_liabilities_equity": round(total_liabilities + total_equity, 2),
+            "is_balanced": abs(total_assets - (total_liabilities + total_equity)) < 0.01,
+            "variance": round(total_assets - (total_liabilities + total_equity), 2)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating balance sheet: {str(e)}")
