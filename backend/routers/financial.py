@@ -595,20 +595,38 @@ async def create_payment_journal_entry(payment_data: dict):
 async def get_trial_balance(
     as_of_date: Optional[str] = Query(None, description="As of date (YYYY-MM-DD)")
 ):
-    """Generate trial balance report - includes all posted journal entries and payments"""
+    """
+    Generate trial balance report - includes all posted journal entries and payments
+    
+    Account Balance Calculation:
+    - Assets & Expenses: Balance = Total Debits - Total Credits (Debit balance is positive)
+    - Liabilities, Equity & Income: Balance = Total Credits - Total Debits (Credit balance is positive)
+    
+    Trial Balance Display:
+    - Debit balances shown in debit_balance column
+    - Credit balances shown in credit_balance column
+    - Total Debits must equal Total Credits
+    """
     try:
         target_date = as_of_date or datetime.now().strftime("%Y-%m-%d")
         
         # Get all accounts
-        accounts = await accounts_collection.find({"is_active": True, "is_group": False}).to_list(length=None)
+        accounts = await accounts_collection.find({"is_active": True}).to_list(length=None)
         
         # Calculate balances from journal entries up to target date
         account_balances = {}
         for account in accounts:
+            # Skip group accounts (parent accounts with no transactions)
+            if account.get("is_group", False):
+                continue
+                
             account_balances[account["id"]] = {
-                "account_code": account["account_code"],
+                "account_code": account.get("account_code", ""),
                 "account_name": account["account_name"],
-                "root_type": account["root_type"],
+                "account_type": account.get("account_type", ""),
+                "root_type": account.get("root_type", ""),
+                "total_debit": 0.0,
+                "total_credit": 0.0,
                 "balance": 0.0
             }
         
@@ -626,12 +644,22 @@ async def get_trial_balance(
                     debit = float(acc.get("debit_amount", 0))
                     credit = float(acc.get("credit_amount", 0))
                     
-                    # Calculate balance based on account type
-                    root_type = account_balances[account_id]["root_type"]
-                    if root_type in ["Asset", "Expense"]:
-                        account_balances[account_id]["balance"] += (debit - credit)
-                    else:  # Liability, Equity, Income
-                        account_balances[account_id]["balance"] += (credit - debit)
+                    account_balances[account_id]["total_debit"] += debit
+                    account_balances[account_id]["total_credit"] += credit
+        
+        # Calculate final balances based on account type
+        for account_id, acc_data in account_balances.items():
+            total_debit = acc_data["total_debit"]
+            total_credit = acc_data["total_credit"]
+            root_type = acc_data.get("root_type", "")
+            
+            # Calculate balance based on normal balance of account type
+            if root_type in ["Asset", "Expense"]:
+                # Debit-balance accounts: Balance = Debits - Credits
+                acc_data["balance"] = total_debit - total_credit
+            else:  # Liability, Equity, Income
+                # Credit-balance accounts: Balance = Credits - Debits
+                acc_data["balance"] = total_credit - total_debit
         
         # Build trial balance
         total_debits = 0
@@ -640,19 +668,36 @@ async def get_trial_balance(
         
         for account_id, acc_data in account_balances.items():
             balance = acc_data["balance"]
-            if abs(balance) > 0.01:  # Only show accounts with balances
+            
+            # Only show accounts with balances
+            if abs(balance) > 0.01:
+                # Positive balance = normal balance for that account type
                 if balance > 0:
-                    debit_balance = balance
-                    credit_balance = 0
+                    # Normal balance
+                    if acc_data["root_type"] in ["Asset", "Expense"]:
+                        debit_balance = balance
+                        credit_balance = 0
+                    else:  # Liability, Equity, Income
+                        debit_balance = 0
+                        credit_balance = balance
                 else:
-                    debit_balance = 0
-                    credit_balance = abs(balance)
+                    # Abnormal balance (negative)
+                    if acc_data["root_type"] in ["Asset", "Expense"]:
+                        debit_balance = 0
+                        credit_balance = abs(balance)
+                    else:  # Liability, Equity, Income
+                        debit_balance = abs(balance)
+                        credit_balance = 0
                 
                 trial_balance.append({
                     "account_code": acc_data["account_code"],
                     "account_name": acc_data["account_name"],
-                    "debit_balance": debit_balance,
-                    "credit_balance": credit_balance
+                    "account_type": acc_data["account_type"],
+                    "root_type": acc_data["root_type"],
+                    "total_debit": acc_data["total_debit"],
+                    "total_credit": acc_data["total_credit"],
+                    "debit_balance": round(debit_balance, 2),
+                    "credit_balance": round(credit_balance, 2)
                 })
                 total_debits += debit_balance
                 total_credits += credit_balance
@@ -663,9 +708,10 @@ async def get_trial_balance(
         return {
             "as_of_date": target_date,
             "accounts": trial_balance,
-            "total_debits": total_debits,
-            "total_credits": total_credits,
-            "is_balanced": abs(total_debits - total_credits) < 0.01
+            "total_debits": round(total_debits, 2),
+            "total_credits": round(total_credits, 2),
+            "is_balanced": abs(total_debits - total_credits) < 0.01,
+            "variance": round(total_debits - total_credits, 2)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating trial balance: {str(e)}")
