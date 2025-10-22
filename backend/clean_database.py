@@ -9,7 +9,8 @@ import os
 from datetime import datetime
 
 # Get MongoDB URL from environment
-MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/gili_erp')
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+DB_NAME = os.environ.get('DB_NAME', 'test_database')
 
 async def clean_database():
     """Clean all records from database for fresh testing"""
