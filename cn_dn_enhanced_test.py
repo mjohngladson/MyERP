@@ -324,12 +324,17 @@ class CNDNEnhancedTester:
                 if resp.status == 200:
                     data = await resp.json()
                     print(f"Payment response type: {type(data)}, keys: {data.keys() if isinstance(data, dict) else 'N/A'}")
-                    # Response is wrapped in success/payment structure
-                    payment = data.get("payment", {})
-                    payment_id = payment.get("id")
+                    # Response returns payment_id, need to fetch full payment
+                    payment_id = data.get("payment_id")
                     if payment_id:
                         self.created_resources["payments"].append(payment_id)
-                    return payment
+                        # Fetch the full payment object
+                        get_url = f"{self.base_url}/api/financial/payments/{payment_id}"
+                        async with self.session.get(get_url, headers=self.get_headers()) as get_resp:
+                            if get_resp.status == 200:
+                                payment = await get_resp.json()
+                                return payment
+                    return None
                 else:
                     text = await resp.text()
                     print(f"Error creating payment: {resp.status} - {text}")
