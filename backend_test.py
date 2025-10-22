@@ -9768,19 +9768,25 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on PURCHASE INVOICE JOURNAL ENTRY ACCOUNTING FIX"""
-        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE INVOICE JE ACCOUNTING FIX")
+        """Run backend tests focusing on TRIAL BALANCE CORRECTNESS"""
+        print("🚀 Starting GiLi Backend API Testing Suite - TRIAL BALANCE CORRECTNESS TEST")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 PURCHASE INVOICE JOURNAL ENTRY ACCOUNTING TEST:")
-        print("   USER REPORTED: Purchase Invoice Journal Entries have incorrect accounting")
-        print("   EXPECTED FIX: Use Input Tax Credit (Asset) for purchase tax")
-        print("   TEST SCENARIO: Create Purchase Invoice and verify JE has correct accounts")
+        print("🎯 TRIAL BALANCE CORRECTNESS TEST:")
+        print("   USER REQUEST: Verify Trial Balance after Purchase Invoice and Debit Note")
+        print("   TEST SCENARIO: Create PI (₹100 + 18% tax) and DN (₹50 + 18% tax), verify Trial Balance")
+        print("   EXPECTED BALANCES:")
+        print("      - Purchases (Expense): Dr ₹100")
+        print("      - Input Tax Credit (Asset): Dr ₹9 (₹18 - ₹9)")
+        print("      - Purchase Returns (Income): Cr ₹50")
+        print("      - Accounts Payable (Liability): Cr ₹59 (₹118 - ₹59)")
+        print("      - Total Debits = Total Credits = ₹109")
+        print("      - is_balanced = true")
         print("=" * 80)
         
-        # Tests to run (PURCHASE INVOICE JE ACCOUNTING as requested in review)
+        # Tests to run (TRIAL BALANCE CORRECTNESS as requested in review)
         tests_to_run = [
-            self.test_health_check,                                    # Basic API health check
-            self.test_purchase_invoice_journal_entry_accounting,       # CRITICAL: Purchase Invoice JE Accounting Fix
+            self.test_health_check,                                           # Basic API health check
+            self.test_trial_balance_after_purchase_invoice_and_debit_note,   # CRITICAL: Trial Balance Correctness
         ]
         
         passed = 0
