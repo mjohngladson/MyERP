@@ -10668,7 +10668,7 @@ class BackendTester:
                 "status": "submitted"
             }
             
-            async with self.session.post(f"{self.base_url}/api/selling/credit-notes", json=cn_zero_tax, headers=headers) as response:
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=cn_zero_tax, headers=headers) as response:
                 if response.status == 200:
                     self.log_test("Scenario 2 - Zero Tax CN", True, "Created CN: ₹500, Tax: 0%")
                 else:
