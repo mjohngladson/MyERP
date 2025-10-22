@@ -234,20 +234,25 @@ async def delete_allocation(allocation_id: str):
             {"$set": {"unallocated_amount": new_unallocated, "updated_at": now_utc()}}
         )
     
-    # Update invoice payment status
-    invoice = await invoices_coll.find_one({"id": invoice_id})
+    # Update invoice payment status - search in both collections
+    invoice = await sales_invoices_coll.find_one({"id": invoice_id})
+    invoices_coll_to_update = sales_invoices_coll
+    if not invoice:
+        invoice = await purchase_invoices_coll.find_one({"id": invoice_id})
+        invoices_coll_to_update = purchase_invoices_coll
+    
     if invoice:
         remaining_allocations = await allocations_coll.find({"invoice_id": invoice_id, "status": "active"}).to_list(length=1000)
         total_allocated = sum(float(a.get("allocated_amount", 0)) for a in remaining_allocations)
         invoice_total = float(invoice.get("total_amount", 0))
         
         if total_allocated == 0:
-            await invoices_coll.update_one(
+            await invoices_coll_to_update.update_one(
                 {"id": invoice_id},
                 {"$set": {"payment_status": "Unpaid", "updated_at": now_utc()}}
             )
         elif total_allocated < invoice_total:
-            await invoices_coll.update_one(
+            await invoices_coll_to_update.update_one(
                 {"id": invoice_id},
                 {"$set": {"status": "submitted", "payment_status": "Partially Paid", "updated_at": now_utc()}}
             )
