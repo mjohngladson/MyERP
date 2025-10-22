@@ -721,23 +721,50 @@ async def get_profit_loss_statement(
     from_date: Optional[str] = Query(None, description="From date (YYYY-MM-DD)"),
     to_date: Optional[str] = Query(None, description="To date (YYYY-MM-DD)")
 ):
-    """Generate Profit & Loss statement - includes all posted journal entries and payments"""
+    """
+    Generate Profit & Loss statement
+    
+    Structure:
+    Revenue:
+      Sales Revenue
+      - Sales Returns
+      = Net Sales
+    
+    Cost of Goods Sold:
+      Purchases
+      - Purchase Returns
+      = Net Purchases
+      
+    Gross Profit = Net Sales - Net Purchases
+    
+    Operating Expenses:
+      Operating Expenses
+      Other Expenses
+      
+    Net Profit = Gross Profit - Operating Expenses
+    
+    Note: Tax accounts (Input Tax Credit, Output Tax Payable) are NOT included as they are balance sheet items
+    """
     try:
         start_date = from_date or datetime.now().replace(day=1).strftime("%Y-%m-%d")
         end_date = to_date or datetime.now().strftime("%Y-%m-%d")
         
-        # Get all income and expense accounts
-        income_accounts = await accounts_collection.find({
-            "root_type": "Income", "is_active": True, "is_group": False
+        # Get all accounts grouped by type
+        all_accounts = await accounts_collection.find({
+            "is_active": True,
+            "is_group": False
         }).to_list(length=None)
         
-        expense_accounts = await accounts_collection.find({
-            "root_type": "Expense", "is_active": True, "is_group": False
-        }).to_list(length=None)
-        
-        # Initialize account balances
-        income_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in income_accounts}
-        expense_balances = {acc["id"]: {"account_name": acc["account_name"], "amount": 0.0} for acc in expense_accounts}
+        # Initialize balances
+        account_balances = {}
+        for acc in all_accounts:
+            account_balances[acc["id"]] = {
+                "account_name": acc["account_name"],
+                "account_code": acc.get("account_code", ""),
+                "root_type": acc.get("root_type", ""),
+                "account_type": acc.get("account_type", ""),
+                "amount": 0.0
+            }
         
         # Get all posted journal entries in date range
         journal_entries = await journal_entries_collection.find({
@@ -749,33 +776,94 @@ async def get_profit_loss_statement(
         for entry in journal_entries:
             for acc in entry.get("accounts", []):
                 account_id = acc.get("account_id")
-                debit = float(acc.get("debit_amount", 0))
-                credit = float(acc.get("credit_amount", 0))
-                
-                # Income accounts: credit increases, debit decreases
-                if account_id in income_balances:
-                    income_balances[account_id]["amount"] += (credit - debit)
-                
-                # Expense accounts: debit increases, credit decreases
-                elif account_id in expense_balances:
-                    expense_balances[account_id]["amount"] += (debit - credit)
+                if account_id in account_balances:
+                    debit = float(acc.get("debit_amount", 0))
+                    credit = float(acc.get("credit_amount", 0))
+                    
+                    root_type = account_balances[account_id]["root_type"]
+                    
+                    # Income accounts: credit increases, debit decreases
+                    if root_type == "Income":
+                        account_balances[account_id]["amount"] += (credit - debit)
+                    # Expense accounts: debit increases, credit decreases
+                    elif root_type == "Expense":
+                        account_balances[account_id]["amount"] += (debit - credit)
         
-        # Filter out zero balances and build result
-        income_list = [acc for acc in income_balances.values() if abs(acc["amount"]) > 0.01]
-        expense_list = [acc for acc in expense_balances.values() if abs(acc["amount"]) > 0.01]
+        # Extract specific accounts for P&L structure
+        sales_revenue = 0.0
+        sales_returns = 0.0
+        purchases = 0.0
+        purchase_returns = 0.0
+        cogs = 0.0
+        operating_expenses = 0.0
+        other_income = 0.0
+        other_expenses = 0.0
         
-        total_income = sum(acc["amount"] for acc in income_list)
-        total_expenses = sum(acc["amount"] for acc in expense_list)
-        net_profit = total_income - total_expenses
+        for acc_id, acc_data in account_balances.items():
+            if acc_data["amount"] == 0:
+                continue
+                
+            account_name = acc_data["account_name"].lower()
+            root_type = acc_data["root_type"]
+            amount = acc_data["amount"]
+            
+            # Skip tax accounts - they are balance sheet items, not P&L
+            if "input tax" in account_name or "output tax" in account_name or "tax credit" in account_name:
+                continue
+            
+            # Revenue section
+            if root_type == "Income":
+                if "sales return" in account_name:
+                    sales_returns += amount
+                elif "sales" in account_name or "revenue" in account_name:
+                    sales_revenue += amount
+                elif "purchase return" in account_name:
+                    purchase_returns += amount
+                else:
+                    other_income += amount
+            
+            # Expense section
+            elif root_type == "Expense":
+                if "purchase" in account_name and "return" not in account_name:
+                    purchases += amount
+                elif "cost of goods sold" in account_name or "cogs" in account_name:
+                    cogs += amount
+                elif "operating" in account_name:
+                    operating_expenses += amount
+                else:
+                    other_expenses += amount
+        
+        # Calculate net figures
+        net_sales = sales_revenue - sales_returns
+        net_purchases = purchases - purchase_returns
+        gross_profit = net_sales - (net_purchases + cogs)
+        total_operating_expenses = operating_expenses + other_expenses
+        net_profit = gross_profit - total_operating_expenses + other_income
         
         return {
             "from_date": start_date,
             "to_date": end_date,
-            "income": income_list,
-            "expenses": expense_list,
-            "total_income": total_income,
-            "total_expenses": total_expenses,
-            "net_profit": net_profit
+            "revenue": {
+                "sales_revenue": round(sales_revenue, 2),
+                "sales_returns": round(sales_returns, 2),
+                "net_sales": round(net_sales, 2)
+            },
+            "cost_of_sales": {
+                "purchases": round(purchases, 2),
+                "purchase_returns": round(purchase_returns, 2),
+                "net_purchases": round(net_purchases, 2),
+                "cost_of_goods_sold": round(cogs, 2),
+                "total_cost_of_sales": round(net_purchases + cogs, 2)
+            },
+            "gross_profit": round(gross_profit, 2),
+            "operating_expenses": {
+                "operating_expenses": round(operating_expenses, 2),
+                "other_expenses": round(other_expenses, 2),
+                "total_operating_expenses": round(total_operating_expenses, 2)
+            },
+            "other_income": round(other_income, 2),
+            "net_profit": round(net_profit, 2),
+            "profit_margin_percent": round((net_profit / net_sales * 100) if net_sales > 0 else 0, 2)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating P&L statement: {str(e)}")
