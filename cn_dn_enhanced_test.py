@@ -179,7 +179,10 @@ class CNDNEnhancedTester:
         try:
             item = await self.get_or_create_item()
             if not item:
+                print("Failed to get item for sales invoice")
                 return None
+            
+            print(f"Using item: {item}")
             
             url = f"{self.base_url}/api/invoices"
             payload = {
@@ -217,6 +220,8 @@ class CNDNEnhancedTester:
                     return None
         except Exception as e:
             print(f"Exception creating sales invoice: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def create_purchase_invoice(self, supplier_id: str, supplier_name: str, total_amount: float) -> Optional[Dict]:
