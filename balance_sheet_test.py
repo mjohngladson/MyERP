@@ -421,8 +421,13 @@ class BalanceSheetTester:
                 customers = await response.json()
                 customer = customers[0]
             
-            async with self.session.get(f"{self.base_url}/api/master/items", headers=headers) as response:
-                items = await response.json()
+            async with self.session.get(f"{self.base_url}/api/stock/items", headers=headers) as response:
+                items_data = await response.json()
+                # items_data might be a dict with 'items' key or a list
+                if isinstance(items_data, dict):
+                    items = items_data.get('items', items_data.get('data', []))
+                else:
+                    items = items_data
                 item = items[0]
             
             async with self.session.get(f"{self.base_url}/api/invoices", headers=headers) as response:
