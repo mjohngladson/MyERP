@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo import ASCENDING, DESCENDING
+import uuid
 
 from database import purchase_invoices_collection, suppliers_collection
 from validators import (
