@@ -1571,7 +1571,7 @@ class BackendTester:
                 "status": "draft"
             }
             
-            async with self.session.post(f"{self.base_url}/api/invoices", json=si_decimal_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=si_decimal_payload) as response:
                 if response.status == 400:
                     data = await response.json()
                     error_msg = data.get("detail", "")
