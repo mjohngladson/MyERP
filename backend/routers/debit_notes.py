@@ -179,29 +179,35 @@ async def get_debit_notes(
 @router.post("/debit-notes")
 async def create_debit_note(body: Dict[str, Any]):
     """Create new debit note with validation and linking"""
-    # Validate required fields using centralized validator
-    validate_required_fields(
-        body,
-        ["supplier_name", "items"],
-        "Debit Note"
-    )
-    
-    # Validate items using centralized validator
-    validate_items(body.get("items", []), "Debit Note")
-    
     # Validate and link to original purchase invoice if provided
     reference_invoice_id = body.get("reference_invoice_id")
     reference_invoice_number = body.get("reference_invoice")
     
+    # If invoice is selected, auto-populate supplier details
     if reference_invoice_id:
         from database import purchase_invoices_collection
         original_invoice = await purchase_invoices_collection.find_one({"id": reference_invoice_id})
         if not original_invoice:
             raise HTTPException(status_code=404, detail="Referenced purchase invoice not found")
         
+        # Auto-fill supplier details from invoice
+        body.setdefault("supplier_id", original_invoice.get("supplier_id"))
+        body.setdefault("supplier_name", original_invoice.get("supplier_name"))
+        body.setdefault("supplier_email", original_invoice.get("supplier_email"))
+        body.setdefault("supplier_phone", original_invoice.get("supplier_phone"))
+        body.setdefault("supplier_address", original_invoice.get("supplier_address"))
+        
         # Auto-fill reference number if not provided
         if not reference_invoice_number:
             reference_invoice_number = original_invoice.get("invoice_number")
+            body["reference_invoice"] = reference_invoice_number
+    
+    # Validate required fields (supplier_name required even if not linked to invoice)
+    validate_required_fields(
+        body,
+        ["supplier_name", "items"],
+        "Debit Note"
+    )
     
     # Get items from body
     items = body.get("items", [])
