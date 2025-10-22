@@ -209,6 +209,9 @@ async def create_debit_note(body: Dict[str, Any]):
         "Debit Note"
     )
     
+    # Validate items using centralized validator
+    validate_items(body.get("items", []), "Debit Note")
+    
     # Get items from body
     items = body.get("items", [])
     
