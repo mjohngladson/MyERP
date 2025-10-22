@@ -318,9 +318,12 @@ class CNDNEnhancedTester:
                 "status": "paid"
             }
             
+            print(f"Creating payment: {payment_type} for {party_name}, amount={amount}")
+            
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    print(f"Payment response type: {type(data)}, keys: {data.keys() if isinstance(data, dict) else 'N/A'}")
                     # Response is wrapped in success/payment structure
                     payment = data.get("payment", {})
                     payment_id = payment.get("id")
@@ -333,6 +336,8 @@ class CNDNEnhancedTester:
                     return None
         except Exception as e:
             print(f"Exception creating payment: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     # ==================== SCENARIO A: CREDIT NOTES - Invoice Optional ====================
