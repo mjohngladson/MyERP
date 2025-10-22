@@ -229,7 +229,10 @@ class CNDNEnhancedTester:
         try:
             item = await self.get_or_create_item()
             if not item:
+                print("Failed to get item for purchase invoice")
                 return None
+            
+            print(f"Using item for purchase invoice: {item}")
             
             url = f"{self.base_url}/api/purchase/invoices/"  # Note: trailing slash required
             payload = {
@@ -255,6 +258,7 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    print(f"Purchase invoice response type: {type(data)}")
                     # Response is wrapped in success/invoice structure
                     invoice = data.get("invoice", {})
                     invoice_id = invoice.get("id")
@@ -267,6 +271,8 @@ class CNDNEnhancedTester:
                     return None
         except Exception as e:
             print(f"Exception creating purchase invoice: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     async def create_payment_allocation(self, payment_id: str, invoice_id: str, amount: float, invoice_type: str = "sales") -> Optional[str]:
