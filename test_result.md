@@ -308,6 +308,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Credit Note and Debit Note Enhanced Features Testing"
     - "Bank Reconciliation Frontend Testing"
     - "Payment Allocation Frontend Testing"
     - "Navigation and Integration Testing"
