@@ -98,22 +98,36 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #===================================================================================================
 
-user_problem_statement: ""
+user_problem_statement: "Fix Balance Sheet to include Net Profit in Equity section and show proper Assets = Liabilities + Equity equation"
 
-backend: []
+backend:
+  - task: "Balance Sheet Net Profit/Loss Inclusion"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/financial.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "USER REPORTED ISSUE: After creating SI of ₹118, Balance Sheet shows Assets=₹118, Liabilities & Equity=0 (WRONG). Expected: Assets=₹118 (Accounts Receivable), Liabilities=₹18 (Output Tax Payable), Equity=₹100 (Net Profit/Retained Earnings). ROOT CAUSE: Balance Sheet endpoint (financial.py lines 877-948) was only showing accounts with direct journal entry transactions in the equity section, but was NOT calculating and including the current period Net Profit/Loss from Income and Expense accounts. FIX IMPLEMENTED: (1) Modified Balance Sheet calculation to iterate through ALL journal entry accounts including Income and Expense types (lines 924-943). (2) Calculate income_total and expense_total from journal entries (excluding tax accounts). (3) Calculate current_period_profit = income_total - expense_total. (4) Add 'Current Period Net Profit' (or 'Net Loss' if negative) to equity_list if amount > 0.01. (5) Added is_balanced check and variance calculation to response. (6) Changed is_group filter from False to {'$ne': True} to include accounts with None value (same fix as P&L). EXPECTED RESULTS: After SI of ₹118 (₹100 + ₹18 tax): Assets: Accounts Receivable ₹118, Liabilities: Output Tax Payable ₹18, Equity: Current Period Net Profit ₹100, Total Assets = ₹118, Total Liabilities = ₹18, Total Equity = ₹100, Total L+E = ₹118, is_balanced = true. Backend restarted successfully. Need comprehensive testing with multiple scenarios."
 
 frontend: []
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 0
+  test_sequence: 1
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Balance Sheet Net Profit/Loss Inclusion"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
-agent_communication: []
+agent_communication:
+    - agent: "main"
+      message: "USER REQUEST: Fix Balance Sheet equation. After creating SI of ₹118, Balance Sheet shows Assets=₹118, Liabilities & Equity=0 (incorrect). Expected: Assets ₹118 = Liabilities ₹18 (Output Tax Payable) + Equity ₹100 (Net Profit). TASK: Test comprehensive Balance Sheet scenarios: (1) Clean database and create fresh SI (₹100 + 18% tax = ₹118). (2) Verify Balance Sheet shows: Assets (Accounts Receivable ₹118), Liabilities (Output Tax Payable ₹18), Equity (Current Period Net Profit ₹100). (3) Verify is_balanced = true and Assets = Liabilities + Equity. (4) Test additional scenarios: SI + PI combination, with Credit Notes and Debit Notes, multiple transactions. (5) Verify tax accounts (Input Tax Credit, Output Tax Payable) appear in correct Balance Sheet sections. All balance calculations must follow accounting principles and Balance Sheet must be balanced."
