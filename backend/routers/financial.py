@@ -750,9 +750,10 @@ async def get_profit_loss_statement(
         end_date = to_date or datetime.now().strftime("%Y-%m-%d")
         
         # Get all accounts grouped by type
+        # Note: Using $ne instead of False to include accounts where is_group is None/null
         all_accounts = await accounts_collection.find({
             "is_active": True,
-            "is_group": False
+            "is_group": {"$ne": True}  # Excludes only True, includes False and None
         }).to_list(length=None)
         
         # Initialize balances
