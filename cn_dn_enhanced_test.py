@@ -148,7 +148,7 @@ class CNDNEnhancedTester:
             async with self.session.get(url, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    if data and len(data) > 0:
+                    if isinstance(data, list) and len(data) > 0:
                         return data[0]
             
             # Create new item if none exist
@@ -163,8 +163,11 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    item = data.get("item", {})
-                    self.created_resources["items"].append(item.get("id"))
+                    # Response could be wrapped in "item" key or direct
+                    item = data.get("item") if "item" in data else data
+                    item_id = item.get("id")
+                    if item_id:
+                        self.created_resources["items"].append(item_id)
                     return item
                 return None
         except Exception as e:
