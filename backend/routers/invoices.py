@@ -304,23 +304,20 @@ async def update_sales_invoice(invoice_id: str, invoice_data: dict):
             # Validate amounts after recalculation
             validate_amounts(invoice_data, "Sales Invoice")
 
-        # If status changed to "submitted", create Journal Entry and Payment Entry (as pending)
+        # If status changed to "submitted", create Journal Entry only (Payment Entry created separately)
         if invoice_data.get("status") == "submitted" and existing.get("status") != "submitted":
-            from database import journal_entries_collection, payments_collection, accounts_collection
+            from database import journal_entries_collection, accounts_collection
             
             # Merge existing data with updates for workflow
             merged_data = {**existing, **invoice_data}
             
-            # Create Journal Entry and Payment Entry
+            # Create Journal Entry only
             je_id = await create_journal_entry_for_sales_invoice(
                 invoice_id, merged_data, journal_entries_collection, accounts_collection
             )
-            payment_id = await create_payment_entry_for_sales_invoice(
-                merged_data, payments_collection
-            )
             
             result = await sales_invoices_collection.update_one({"_id": existing["_id"]}, {"$set": invoice_data})
-            return {"success": True, "message": "Invoice updated, Journal Entry and Payment Entry created", "journal_entry_id": je_id, "payment_entry_id": payment_id}
+            return {"success": True, "message": "Invoice updated and Journal Entry created", "journal_entry_id": je_id}
         
         result = await sales_invoices_collection.update_one({"_id": existing["_id"]}, {"$set": invoice_data})
         if result.modified_count > 0:
