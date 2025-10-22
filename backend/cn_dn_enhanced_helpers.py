@@ -1,0 +1,358 @@
+"""
+Enhanced Credit Note and Debit Note Helpers
+Handles invoice balance adjustments, AR/AP adjustments, and refund workflows
+"""
+from datetime import datetime, timezone
+import uuid
+from typing import Dict, Optional, Tuple
+
+
+def now_utc():
+    return datetime.now(timezone.utc)
+
+
+async def adjust_invoice_for_credit_note(
+    credit_note: Dict,
+    sales_invoices_coll,
+    payment_allocations_coll,
+    payments_coll,
+    journal_entries_coll,
+    accounts_coll
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Adjust linked sales invoice when credit note is issued
+    Returns: (adjustment_journal_entry_id, refund_entry_id)
+    """
+    reference_invoice_id = credit_note.get("reference_invoice_id")
+    if not reference_invoice_id:
+        return None, None
+    
+    # Get the linked invoice
+    invoice = await sales_invoices_coll.find_one({"id": reference_invoice_id})
+    if not invoice:
+        return None, None
+    
+    cn_amount = float(credit_note.get("total_amount", 0))
+    invoice_total = float(invoice.get("total_amount", 0))
+    
+    # Get payment allocations for this invoice
+    allocations = await payment_allocations_coll.find({
+        "invoice_id": reference_invoice_id,
+        "status": "active"
+    }).to_list(length=1000)
+    
+    total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
+    invoice_outstanding = invoice_total - total_allocated
+    
+    adjustment_je_id = None
+    refund_entry_id = None
+    
+    # Scenario 1: Invoice fully paid - Issue refund
+    if total_allocated >= invoice_total:
+        # Create refund payment entry
+        refund_entry_id = str(uuid.uuid4())
+        refund_payment = {
+            "id": refund_entry_id,
+            "payment_number": f"REF-{credit_note.get('credit_note_number', '')}",
+            "payment_type": "Pay",  # Refund is outgoing payment
+            "party_type": "Customer",
+            "party_id": credit_note.get("customer_id"),
+            "party_name": credit_note.get("customer_name"),
+            "payment_date": credit_note.get("credit_note_date") or now_utc(),
+            "amount": min(cn_amount, invoice_total),  # Refund up to invoice amount
+            "payment_method": "Bank Transfer",
+            "reference_number": f"CN-{credit_note.get('credit_note_number')}",
+            "currency": "INR",
+            "exchange_rate": 1.0,
+            "base_amount": min(cn_amount, invoice_total),
+            "status": "draft",  # Draft until processed
+            "description": f"Refund for Credit Note {credit_note.get('credit_note_number')}",
+            "unallocated_amount": 0.0,
+            "company_id": credit_note.get("company_id", "default_company"),
+            "created_at": now_utc(),
+            "updated_at": now_utc()
+        }
+        await payments_coll.insert_one(refund_payment)
+        
+        # Create journal entry for refund
+        cash_account = await accounts_coll.find_one({"account_name": {"$regex": "Cash|Bank", "$options": "i"}})
+        ar_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
+        
+        if cash_account and ar_account:
+            adjustment_je_id = str(uuid.uuid4())
+            refund_je = {
+                "id": adjustment_je_id,
+                "entry_number": f"JE-REF-{credit_note.get('credit_note_number', '')}",
+                "posting_date": credit_note.get("credit_note_date") or now_utc(),
+                "reference": credit_note.get("credit_note_number", ""),
+                "description": f"Refund for Credit Note {credit_note.get('credit_note_number')} against Invoice {invoice.get('invoice_number')}",
+                "voucher_type": "Refund",
+                "voucher_id": credit_note.get("id"),
+                "accounts": [
+                    {
+                        "account_id": ar_account["id"],
+                        "account_name": ar_account["account_name"],
+                        "debit_amount": min(cn_amount, invoice_total),
+                        "credit_amount": 0,
+                        "description": "Reduce A/R for refund"
+                    },
+                    {
+                        "account_id": cash_account["id"],
+                        "account_name": cash_account["account_name"],
+                        "debit_amount": 0,
+                        "credit_amount": min(cn_amount, invoice_total),
+                        "description": "Cash refund to customer"
+                    }
+                ],
+                "total_debit": min(cn_amount, invoice_total),
+                "total_credit": min(cn_amount, invoice_total),
+                "status": "posted",
+                "is_auto_generated": True,
+                "company_id": credit_note.get("company_id", "default_company"),
+                "created_at": now_utc(),
+                "updated_at": now_utc()
+            }
+            await journal_entries_coll.insert_one(refund_je)
+    
+    # Scenario 2: Invoice partially/not paid - Reduce outstanding
+    else:
+        # Reduce invoice total amount
+        new_invoice_total = max(0, invoice_total - cn_amount)
+        
+        # Update invoice
+        update_data = {
+            "total_amount": new_invoice_total,
+            "updated_at": now_utc(),
+            "credit_note_applied": True,
+            "credit_note_id": credit_note.get("id"),
+            "credit_note_amount": cn_amount
+        }
+        
+        # Recalculate payment status
+        if total_allocated >= new_invoice_total and new_invoice_total > 0:
+            update_data["payment_status"] = "Paid"
+            update_data["status"] = "paid"
+        elif total_allocated > 0:
+            update_data["payment_status"] = "Partially Paid"
+        else:
+            update_data["payment_status"] = "Unpaid"
+        
+        await sales_invoices_coll.update_one(
+            {"id": reference_invoice_id},
+            {"$set": update_data}
+        )
+        
+        # Create adjustment JE to reduce AR
+        ar_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
+        sales_return_account = await accounts_coll.find_one({"account_name": {"$regex": "Sales Return", "$options": "i"}})
+        
+        if ar_account and sales_return_account:
+            adjustment_je_id = str(uuid.uuid4())
+            adjustment_je = {
+                "id": adjustment_je_id,
+                "entry_number": f"JE-ADJ-{credit_note.get('credit_note_number', '')}",
+                "posting_date": credit_note.get("credit_note_date") or now_utc(),
+                "reference": f"{credit_note.get('credit_note_number', '')} for {invoice.get('invoice_number')}",
+                "description": f"Invoice balance adjustment for Credit Note {credit_note.get('credit_note_number')}",
+                "voucher_type": "Credit Note Adjustment",
+                "voucher_id": credit_note.get("id"),
+                "accounts": [
+                    {
+                        "account_id": sales_return_account["id"],
+                        "account_name": sales_return_account["account_name"],
+                        "debit_amount": cn_amount,
+                        "credit_amount": 0,
+                        "description": f"Sales return for CN {credit_note.get('credit_note_number')}"
+                    },
+                    {
+                        "account_id": ar_account["id"],
+                        "account_name": ar_account["account_name"],
+                        "debit_amount": 0,
+                        "credit_amount": cn_amount,
+                        "description": f"Reduce A/R for invoice {invoice.get('invoice_number')}"
+                    }
+                ],
+                "total_debit": cn_amount,
+                "total_credit": cn_amount,
+                "status": "posted",
+                "is_auto_generated": True,
+                "company_id": credit_note.get("company_id", "default_company"),
+                "created_at": now_utc(),
+                "updated_at": now_utc()
+            }
+            await journal_entries_coll.insert_one(adjustment_je)
+    
+    return adjustment_je_id, refund_entry_id
+
+
+async def adjust_invoice_for_debit_note(
+    debit_note: Dict,
+    purchase_invoices_coll,
+    payment_allocations_coll,
+    payments_coll,
+    journal_entries_coll,
+    accounts_coll
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Adjust linked purchase invoice when debit note is issued
+    Returns: (adjustment_journal_entry_id, refund_entry_id)
+    """
+    reference_invoice_id = debit_note.get("reference_invoice_id")
+    if not reference_invoice_id:
+        return None, None
+    
+    # Get the linked invoice
+    invoice = await purchase_invoices_coll.find_one({"id": reference_invoice_id})
+    if not invoice:
+        return None, None
+    
+    dn_amount = float(debit_note.get("total_amount", 0))
+    invoice_total = float(invoice.get("total_amount", 0))
+    
+    # Get payment allocations for this invoice
+    allocations = await payment_allocations_coll.find({
+        "invoice_id": reference_invoice_id,
+        "status": "active"
+    }).to_list(length=1000)
+    
+    total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
+    invoice_outstanding = invoice_total - total_allocated
+    
+    adjustment_je_id = None
+    refund_entry_id = None
+    
+    # Scenario 1: Invoice fully paid - Receive refund from supplier
+    if total_allocated >= invoice_total:
+        # Create refund receipt entry
+        refund_entry_id = str(uuid.uuid4())
+        refund_payment = {
+            "id": refund_entry_id,
+            "payment_number": f"REFR-{debit_note.get('debit_note_number', '')}",
+            "payment_type": "Receive",  # Receiving refund from supplier
+            "party_type": "Supplier",
+            "party_id": debit_note.get("supplier_id"),
+            "party_name": debit_note.get("supplier_name"),
+            "payment_date": debit_note.get("debit_note_date") or now_utc(),
+            "amount": min(dn_amount, invoice_total),
+            "payment_method": "Bank Transfer",
+            "reference_number": f"DN-{debit_note.get('debit_note_number')}",
+            "currency": "INR",
+            "exchange_rate": 1.0,
+            "base_amount": min(dn_amount, invoice_total),
+            "status": "draft",
+            "description": f"Refund for Debit Note {debit_note.get('debit_note_number')}",
+            "unallocated_amount": 0.0,
+            "company_id": debit_note.get("company_id", "default_company"),
+            "created_at": now_utc(),
+            "updated_at": now_utc()
+        }
+        await payments_coll.insert_one(refund_payment)
+        
+        # Create journal entry for refund receipt
+        cash_account = await accounts_coll.find_one({"account_name": {"$regex": "Cash|Bank", "$options": "i"}})
+        ap_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
+        
+        if cash_account and ap_account:
+            adjustment_je_id = str(uuid.uuid4())
+            refund_je = {
+                "id": adjustment_je_id,
+                "entry_number": f"JE-REFR-{debit_note.get('debit_note_number', '')}",
+                "posting_date": debit_note.get("debit_note_date") or now_utc(),
+                "reference": debit_note.get("debit_note_number", ""),
+                "description": f"Refund received for Debit Note {debit_note.get('debit_note_number')} against Invoice {invoice.get('invoice_number')}",
+                "voucher_type": "Refund Receipt",
+                "voucher_id": debit_note.get("id"),
+                "accounts": [
+                    {
+                        "account_id": cash_account["id"],
+                        "account_name": cash_account["account_name"],
+                        "debit_amount": min(dn_amount, invoice_total),
+                        "credit_amount": 0,
+                        "description": "Cash refund received"
+                    },
+                    {
+                        "account_id": ap_account["id"],
+                        "account_name": ap_account["account_name"],
+                        "debit_amount": 0,
+                        "credit_amount": min(dn_amount, invoice_total),
+                        "description": "Reduce A/P for refund"
+                    }
+                ],
+                "total_debit": min(dn_amount, invoice_total),
+                "total_credit": min(dn_amount, invoice_total),
+                "status": "posted",
+                "is_auto_generated": True,
+                "company_id": debit_note.get("company_id", "default_company"),
+                "created_at": now_utc(),
+                "updated_at": now_utc()
+            }
+            await journal_entries_coll.insert_one(refund_je)
+    
+    # Scenario 2: Invoice not fully paid - Reduce outstanding
+    else:
+        # Reduce invoice total amount
+        new_invoice_total = max(0, invoice_total - dn_amount)
+        
+        update_data = {
+            "total_amount": new_invoice_total,
+            "updated_at": now_utc(),
+            "debit_note_applied": True,
+            "debit_note_id": debit_note.get("id"),
+            "debit_note_amount": dn_amount
+        }
+        
+        # Recalculate payment status
+        if total_allocated >= new_invoice_total and new_invoice_total > 0:
+            update_data["payment_status"] = "Paid"
+            update_data["status"] = "paid"
+        elif total_allocated > 0:
+            update_data["payment_status"] = "Partially Paid"
+        else:
+            update_data["payment_status"] = "Unpaid"
+        
+        await purchase_invoices_coll.update_one(
+            {"id": reference_invoice_id},
+            {"$set": update_data}
+        )
+        
+        # Create adjustment JE to reduce AP
+        ap_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
+        purchase_return_account = await accounts_coll.find_one({"account_name": {"$regex": "Purchase Return", "$options": "i"}})
+        
+        if ap_account and purchase_return_account:
+            adjustment_je_id = str(uuid.uuid4())
+            adjustment_je = {
+                "id": adjustment_je_id,
+                "entry_number": f"JE-ADJ-{debit_note.get('debit_note_number', '')}",
+                "posting_date": debit_note.get("debit_note_date") or now_utc(),
+                "reference": f"{debit_note.get('debit_note_number', '')} for {invoice.get('invoice_number')}",
+                "description": f"Invoice balance adjustment for Debit Note {debit_note.get('debit_note_number')}",
+                "voucher_type": "Debit Note Adjustment",
+                "voucher_id": debit_note.get("id"),
+                "accounts": [
+                    {
+                        "account_id": ap_account["id"],
+                        "account_name": ap_account["account_name"],
+                        "debit_amount": dn_amount,
+                        "credit_amount": 0,
+                        "description": f"Reduce A/P for invoice {invoice.get('invoice_number')}"
+                    },
+                    {
+                        "account_id": purchase_return_account["id"],
+                        "account_name": purchase_return_account["account_name"],
+                        "debit_amount": 0,
+                        "credit_amount": dn_amount,
+                        "description": f"Purchase return for DN {debit_note.get('debit_note_number')}"
+                    }
+                ],
+                "total_debit": dn_amount,
+                "total_credit": dn_amount,
+                "status": "posted",
+                "is_auto_generated": True,
+                "company_id": debit_note.get("company_id", "default_company"),
+                "created_at": now_utc(),
+                "updated_at": now_utc()
+            }
+            await journal_entries_coll.insert_one(adjustment_je)
+    
+    return adjustment_je_id, refund_entry_id
