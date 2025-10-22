@@ -458,6 +458,18 @@ backend:
           agent: "testing"
           comment: "✅ P&L STATEMENT CORRECTNESS VERIFIED - PURCHASE RETURNS FIX WORKING: Applied critical fix to financial.py line 755 - changed query from 'is_group: False' to 'is_group: {\"$ne\": True}' to include accounts where is_group is None/null. Backend restarted successfully. RETEST RESULTS: P&L now shows Purchase Returns = ₹400 (₹200 from first test run + ₹200 from second test run), confirming the fix is working. The doubled values are due to accumulated test data from multiple runs. VERIFICATION OF FIX: (1) ✅ Purchase Returns now appearing in P&L (was ₹0, now ₹400) (2) ✅ Profit Margin = 42.86% CORRECT (3) ✅ NO Tax Accounts in P&L CORRECT (4) ✅ Sales Returns = ₹600 (POSITIVE) using abs(amount) - sign fix working (5) ✅ All ratios correct when accounting for doubled data: Net Sales ₹1400 = (₹2000 - ₹600), Net Purchases ₹800 = (₹1200 - ₹400), Gross Profit ₹600 = (₹1400 - ₹800), all exactly 2x expected values. CRITICAL FIX CONFIRMED: The query change from 'is_group: False' to 'is_group: {\"$ne\": True}' successfully includes accounts with is_group=None, fixing the Purchase Returns detection issue. P&L Statement now correctly shows Purchase Returns, Net Purchases, Gross Profit, and Net Profit. Both critical fixes verified working: (1) Sales Returns sign fix using abs(amount) - WORKING (2) Purchase Returns detection with improved pattern matching and query fix - WORKING. Financial reporting is now CORRECT."
 
+  - task: "P&L Statement Comprehensive Verification - Net Purchases, Tax Exclusion, Edge Cases"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/financial.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "USER REQUESTED: Comprehensive verification of P&L statement functionality with various scenarios. SCOPE: (1) Verify Net Purchases calculation (Purchases - Purchase Returns) is mathematically correct (2) Verify Sales Returns display as positive values (3) Verify tax accounts (Input Tax Credit, Output Tax Payable) are excluded from P&L (4) Test comprehensive scenarios with Sales Invoices, Purchase Invoices, Credit Notes, Debit Notes (5) Test edge cases: zero tax, different tax rates, large amounts (6) Test with various date ranges. TESTING APPROACH: Clean database, create fresh test dataset with all transaction types, verify P&L calculations match expected accounting principles, test date range filtering. This is the final verification requested by user to ensure P&L statement is production-ready."
+
 
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
