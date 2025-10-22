@@ -184,29 +184,35 @@ async def get_credit_notes(
 @router.post("/credit-notes")
 async def create_credit_note(body: Dict[str, Any]):
     """Create new credit note with validation and linking"""
-    # Validate required fields using centralized validator
-    validate_required_fields(
-        body,
-        ["customer_name", "items"],
-        "Credit Note"
-    )
-    
-    # Validate items using centralized validator
-    validate_items(body.get("items", []), "Credit Note")
-    
     # Validate and link to original invoice if provided
     reference_invoice_id = body.get("reference_invoice_id")
     reference_invoice_number = body.get("reference_invoice")
     
+    # If invoice is selected, auto-populate customer details
     if reference_invoice_id:
         from database import sales_invoices_collection
         original_invoice = await sales_invoices_collection.find_one({"id": reference_invoice_id})
         if not original_invoice:
             raise HTTPException(status_code=404, detail="Referenced invoice not found")
         
+        # Auto-fill customer details from invoice
+        body.setdefault("customer_id", original_invoice.get("customer_id"))
+        body.setdefault("customer_name", original_invoice.get("customer_name"))
+        body.setdefault("customer_email", original_invoice.get("customer_email"))
+        body.setdefault("customer_phone", original_invoice.get("customer_phone"))
+        body.setdefault("customer_address", original_invoice.get("customer_address"))
+        
         # Auto-fill reference number if not provided
         if not reference_invoice_number:
             reference_invoice_number = original_invoice.get("invoice_number")
+            body["reference_invoice"] = reference_invoice_number
+    
+    # Validate required fields (customer_name required even if not linked to invoice)
+    validate_required_fields(
+        body,
+        ["customer_name", "items"],
+        "Credit Note"
+    )
     
     # Get items from body
     items = body.get("items", [])
