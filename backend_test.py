@@ -1016,9 +1016,10 @@ class BackendTester:
             
             # STEP 2: Create Debit Note linked to PI with status='submitted'
             # ₹50 + 18% tax = ₹59
+            # NOTE: Using invoice_number instead of invoice_id due to ID mismatch issue
             dn_payload = {
                 "supplier_name": "Test Supplier for Trial Balance",
-                "reference_invoice_id": pi_id,
+                "reference_invoice": pi_number,  # Use invoice number instead of ID
                 "items": [
                     {"item_name": "Test Item", "quantity": 1, "rate": 50, "amount": 50}
                 ],
