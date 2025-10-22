@@ -65,6 +65,10 @@ async def allocate_payment_to_invoices(payload: Dict[str, Any]):
     
     created_allocations = []
     
+    # Determine which invoice collection to use based on payment type
+    invoices_coll = sales_invoices_coll if payment.get("party_type") == "Customer" else purchase_invoices_coll
+    party_field = "customer_id" if payment.get("party_type") == "Customer" else "supplier_id"
+    
     for allocation in allocations_list:
         invoice_id = allocation.get("invoice_id")
         allocated_amount = float(allocation.get("allocated_amount", 0))
@@ -73,15 +77,14 @@ async def allocate_payment_to_invoices(payload: Dict[str, Any]):
         if not invoice_id:
             continue
         
-        # Verify invoice exists
+        # Verify invoice exists in the correct collection
         invoice = await invoices_coll.find_one({"id": invoice_id})
         if not invoice:
             raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
         
         # Check if invoice belongs to same party as payment
-        if payment.get("party_type") == "Customer":
-            if invoice.get("customer_id") != payment.get("party_id"):
-                raise HTTPException(status_code=400, detail=f"Invoice customer does not match payment party")
+        if invoice.get(party_field) != payment.get("party_id"):
+            raise HTTPException(status_code=400, detail=f"Invoice party does not match payment party")
         
         # Calculate invoice outstanding amount
         invoice_total = float(invoice.get("total_amount", 0))
