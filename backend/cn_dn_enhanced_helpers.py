@@ -303,7 +303,19 @@ async def adjust_invoice_for_debit_note(
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Adjust linked purchase invoice when debit note is issued
+    
+    Validations:
+    - Checks cumulative DN amount doesn't exceed original invoice total
+    - Prevents over-debiting
+    
+    Actions:
+    - Tracks DN in invoice's debit_notes array
+    - Updates total_debit_notes_amount
+    - Reverses excess payment allocations if needed
+    - Creates refund receipt or adjustment journal entries
+    
     Returns: (adjustment_journal_entry_id, refund_entry_id)
+    Raises: HTTPException if validation fails
     """
     reference_invoice_id = debit_note.get("reference_invoice_id")
     if not reference_invoice_id:
@@ -312,10 +324,25 @@ async def adjust_invoice_for_debit_note(
     # Get the linked invoice
     invoice = await purchase_invoices_coll.find_one({"id": reference_invoice_id})
     if not invoice:
-        return None, None
+        raise HTTPException(status_code=404, detail="Referenced purchase invoice not found")
     
     dn_amount = float(debit_note.get("total_amount", 0))
-    invoice_total = float(invoice.get("total_amount", 0))
+    original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
+    current_invoice_total = float(invoice.get("total_amount", 0))
+    
+    # VALIDATION 1: Check cumulative DN amount
+    existing_dn_amount = float(invoice.get("total_debit_notes_amount", 0))
+    total_dn_after_this = existing_dn_amount + dn_amount
+    
+    if total_dn_after_this > original_invoice_total:
+        available_for_dn = original_invoice_total - existing_dn_amount
+        raise HTTPException(
+            status_code=400,
+            detail=f"Debit Note amount (₹{dn_amount}) exceeds available balance. "
+                   f"Invoice original total: ₹{original_invoice_total}, "
+                   f"Already debited: ₹{existing_dn_amount}, "
+                   f"Available for debit: ₹{available_for_dn}"
+        )
     
     # Get payment allocations for this invoice
     allocations = await payment_allocations_coll.find({
