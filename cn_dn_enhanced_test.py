@@ -278,7 +278,7 @@ class CNDNEnhancedTester:
     async def create_payment_allocation(self, payment_id: str, invoice_id: str, amount: float, invoice_type: str = "sales") -> Optional[str]:
         """Create payment allocation"""
         try:
-            url = f"{self.base_url}/api/financial/payment-allocations/allocate"
+            url = f"{self.base_url}/api/financial/payment-allocation/allocate"
             payload = {
                 "payment_id": payment_id,
                 "invoice_id": invoice_id,
