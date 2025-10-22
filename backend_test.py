@@ -10840,6 +10840,289 @@ class BackendTester:
             self.log_test("Comprehensive P&L Verification", False, f"Critical error: {str(e)}")
             return False
 
+    async def test_balance_sheet_verification_debit_note_tax_accounting(self):
+        """Test Balance Sheet Verification - Correct Debit Note Tax Accounting"""
+        try:
+            print("🔄 Testing Balance Sheet Verification - Correct Debit Note Tax Accounting")
+            
+            # STEP 1: Clean Database using clean_database.py
+            print("\n📋 STEP 1: Clean Database")
+            import subprocess
+            import sys
+            
+            # Run clean_database.py script
+            result = subprocess.run([
+                sys.executable, "/app/backend/clean_database.py"
+            ], input="yes\n", text=True, capture_output=True, cwd="/app/backend")
+            
+            if result.returncode != 0:
+                self.log_test("Balance Sheet - Step 1: Clean Database", False, f"Clean database failed: {result.stderr}")
+                return False
+            
+            self.log_test("Balance Sheet - Step 1: Clean Database", True, "Database cleaned successfully")
+            
+            # STEP 2: Verify Chart of Accounts has required accounts
+            print("\n📋 STEP 2: Verify Chart of Accounts")
+            async with self.session.get(f"{self.base_url}/api/financial/accounts") as response:
+                if response.status == 200:
+                    accounts = await response.json()
+                    account_names = [acc.get("account_name", "").lower() for acc in accounts]
+                    
+                    required_accounts = [
+                        "input tax credit",
+                        "output tax payable", 
+                        "accounts payable",
+                        "purchases",
+                        "purchase returns"
+                    ]
+                    
+                    missing_accounts = []
+                    for req_acc in required_accounts:
+                        if not any(req_acc in name for name in account_names):
+                            missing_accounts.append(req_acc)
+                    
+                    if missing_accounts:
+                        self.log_test("Balance Sheet - Step 2: Chart of Accounts", False, f"Missing accounts: {missing_accounts}")
+                        return False
+                    
+                    self.log_test("Balance Sheet - Step 2: Chart of Accounts", True, f"All required accounts present: {required_accounts}")
+                else:
+                    self.log_test("Balance Sheet - Step 2: Chart of Accounts", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 3: Create Purchase Invoice (₹100 + 18% tax = ₹118)
+            print("\n📋 STEP 3: Create Purchase Invoice")
+            pi_payload = {
+                "supplier_name": "Test Supplier for Balance Sheet",
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 100, "amount": 100}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"  # Direct submit to trigger Journal Entry
+            }
+            
+            pi_id = None
+            pi_je_id = None
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=pi_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        pi_id = data["invoice"].get("id")
+                        pi_number = data["invoice"].get("invoice_number")
+                        pi_total = data["invoice"].get("total_amount")
+                        pi_je_id = data.get("journal_entry_id")
+                        
+                        self.log_test("Balance Sheet - Step 3: Create Purchase Invoice", True, 
+                                    f"PI created: {pi_number}, Total: ₹{pi_total}, JE: {pi_je_id}", 
+                                    {"pi_id": pi_id, "total": pi_total})
+                    else:
+                        self.log_test("Balance Sheet - Step 3: Create Purchase Invoice", False, f"Invalid response: {data}")
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Balance Sheet - Step 3: Create Purchase Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not pi_id:
+                return False
+            
+            # STEP 4: Create Debit Note (₹90 + 18% tax = ₹106.20)
+            print("\n📋 STEP 4: Create Debit Note")
+            dn_payload = {
+                "supplier_name": "Test Supplier for Balance Sheet",
+                "reference_invoice": pi_number,
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 90, "amount": 90}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Return",
+                "status": "submitted"  # Direct submit to trigger Journal Entry
+            }
+            
+            dn_id = None
+            dn_je_id = None
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "debit_note" in data:
+                        dn_id = data["debit_note"].get("id")
+                        dn_number = data["debit_note"].get("debit_note_number")
+                        dn_total = data["debit_note"].get("total_amount")
+                        
+                        self.log_test("Balance Sheet - Step 4: Create Debit Note", True, 
+                                    f"DN created: {dn_number}, Total: ₹{dn_total}, linked to PI: {pi_number}", 
+                                    {"dn_id": dn_id, "total": dn_total})
+                    else:
+                        self.log_test("Balance Sheet - Step 4: Create Debit Note", False, f"Invalid response: {data}")
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Balance Sheet - Step 4: Create Debit Note", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not dn_id:
+                return False
+            
+            # STEP 5: Verify Journal Entries
+            print("\n📋 STEP 5: Verify Journal Entries")
+            
+            # Get PI Journal Entry
+            if pi_je_id:
+                async with self.session.get(f"{self.base_url}/api/financial/journal-entries/{pi_je_id}") as response:
+                    if response.status == 200:
+                        pi_je = await response.json()
+                        
+                        # Verify PI JE uses Input Tax Credit (Asset) for tax
+                        input_tax_found = False
+                        for acc in pi_je.get("accounts", []):
+                            if "input tax credit" in acc.get("account_name", "").lower():
+                                if acc.get("debit_amount", 0) == 18.0:
+                                    input_tax_found = True
+                                    break
+                        
+                        if input_tax_found:
+                            self.log_test("Balance Sheet - Step 5a: PI Journal Entry", True, 
+                                        "PI JE correctly uses Input Tax Credit (Asset) ₹18", pi_je)
+                        else:
+                            self.log_test("Balance Sheet - Step 5a: PI Journal Entry", False, 
+                                        "PI JE does not use Input Tax Credit correctly", pi_je)
+                            return False
+                    else:
+                        self.log_test("Balance Sheet - Step 5a: PI Journal Entry", False, f"HTTP {response.status}")
+                        return False
+            
+            # Get DN Journal Entry by searching for DN number
+            async with self.session.get(f"{self.base_url}/api/financial/journal-entries?voucher_type=Debit Note") as response:
+                if response.status == 200:
+                    dn_jes = await response.json()
+                    dn_je = None
+                    
+                    # Find DN JE by reference
+                    for je in dn_jes:
+                        if dn_number in je.get("reference", ""):
+                            dn_je = je
+                            break
+                    
+                    if dn_je:
+                        # CRITICAL CHECK: Verify DN JE uses Output Tax Payable (Liability) for tax, NOT Input Tax Credit
+                        output_tax_found = False
+                        input_tax_used = False
+                        
+                        for acc in dn_je.get("accounts", []):
+                            acc_name = acc.get("account_name", "").lower()
+                            if "output tax" in acc_name or "tax payable" in acc_name:
+                                if acc.get("credit_amount", 0) == 16.20:  # ₹90 * 18% = ₹16.20
+                                    output_tax_found = True
+                            elif "input tax credit" in acc_name:
+                                input_tax_used = True
+                        
+                        if output_tax_found and not input_tax_used:
+                            self.log_test("Balance Sheet - Step 5b: DN Journal Entry", True, 
+                                        "✅ CRITICAL: DN JE correctly uses Output Tax Payable (Liability) ₹16.20, NOT Input Tax Credit", dn_je)
+                        else:
+                            self.log_test("Balance Sheet - Step 5b: DN Journal Entry", False, 
+                                        f"❌ CRITICAL: DN JE incorrect tax account - Output Tax Found: {output_tax_found}, Input Tax Used: {input_tax_used}", dn_je)
+                            return False
+                    else:
+                        self.log_test("Balance Sheet - Step 5b: DN Journal Entry", False, "DN Journal Entry not found")
+                        return False
+                else:
+                    self.log_test("Balance Sheet - Step 5b: DN Journal Entry", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 6: Get Balance Sheet and verify structure
+            print("\n📋 STEP 6: Get Balance Sheet")
+            async with self.session.get(f"{self.base_url}/api/financial/reports/balance-sheet") as response:
+                if response.status == 200:
+                    balance_sheet = await response.json()
+                    
+                    # Extract account balances
+                    assets = balance_sheet.get("assets", [])
+                    liabilities = balance_sheet.get("liabilities", [])
+                    equity = balance_sheet.get("equity", [])
+                    
+                    # Find specific accounts
+                    input_tax_credit = 0
+                    accounts_payable = 0
+                    output_tax_payable = 0
+                    
+                    for asset in assets:
+                        if "input tax credit" in asset.get("account_name", "").lower():
+                            input_tax_credit = asset.get("amount", 0)
+                    
+                    for liability in liabilities:
+                        if "accounts payable" in liability.get("account_name", "").lower():
+                            accounts_payable = liability.get("amount", 0)
+                        elif "output tax" in liability.get("account_name", "").lower() or "tax payable" in liability.get("account_name", "").lower():
+                            output_tax_payable = liability.get("amount", 0)
+                    
+                    # Expected values:
+                    # Input Tax Credit: ₹18.00 (from PI only - DN doesn't touch this)
+                    # Accounts Payable: ₹11.80 (₹118 from PI - ₹106.20 from DN)
+                    # Output Tax Payable: ₹16.20 (from DN tax reversal)
+                    
+                    validation_results = []
+                    
+                    # Check Input Tax Credit
+                    if abs(input_tax_credit - 18.0) < 0.01:
+                        validation_results.append("✅ Input Tax Credit: ₹18.00 (correct)")
+                    else:
+                        validation_results.append(f"❌ Input Tax Credit: ₹{input_tax_credit} (expected ₹18.00)")
+                    
+                    # Check Accounts Payable
+                    expected_payable = 118.0 - 106.20  # ₹11.80
+                    if abs(accounts_payable - expected_payable) < 0.01:
+                        validation_results.append("✅ Accounts Payable: ₹11.80 (correct)")
+                    else:
+                        validation_results.append(f"❌ Accounts Payable: ₹{accounts_payable} (expected ₹{expected_payable})")
+                    
+                    # Check Output Tax Payable (CRITICAL)
+                    if abs(output_tax_payable - 16.20) < 0.01:
+                        validation_results.append("✅ Output Tax Payable: ₹16.20 (correct - GST reversal liability)")
+                    else:
+                        validation_results.append(f"❌ Output Tax Payable: ₹{output_tax_payable} (expected ₹16.20)")
+                    
+                    # Check accounting equation
+                    total_assets = balance_sheet.get("total_assets", 0)
+                    total_liabilities = balance_sheet.get("total_liabilities", 0)
+                    total_equity = balance_sheet.get("total_equity", 0)
+                    
+                    accounting_equation_balanced = abs(total_assets - (total_liabilities + total_equity)) < 0.01
+                    
+                    if accounting_equation_balanced:
+                        validation_results.append(f"✅ Accounting Equation Balanced: Assets ₹{total_assets} = Liabilities ₹{total_liabilities} + Equity ₹{total_equity}")
+                    else:
+                        validation_results.append(f"❌ Accounting Equation NOT Balanced: Assets ₹{total_assets} ≠ Liabilities ₹{total_liabilities} + Equity ₹{total_equity}")
+                    
+                    # Overall success
+                    all_validations_passed = all("✅" in result for result in validation_results)
+                    
+                    if all_validations_passed:
+                        self.log_test("Balance Sheet - Step 6: Balance Sheet Verification", True, 
+                                    f"✅ ALL VALIDATIONS PASSED: {'; '.join(validation_results)}", 
+                                    {"balance_sheet": balance_sheet, "validations": validation_results})
+                    else:
+                        self.log_test("Balance Sheet - Step 6: Balance Sheet Verification", False, 
+                                    f"❌ VALIDATION FAILURES: {'; '.join(validation_results)}", 
+                                    {"balance_sheet": balance_sheet, "validations": validation_results})
+                        return False
+                    
+                else:
+                    self.log_test("Balance Sheet - Step 6: Balance Sheet Verification", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 7: Final Success
+            self.log_test("Balance Sheet Verification - Debit Note Tax Accounting", True, 
+                        "✅ COMPLETE SUCCESS: Debit Note correctly uses Output Tax Payable (Liability) for GST reversal, Balance Sheet shows correct accounting structure, Accounting equation balanced")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Balance Sheet Verification - Debit Note Tax Accounting", False, f"Critical error: {str(e)}")
+            return False
+
     async def run_all_tests(self):
         """Run backend tests focusing on P&L STATEMENT CORRECTNESS"""
         print("🚀 Starting GiLi Backend API Testing Suite - P&L STATEMENT CORRECTNESS TEST")
