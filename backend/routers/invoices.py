@@ -175,6 +175,11 @@ async def create_sales_invoice(invoice_data: dict):
         if not invoice_data.get("invoice_number"):
             invoice_count = await sales_invoices_collection.count_documents({})
             invoice_data["invoice_number"] = f"INV-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{invoice_count + 1:04d}"
+        
+        # Set default invoice_date if not provided (CRITICAL for journal entry posting_date)
+        if not invoice_data.get("invoice_date"):
+            invoice_data["invoice_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        
         invoice_data["id"] = str(uuid.uuid4())
         now_iso = datetime.now(timezone.utc)
         invoice_data["created_at"] = now_iso
