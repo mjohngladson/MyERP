@@ -238,12 +238,20 @@ async def create_debit_note(body: Dict[str, Any]):
     total_amount = discounted_total + tax_amount
     
     # CRITICAL: Validate DN amount doesn't exceed available PI balance (even for draft)
+    # Calculate cumulative DN amount by querying ALL existing DNs (draft + submitted) for this PI
     if reference_invoice_id:
         from database import purchase_invoices_collection
         invoice = await purchase_invoices_collection.find_one({"id": reference_invoice_id})
         if invoice:
             original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
-            existing_dn_amount = float(invoice.get("total_debit_notes_amount", 0))
+            
+            # CRITICAL FIX: Query debit_notes_collection to get total of ALL DNs (both draft and submitted)
+            # instead of relying on 'total_debit_notes_amount' field which only tracks submitted DNs
+            existing_dns = await debit_notes_collection.find({
+                "reference_invoice_id": reference_invoice_id
+            }).to_list(length=1000)
+            existing_dn_amount = sum(float(dn.get("total_amount", 0)) for dn in existing_dns)
+            
             total_dn_after_this = existing_dn_amount + total_amount
             
             if total_dn_after_this > original_invoice_total:
