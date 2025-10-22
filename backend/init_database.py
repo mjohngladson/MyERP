@@ -28,11 +28,12 @@ async def initialize_database():
     print("DATABASE INITIALIZATION SCRIPT")
     print("=" * 70)
     print(f"MongoDB URL: {MONGO_URL}")
+    print(f"Database Name: {DB_NAME}")
     print(f"Timestamp: {datetime.now().isoformat()}")
     print("=" * 70)
     
     client = AsyncIOMotorClient(MONGO_URL)
-    db = client.get_default_database()
+    db = client[DB_NAME]
     
     # 1. Create Users
     print("\n1️⃣  Creating Users...")
