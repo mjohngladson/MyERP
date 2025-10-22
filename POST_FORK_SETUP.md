@@ -17,9 +17,23 @@ When you fork this project to a new environment, the frontend will fail to conne
 - ❌ Browser console shows CORS errors pointing to old URL (e.g., `erp-gili-1.preview.emergentagent.com`)
 - ❌ Console log shows: `Using backend URL from env: https://erp-[old-name].preview.emergentagent.com`
 
-## Automated Fix
+## Automatic Fix on Startup
 
-We've created an automated script to fix this issue. Simply run:
+**The fix now runs automatically when the system starts!**
+
+After forking, just wait 60-90 seconds and the system will:
+1. ✅ Detect the new backend URL
+2. ✅ Update configuration files
+3. ✅ Restart services with correct settings
+
+You can check the auto-fix log:
+```bash
+cat /var/log/auto-fix-backend-url.log
+```
+
+## Manual Fix (If Needed)
+
+If the automatic fix doesn't work or you need to force an update:
 
 ```bash
 cd /app
