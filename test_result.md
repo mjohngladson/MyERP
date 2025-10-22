@@ -308,10 +308,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Credit Note and Debit Note Enhanced Features Testing"
-    - "Bank Reconciliation Frontend Testing"
-    - "Payment Allocation Frontend Testing"
-    - "Navigation and Integration Testing"
+    - "P&L Statement Comprehensive Verification - Net Purchases, Tax Exclusion, Edge Cases"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
