@@ -234,7 +234,7 @@ class CNDNEnhancedTester:
             
             print(f"Using item for purchase invoice: {item}")
             
-            url = f"{self.base_url}/api/purchase/invoices/"  # Note: trailing slash required
+            url = f"{self.base_url}/api/purchase/invoices"  # No trailing slash for purchase invoices
             payload = {
                 "supplier_id": supplier_id,
                 "supplier_name": supplier_name,
