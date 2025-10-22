@@ -405,11 +405,11 @@ class BalanceSheetTester:
             headers = {"Authorization": f"Bearer {self.token}"}
             
             # Get customer, item, and sales invoice
-            async with self.session.get(f"{self.base_url}/api/sales/customers", headers=headers) as response:
+            async with self.session.get(f"{self.base_url}/api/master/customers", headers=headers) as response:
                 customers = await response.json()
                 customer = customers[0]
             
-            async with self.session.get(f"{self.base_url}/api/master-data/items", headers=headers) as response:
+            async with self.session.get(f"{self.base_url}/api/master/items", headers=headers) as response:
                 items = await response.json()
                 item = items[0]
             
