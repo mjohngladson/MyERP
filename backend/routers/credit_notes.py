@@ -217,6 +217,16 @@ async def create_credit_note(body: Dict[str, Any]):
     # Validate items using centralized validator
     validate_items(body.get("items", []), "Credit Note")
     
+    # CRITICAL: Validate line item quantities are integers only (no decimals)
+    items = body.get("items", [])
+    for idx, item in enumerate(items):
+        qty = item.get("quantity", 0)
+        if not isinstance(qty, int) and (isinstance(qty, float) and not qty.is_integer()):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Line item {idx + 1}: Quantity must be a whole number (integer), not decimal. Received: {qty}"
+            )
+    
     # Get items from body
     items = body.get("items", [])
     
@@ -228,6 +238,26 @@ async def create_credit_note(body: Dict[str, Any]):
     discounted_total = subtotal - discount_amount
     tax_amount = (discounted_total * tax_rate) / 100
     total_amount = discounted_total + tax_amount
+    
+    # CRITICAL: Validate CN amount doesn't exceed available SI balance (even for draft)
+    if reference_invoice_id:
+        from database import sales_invoices_collection
+        invoice = await sales_invoices_collection.find_one({"id": reference_invoice_id})
+        if invoice:
+            original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
+            existing_cn_amount = float(invoice.get("total_credit_notes_amount", 0))
+            total_cn_after_this = existing_cn_amount + total_amount
+            
+            if total_cn_after_this > original_invoice_total:
+                available_for_cn = original_invoice_total - existing_cn_amount
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"❌ Credit Note creation rejected: Amount (₹{total_amount:.2f}) exceeds available balance. "
+                           f"Invoice original total: ₹{original_invoice_total:.2f}, "
+                           f"Already credited: ₹{existing_cn_amount:.2f}, "
+                           f"Available for credit: ₹{available_for_cn:.2f}. "
+                           f"Cannot create Credit Note (even in draft) that exceeds invoice amount."
+                )
     
     # Set default credit_note_date if not provided (CRITICAL for journal entry posting_date)
     credit_note_date = body.get("credit_note_date")
