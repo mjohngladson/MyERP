@@ -12212,6 +12212,279 @@ class BackendTester:
             self.log_test("General Settings Extended", False, f"Critical error: {str(e)}")
             return False
     
+    async def test_profit_loss_statement_after_date_fix(self):
+        """Test Profit & Loss Statement after date fix - RETEST with complete transaction set"""
+        try:
+            print("\n🔄 Testing Profit & Loss Statement After Date Fix - Complete Transaction Set")
+            print("=" * 80)
+            
+            # STEP 1: Create Sales Invoice with status='submitted'
+            # ₹1000 + 18% tax = ₹1180
+            si_payload = {
+                "customer_name": "Test Customer for P&L",
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 1000}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            si_id = None
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=si_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        si_id = data["invoice"].get("id")
+                        si_number = data["invoice"].get("invoice_number")
+                        si_total = data["invoice"].get("total_amount")
+                        self.log_test("P&L Test - Step 1: Create Sales Invoice", True, 
+                                    f"Sales Invoice created: {si_number}, Total: ₹{si_total}, JE: {data.get('journal_entry_id')}", 
+                                    {"si_id": si_id, "si_number": si_number, "total": si_total})
+                    else:
+                        self.log_test("P&L Test - Step 1: Create Sales Invoice", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("P&L Test - Step 1: Create Sales Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not si_id:
+                self.log_test("P&L Test", False, "Cannot proceed without Sales Invoice")
+                return False
+            
+            # STEP 2: Create Purchase Invoice with status='submitted'
+            # ₹600 + 18% tax = ₹708
+            pi_payload = {
+                "supplier_name": "Test Supplier for P&L",
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 600}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            pi_id = None
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=pi_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        pi_id = data["invoice"].get("id")
+                        pi_number = data["invoice"].get("invoice_number")
+                        pi_total = data["invoice"].get("total_amount")
+                        self.log_test("P&L Test - Step 2: Create Purchase Invoice", True, 
+                                    f"Purchase Invoice created: {pi_number}, Total: ₹{pi_total}, JE: {data.get('journal_entry_id')}", 
+                                    {"pi_id": pi_id, "pi_number": pi_number, "total": pi_total})
+                    else:
+                        self.log_test("P&L Test - Step 2: Create Purchase Invoice", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("P&L Test - Step 2: Create Purchase Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not pi_id:
+                self.log_test("P&L Test", False, "Cannot proceed without Purchase Invoice")
+                return False
+            
+            # STEP 3: Create Credit Note (Sales Return) linked to SI with status='submitted'
+            # ₹300 + 18% tax = ₹354
+            cn_payload = {
+                "customer_name": "Test Customer for P&L",
+                "reference_invoice_id": si_id,
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 300, "amount": 300}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Sales Return",
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            cn_id = None
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=cn_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "credit_note" in data:
+                        cn_id = data["credit_note"].get("id")
+                        cn_number = data["credit_note"].get("credit_note_number")
+                        cn_total = data["credit_note"].get("total_amount")
+                        self.log_test("P&L Test - Step 3: Create Credit Note", True, 
+                                    f"Credit Note created: {cn_number}, Total: ₹{cn_total}, linked to SI: {si_id}", 
+                                    {"cn_id": cn_id, "cn_number": cn_number, "total": cn_total})
+                    else:
+                        self.log_test("P&L Test - Step 3: Create Credit Note", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("P&L Test - Step 3: Create Credit Note", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not cn_id:
+                self.log_test("P&L Test", False, "Cannot proceed without Credit Note")
+                return False
+            
+            # STEP 4: Create Debit Note (Purchase Return) linked to PI with status='submitted'
+            # ₹200 + 18% tax = ₹236
+            dn_payload = {
+                "supplier_name": "Test Supplier for P&L",
+                "reference_invoice_id": pi_id,
+                "items": [
+                    {"item_name": "Test Product", "quantity": 1, "rate": 200, "amount": 200}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Purchase Return",
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            dn_id = None
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "debit_note" in data:
+                        dn_id = data["debit_note"].get("id")
+                        dn_number = data["debit_note"].get("debit_note_number")
+                        dn_total = data["debit_note"].get("total_amount")
+                        self.log_test("P&L Test - Step 4: Create Debit Note", True, 
+                                    f"Debit Note created: {dn_number}, Total: ₹{dn_total}, linked to PI: {pi_id}", 
+                                    {"dn_id": dn_id, "dn_number": dn_number, "total": dn_total})
+                    else:
+                        self.log_test("P&L Test - Step 4: Create Debit Note", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("P&L Test - Step 4: Create Debit Note", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not dn_id:
+                self.log_test("P&L Test", False, "Cannot proceed without Debit Note")
+                return False
+            
+            # STEP 5: Get Profit & Loss Statement and verify structure
+            async with self.session.get(f"{self.base_url}/api/financial/reports/profit-loss") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Debug: Print P&L structure
+                    print(f"\n📊 PROFIT & LOSS STATEMENT:")
+                    print(f"   From: {data.get('from_date')} To: {data.get('to_date')}")
+                    print(f"\n   REVENUE:")
+                    revenue = data.get("revenue", {})
+                    print(f"      Sales Revenue: ₹{revenue.get('sales_revenue', 0)}")
+                    print(f"      - Sales Returns: ₹{revenue.get('sales_returns', 0)}")
+                    print(f"      = Net Sales: ₹{revenue.get('net_sales', 0)}")
+                    
+                    print(f"\n   COST OF SALES:")
+                    cost_of_sales = data.get("cost_of_sales", {})
+                    print(f"      Purchases: ₹{cost_of_sales.get('purchases', 0)}")
+                    print(f"      - Purchase Returns: ₹{cost_of_sales.get('purchase_returns', 0)}")
+                    print(f"      = Net Purchases: ₹{cost_of_sales.get('net_purchases', 0)}")
+                    print(f"      + Cost of Goods Sold: ₹{cost_of_sales.get('cost_of_goods_sold', 0)}")
+                    print(f"      = Total Cost of Sales: ₹{cost_of_sales.get('total_cost_of_sales', 0)}")
+                    
+                    print(f"\n   GROSS PROFIT: ₹{data.get('gross_profit', 0)}")
+                    
+                    print(f"\n   OPERATING EXPENSES:")
+                    operating_expenses = data.get("operating_expenses", {})
+                    print(f"      Operating Expenses: ₹{operating_expenses.get('operating_expenses', 0)}")
+                    print(f"      Other Expenses: ₹{operating_expenses.get('other_expenses', 0)}")
+                    print(f"      = Total Operating Expenses: ₹{operating_expenses.get('total_operating_expenses', 0)}")
+                    
+                    print(f"\n   OTHER INCOME: ₹{data.get('other_income', 0)}")
+                    print(f"\n   NET PROFIT: ₹{data.get('net_profit', 0)}")
+                    print(f"   Profit Margin: {data.get('profit_margin_percent', 0)}%\n")
+                    
+                    # Validation checks
+                    validation_results = []
+                    
+                    # 1. Sales Revenue = ₹1000
+                    if revenue.get('sales_revenue') == 1000.0:
+                        validation_results.append("✅ Sales Revenue = ₹1000")
+                    else:
+                        validation_results.append(f"❌ Sales Revenue = ₹{revenue.get('sales_revenue')} (expected ₹1000)")
+                    
+                    # 2. Sales Returns = ₹300
+                    if revenue.get('sales_returns') == 300.0:
+                        validation_results.append("✅ Sales Returns = ₹300")
+                    else:
+                        validation_results.append(f"❌ Sales Returns = ₹{revenue.get('sales_returns')} (expected ₹300)")
+                    
+                    # 3. Net Sales = ₹700
+                    if revenue.get('net_sales') == 700.0:
+                        validation_results.append("✅ Net Sales = ₹700")
+                    else:
+                        validation_results.append(f"❌ Net Sales = ₹{revenue.get('net_sales')} (expected ₹700)")
+                    
+                    # 4. Purchases = ₹600
+                    if cost_of_sales.get('purchases') == 600.0:
+                        validation_results.append("✅ Purchases = ₹600")
+                    else:
+                        validation_results.append(f"❌ Purchases = ₹{cost_of_sales.get('purchases')} (expected ₹600)")
+                    
+                    # 5. Purchase Returns = ₹200
+                    if cost_of_sales.get('purchase_returns') == 200.0:
+                        validation_results.append("✅ Purchase Returns = ₹200")
+                    else:
+                        validation_results.append(f"❌ Purchase Returns = ₹{cost_of_sales.get('purchase_returns')} (expected ₹200)")
+                    
+                    # 6. Net Purchases = ₹400
+                    if cost_of_sales.get('net_purchases') == 400.0:
+                        validation_results.append("✅ Net Purchases = ₹400")
+                    else:
+                        validation_results.append(f"❌ Net Purchases = ₹{cost_of_sales.get('net_purchases')} (expected ₹400)")
+                    
+                    # 7. Gross Profit = ₹300
+                    if data.get('gross_profit') == 300.0:
+                        validation_results.append("✅ Gross Profit = ₹300")
+                    else:
+                        validation_results.append(f"❌ Gross Profit = ₹{data.get('gross_profit')} (expected ₹300)")
+                    
+                    # 8. Net Profit = ₹300
+                    if data.get('net_profit') == 300.0:
+                        validation_results.append("✅ Net Profit = ₹300")
+                    else:
+                        validation_results.append(f"❌ Net Profit = ₹{data.get('net_profit')} (expected ₹300)")
+                    
+                    # 9. Profit Margin = 42.86%
+                    expected_margin = 42.86
+                    actual_margin = data.get('profit_margin_percent', 0)
+                    if abs(actual_margin - expected_margin) < 0.1:  # Allow small rounding difference
+                        validation_results.append(f"✅ Profit Margin = {actual_margin}%")
+                    else:
+                        validation_results.append(f"❌ Profit Margin = {actual_margin}% (expected {expected_margin}%)")
+                    
+                    # Print validation results
+                    print("🔍 VALIDATION RESULTS:")
+                    for result in validation_results:
+                        print(f"   {result}")
+                    
+                    # Check if all validations passed
+                    all_passed = all("✅" in result for result in validation_results)
+                    
+                    if all_passed:
+                        self.log_test("P&L Test - Step 5: Verify P&L Structure", True, 
+                                    f"All 9 validations passed! P&L structure correct with net amounts and NO tax accounts", 
+                                    {"validations": validation_results})
+                        return True
+                    else:
+                        failed_validations = [r for r in validation_results if "❌" in r]
+                        self.log_test("P&L Test - Step 5: Verify P&L Structure", False, 
+                                    f"{len(failed_validations)} validations failed: {failed_validations}", 
+                                    {"validations": validation_results, "p&l_data": data})
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("P&L Test - Step 5: Get P&L Statement", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+        except Exception as e:
+            self.log_test("P&L Test", False, f"Critical error during P&L testing: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
     async def run_payment_allocation_bank_reconciliation_tests(self):
         """Run Payment Allocation and Bank Reconciliation API tests"""
         print("\n" + "=" * 80)
