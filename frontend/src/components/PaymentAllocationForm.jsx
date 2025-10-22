@@ -41,6 +41,17 @@ const PaymentAllocationForm = ({ payment, onClose, onSuccess }) => {
       
       const data = await res.json();
       
+      // Debug: Log the invoices structure
+      console.log('Raw invoice data:', data);
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('First invoice sample:', {
+          id: data[0].id,
+          _id: data[0]._id,
+          invoice_number: data[0].invoice_number,
+          hasProperUUID: data[0].id && data[0].id.length > 30
+        });
+      }
+      
       // Filter for unpaid or partially paid invoices
       // Include invoices without payment_status field (default to unpaid)
       const unpaidInvoices = (Array.isArray(data) ? data : data.invoices || []).filter(
