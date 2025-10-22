@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 
 # Get backend URL from environment
-BACKEND_URL = "https://erp-gili-1.preview.emergentagent.com"
+BACKEND_URL = "https://erp-debug-1.preview.emergentagent.com"
 
 def parse_timestamp(timestamp_str):
     """Parse timestamp string handling different formats"""

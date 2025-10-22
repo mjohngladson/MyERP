@@ -11,7 +11,7 @@ import aiohttp
 import json
 from datetime import datetime, timezone
 
-BACKEND_URL = "https://erp-gili-1.preview.emergentagent.com"
+BACKEND_URL = "https://erp-debug-1.preview.emergentagent.com"
 
 async def test_enhancements():
     """Test all CN/DN enhancements"""

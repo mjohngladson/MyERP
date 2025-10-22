@@ -133,7 +133,7 @@ alert(`Error loading report: ${err.message}`);
 - ✅ All services running successfully
 - ✅ Changes live in preview environment
 
-**Frontend URL**: https://erp-gili-1.preview.emergentagent.com
+**Frontend URL**: https://erp-debug-1.preview.emergentagent.com
 
 ## Summary
 
