@@ -1589,7 +1589,7 @@ class BackendTester:
                     return False
             
             # Verify NO SI created
-            async with self.session.get(f"{self.base_url}/api/invoices") as response:
+            async with self.session.get(f"{self.base_url}/api/invoices/") as response:
                 if response.status == 200:
                     invoices = await response.json()
                     si_count = len([inv for inv in invoices if inv.get("customer_name") == "Test Customer Qty Validation"])
