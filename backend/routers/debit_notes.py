@@ -237,6 +237,26 @@ async def create_debit_note(body: Dict[str, Any]):
     tax_amount = (discounted_total * tax_rate) / 100
     total_amount = discounted_total + tax_amount
     
+    # CRITICAL: Validate DN amount doesn't exceed available PI balance (even for draft)
+    if reference_invoice_id:
+        from database import purchase_invoices_collection
+        invoice = await purchase_invoices_collection.find_one({"id": reference_invoice_id})
+        if invoice:
+            original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
+            existing_dn_amount = float(invoice.get("total_debit_notes_amount", 0))
+            total_dn_after_this = existing_dn_amount + total_amount
+            
+            if total_dn_after_this > original_invoice_total:
+                available_for_dn = original_invoice_total - existing_dn_amount
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"❌ Debit Note creation rejected: Amount (₹{total_amount:.2f}) exceeds available balance. "
+                           f"Invoice original total: ₹{original_invoice_total:.2f}, "
+                           f"Already debited: ₹{existing_dn_amount:.2f}, "
+                           f"Available for debit: ₹{available_for_dn:.2f}. "
+                           f"Cannot create Debit Note (even in draft) that exceeds invoice amount."
+                )
+    
     # Set debit_note_date to today if not provided (required for journal entry posting_date)
     debit_note_date = body.get("debit_note_date")
     if not debit_note_date:
