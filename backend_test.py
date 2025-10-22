@@ -11737,16 +11737,16 @@ class BackendTester:
         return passed, failed
 
 async def main():
-    """Main function to run Payment Allocation and Bank Reconciliation Tests"""
+    """Main function to run Purchase Invoice Journal Entry Accounting Tests"""
     async with BackendTester() as tester:
-        # Run payment allocation and bank reconciliation tests as requested in review
-        passed, failed = await tester.run_payment_allocation_bank_reconciliation_tests()
+        # Run purchase invoice journal entry accounting tests as requested in review
+        passed, total, results = await tester.run_all_tests()
         
-        if failed == 0:
-            print("🎉 Payment Allocation & Bank Reconciliation Tests PASSED!")
+        if passed == total:
+            print("🎉 Purchase Invoice Journal Entry Accounting Tests PASSED!")
             return 0
         else:
-            print("💥 Payment Allocation & Bank Reconciliation Tests detected critical issues!")
+            print("💥 Purchase Invoice Journal Entry Accounting Tests detected critical issues!")
             return 1
 
 if __name__ == "__main__":
