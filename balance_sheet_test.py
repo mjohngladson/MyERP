@@ -68,42 +68,74 @@ class BalanceSheetTester:
         try:
             headers = {"Authorization": f"Bearer {self.token}"}
             
+            print("🧹 Cleaning database...")
+            
             # Delete all sales invoices
-            async with self.session.get(f"{self.base_url}/api/invoices", headers=headers) as response:
-                if response.status == 200:
-                    invoices = await response.json()
-                    for invoice in invoices:
-                        await self.session.delete(f"{self.base_url}/api/invoices/{invoice['id']}", headers=headers)
+            try:
+                async with self.session.get(f"{self.base_url}/api/invoices", headers=headers) as response:
+                    if response.status == 200:
+                        invoices = await response.json()
+                        for invoice in invoices:
+                            try:
+                                await self.session.delete(f"{self.base_url}/api/invoices/{invoice['id']}", headers=headers)
+                            except:
+                                pass
+            except:
+                pass
             
             # Delete all purchase invoices
-            async with self.session.get(f"{self.base_url}/api/purchase-invoices", headers=headers) as response:
-                if response.status == 200:
-                    invoices = await response.json()
-                    for invoice in invoices:
-                        await self.session.delete(f"{self.base_url}/api/purchase-invoices/{invoice['id']}", headers=headers)
+            try:
+                async with self.session.get(f"{self.base_url}/api/purchase/invoices", headers=headers) as response:
+                    if response.status == 200:
+                        invoices = await response.json()
+                        for invoice in invoices:
+                            try:
+                                await self.session.delete(f"{self.base_url}/api/purchase/invoices/{invoice['id']}", headers=headers)
+                            except:
+                                pass
+            except:
+                pass
             
             # Delete all credit notes
-            async with self.session.get(f"{self.base_url}/api/credit-notes", headers=headers) as response:
-                if response.status == 200:
-                    notes = await response.json()
-                    for note in notes:
-                        await self.session.delete(f"{self.base_url}/api/credit-notes/{note['id']}", headers=headers)
+            try:
+                async with self.session.get(f"{self.base_url}/api/credit-notes", headers=headers) as response:
+                    if response.status == 200:
+                        notes = await response.json()
+                        for note in notes:
+                            try:
+                                await self.session.delete(f"{self.base_url}/api/credit-notes/{note['id']}", headers=headers)
+                            except:
+                                pass
+            except:
+                pass
             
             # Delete all debit notes
-            async with self.session.get(f"{self.base_url}/api/debit-notes", headers=headers) as response:
-                if response.status == 200:
-                    notes = await response.json()
-                    for note in notes:
-                        await self.session.delete(f"{self.base_url}/api/debit-notes/{note['id']}", headers=headers)
+            try:
+                async with self.session.get(f"{self.base_url}/api/debit-notes", headers=headers) as response:
+                    if response.status == 200:
+                        notes = await response.json()
+                        for note in notes:
+                            try:
+                                await self.session.delete(f"{self.base_url}/api/debit-notes/{note['id']}", headers=headers)
+                            except:
+                                pass
+            except:
+                pass
             
             # Delete all journal entries
-            async with self.session.get(f"{self.base_url}/api/financial/journal-entries", headers=headers) as response:
-                if response.status == 200:
-                    entries = await response.json()
-                    for entry in entries:
-                        await self.session.delete(f"{self.base_url}/api/financial/journal-entries/{entry['id']}", headers=headers)
+            try:
+                async with self.session.get(f"{self.base_url}/api/financial/journal-entries", headers=headers) as response:
+                    if response.status == 200:
+                        entries = await response.json()
+                        for entry in entries:
+                            try:
+                                await self.session.delete(f"{self.base_url}/api/financial/journal-entries/{entry['id']}", headers=headers)
+                            except:
+                                pass
+            except:
+                pass
             
-            self.log_test("Database Cleanup", True, "All transactions deleted")
+            self.log_test("Database Cleanup", True, "Attempted to clean all transactions")
             return True
         except Exception as e:
             self.log_test("Database Cleanup", False, f"Exception: {str(e)}")
