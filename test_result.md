@@ -376,6 +376,18 @@ test_plan:
     - "Credit Notes and Debit Notes Frontend Timestamp Tracking Fix - User reported issue resolved, timestamps update correctly after send operations"
     - "Sales Invoices API Credit Note Autocomplete Fix - 404 error resolved, /api/invoices endpoint now accessible with proper autocomplete data structure"
 backend:
+  - task: "Credit Note and Debit Note Enhanced Features - Invoice Optional, Auto-populate, Refund Workflow, Audit Trail"
+    implemented: true
+    working: "NA"
+    file: "backend/cn_dn_enhanced_helpers.py, backend/routers/credit_notes.py, backend/routers/debit_notes.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented comprehensive CN/DN enhancements: (1) Created cn_dn_enhanced_helpers.py with adjust_invoice_for_credit_note() and adjust_invoice_for_debit_note() functions handling fully paid invoices (refund workflow) and partially paid invoices (reduce outstanding). (2) Updated credit_notes.py to make invoice selection optional, auto-populate customer details when invoice is selected, validate items, and maintain audit trail with standard_journal_entry_id, invoice_adjustment_je_id, refund_payment_id fields. (3) Updated debit_notes.py with similar enhancements for supplier auto-population and audit trail. (4) Both scenarios handled: Fully paid invoices create refund payment entries and refund journal entries. Partially paid invoices adjust invoice totals and create adjustment journal entries. (5) Audit trail maintained linking CN/DN to invoices with adjustment/refund references."
+
   - task: "Workflow Automation on Direct Submit - Extract and Apply Workflow Logic in CREATE Endpoints"
     implemented: true
     working: true
