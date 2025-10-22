@@ -9387,23 +9387,202 @@ class BackendTester:
             self.log_test("Sales Invoices API", False, f"Critical error during Sales Invoices API testing: {str(e)}")
             return False
 
+    async def test_purchase_invoice_journal_entry_accounting(self):
+        """Test Purchase Invoice Journal Entry - Verify Correct Accounting with Input Tax Credit"""
+        try:
+            print("\n🧪 Testing Purchase Invoice Journal Entry Accounting Fix")
+            print("=" * 80)
+            print("USER REPORTED ISSUE: Purchase Invoice Journal Entries have incorrect accounting")
+            print("EXPECTED FIX: Use Input Tax Credit (Asset) for purchase tax, NOT Tax Payable")
+            print("=" * 80)
+            
+            # Step 1: Login to get authentication
+            login_payload = {
+                "email": "admin@gili.com",
+                "password": "admin123"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/auth/login", json=login_payload) as response:
+                if response.status != 200:
+                    self.log_test("Purchase Invoice JE - Login", False, f"Login failed with HTTP {response.status}")
+                    return False
+                login_data = await response.json()
+                token = login_data.get("token")
+                print(f"✅ Login successful, token: {token[:20]}...")
+            
+            # Step 2: Create Purchase Invoice with status='submitted' to trigger JE creation
+            purchase_invoice_payload = {
+                "supplier_name": "Test Supplier for JE Accounting",
+                "items": [
+                    {"item_name": "Product A", "quantity": 1, "rate": 100}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"  # Direct submit to trigger JE creation
+            }
+            
+            print("\n📝 Creating Purchase Invoice:")
+            print(f"   - Supplier: {purchase_invoice_payload['supplier_name']}")
+            print(f"   - Item: Product A, Quantity: 1, Rate: ₹100")
+            print(f"   - Tax Rate: 18%")
+            print(f"   - Expected Subtotal: ₹100")
+            print(f"   - Expected Tax: ₹18")
+            print(f"   - Expected Total: ₹118")
+            print(f"   - Status: submitted (to trigger JE creation)")
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=purchase_invoice_payload) as response:
+                if response.status != 200:
+                    response_text = await response.text()
+                    self.log_test("Purchase Invoice JE - Create PI", False, f"HTTP {response.status}: {response_text}")
+                    return False
+                
+                pi_data = await response.json()
+                if not pi_data.get("success"):
+                    self.log_test("Purchase Invoice JE - Create PI", False, f"Creation failed: {pi_data}")
+                    return False
+                
+                journal_entry_id = pi_data.get("journal_entry_id")
+                if not journal_entry_id:
+                    self.log_test("Purchase Invoice JE - Create PI", False, f"No journal_entry_id in response: {pi_data}")
+                    return False
+                
+                invoice = pi_data.get("invoice", {})
+                invoice_number = invoice.get("invoice_number")
+                print(f"✅ Purchase Invoice created: {invoice_number}")
+                print(f"✅ Journal Entry auto-generated: {journal_entry_id}")
+            
+            # Step 3: Retrieve the Journal Entry and verify accounting
+            print(f"\n🔍 Retrieving Journal Entry: {journal_entry_id}")
+            
+            async with self.session.get(f"{self.base_url}/api/financial/journal-entries/{journal_entry_id}") as response:
+                if response.status != 200:
+                    response_text = await response.text()
+                    self.log_test("Purchase Invoice JE - Get JE", False, f"HTTP {response.status}: {response_text}")
+                    return False
+                
+                je_data = await response.json()
+                accounts = je_data.get("accounts", [])
+                
+                if len(accounts) != 3:
+                    self.log_test("Purchase Invoice JE - Account Count", False, f"Expected 3 accounts, got {len(accounts)}: {accounts}")
+                    return False
+                
+                print(f"✅ Journal Entry has 3 account entries")
+                print("\n📊 Journal Entry Accounts:")
+                for acc in accounts:
+                    print(f"   - {acc.get('account_name')}: Dr ₹{acc.get('debit_amount', 0):.2f} | Cr ₹{acc.get('credit_amount', 0):.2f}")
+            
+            # Step 4: Verify expected accounts and amounts
+            print("\n✅ VERIFICATION CHECKS:")
+            
+            # Find accounts by name
+            purchases_account = None
+            input_tax_account = None
+            payables_account = None
+            
+            for acc in accounts:
+                acc_name = acc.get("account_name", "").lower()
+                if "purchases" in acc_name and "return" not in acc_name:
+                    purchases_account = acc
+                elif "input tax" in acc_name:
+                    input_tax_account = acc
+                elif "accounts payable" in acc_name or "payable" in acc_name:
+                    payables_account = acc
+            
+            # Check 1: Purchases (Expense) - Dr ₹100 | Cr ₹0
+            if not purchases_account:
+                self.log_test("Purchase Invoice JE - Purchases Account", False, f"Purchases account not found in JE: {accounts}")
+                return False
+            
+            if purchases_account.get("debit_amount") != 100.0 or purchases_account.get("credit_amount") != 0.0:
+                self.log_test("Purchase Invoice JE - Purchases Amount", False, 
+                            f"Expected Purchases Dr ₹100 | Cr ₹0, got Dr ₹{purchases_account.get('debit_amount')} | Cr ₹{purchases_account.get('credit_amount')}")
+                return False
+            
+            print(f"   ✅ Purchases (Expense): Dr ₹{purchases_account.get('debit_amount'):.2f} | Cr ₹{purchases_account.get('credit_amount'):.2f} - CORRECT")
+            
+            # Check 2: Input Tax Credit (Asset) - Dr ₹18 | Cr ₹0
+            if not input_tax_account:
+                self.log_test("Purchase Invoice JE - Input Tax Credit Account", False, 
+                            f"Input Tax Credit account not found in JE. This is the CRITICAL FIX! Found accounts: {[a.get('account_name') for a in accounts]}")
+                return False
+            
+            if input_tax_account.get("debit_amount") != 18.0 or input_tax_account.get("credit_amount") != 0.0:
+                self.log_test("Purchase Invoice JE - Input Tax Amount", False, 
+                            f"Expected Input Tax Credit Dr ₹18 | Cr ₹0, got Dr ₹{input_tax_account.get('debit_amount')} | Cr ₹{input_tax_account.get('credit_amount')}")
+                return False
+            
+            print(f"   ✅ Input Tax Credit (Asset): Dr ₹{input_tax_account.get('debit_amount'):.2f} | Cr ₹{input_tax_account.get('credit_amount'):.2f} - CORRECT ✨")
+            
+            # Check 3: Accounts Payable (Liability) - Dr ₹0 | Cr ₹118
+            if not payables_account:
+                self.log_test("Purchase Invoice JE - Accounts Payable Account", False, f"Accounts Payable account not found in JE: {accounts}")
+                return False
+            
+            if payables_account.get("debit_amount") != 0.0 or payables_account.get("credit_amount") != 118.0:
+                self.log_test("Purchase Invoice JE - Accounts Payable Amount", False, 
+                            f"Expected Accounts Payable Dr ₹0 | Cr ₹118, got Dr ₹{payables_account.get('debit_amount')} | Cr ₹{payables_account.get('credit_amount')}")
+                return False
+            
+            print(f"   ✅ Accounts Payable (Liability): Dr ₹{payables_account.get('debit_amount'):.2f} | Cr ₹{payables_account.get('credit_amount'):.2f} - CORRECT")
+            
+            # Check 4: Verify Total Debit = Total Credit = ₹118
+            total_debit = sum(acc.get("debit_amount", 0) for acc in accounts)
+            total_credit = sum(acc.get("credit_amount", 0) for acc in accounts)
+            
+            if total_debit != 118.0 or total_credit != 118.0:
+                self.log_test("Purchase Invoice JE - Debit/Credit Balance", False, 
+                            f"Expected Total Debit = Total Credit = ₹118, got Debit ₹{total_debit} | Credit ₹{total_credit}")
+                return False
+            
+            print(f"   ✅ Total Debit = Total Credit = ₹{total_debit:.2f} - BALANCED")
+            
+            # Check 5: Verify NO "Tax Payable" account (old incorrect logic)
+            tax_payable_found = any("tax payable" in acc.get("account_name", "").lower() and "input" not in acc.get("account_name", "").lower() 
+                                   for acc in accounts)
+            
+            if tax_payable_found:
+                self.log_test("Purchase Invoice JE - No Tax Payable", False, 
+                            f"❌ CRITICAL: Found 'Tax Payable' account in JE (old incorrect logic). Should use 'Input Tax Credit' instead!")
+                return False
+            
+            print(f"   ✅ NO 'Tax Payable' account found (old incorrect logic eliminated) - CORRECT")
+            
+            print("\n" + "=" * 80)
+            print("🎉 SUCCESS: Purchase Invoice Journal Entry Accounting is CORRECT!")
+            print("=" * 80)
+            print("VERIFIED:")
+            print("   ✅ Purchases (Expense): Dr ₹100 | Cr ₹0")
+            print("   ✅ Input Tax Credit (Asset): Dr ₹18 | Cr ₹0  ← CRITICAL FIX WORKING!")
+            print("   ✅ Accounts Payable (Liability): Dr ₹0 | Cr ₹118")
+            print("   ✅ Total Debit = Total Credit = ₹118")
+            print("   ✅ NO incorrect 'Tax Payable' account")
+            print("=" * 80)
+            
+            self.log_test("Purchase Invoice JE - Correct Accounting", True, 
+                        f"Purchase Invoice Journal Entry uses correct accounting: Input Tax Credit (Asset) for purchase tax. All verification checks passed.")
+            return True
+            
+        except Exception as e:
+            self.log_test("Purchase Invoice JE - Accounting Test", False, f"Error during testing: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+
     async def run_all_tests(self):
-        """Run backend tests focusing on SALES INVOICES API - CREDIT NOTE AUTOCOMPLETE FIX TESTING"""
-        print("🚀 Starting GiLi Backend API Testing Suite - SALES INVOICES API TESTING")
+        """Run backend tests focusing on PURCHASE INVOICE JOURNAL ENTRY ACCOUNTING FIX"""
+        print("🚀 Starting GiLi Backend API Testing Suite - PURCHASE INVOICE JE ACCOUNTING FIX")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 SALES INVOICES API COMPREHENSIVE TESTS:")
-        print("   1. GET /api/invoices (List all invoices - basic endpoint test)")
-        print("   2. GET /api/invoices?limit=5 (Test limit parameter for autocomplete)")
-        print("   3. Verify response structure is correct for frontend autocomplete")
-        print("   4. Check that at least some test invoices exist in the database")
-        print("   5. Test search functionality for autocomplete filtering")
-        print("   6. Test endpoint accessibility (the main fix - no 404 error)")
+        print("🎯 PURCHASE INVOICE JOURNAL ENTRY ACCOUNTING TEST:")
+        print("   USER REPORTED: Purchase Invoice Journal Entries have incorrect accounting")
+        print("   EXPECTED FIX: Use Input Tax Credit (Asset) for purchase tax")
+        print("   TEST SCENARIO: Create Purchase Invoice and verify JE has correct accounts")
         print("=" * 80)
         
-        # Tests to run (SALES INVOICES API as requested in review)
+        # Tests to run (PURCHASE INVOICE JE ACCOUNTING as requested in review)
         tests_to_run = [
-            self.test_health_check,                         # Basic API health check
-            self.test_sales_invoices_api,                   # COMPREHENSIVE: Sales Invoices API for Credit Note autocomplete fix
+            self.test_health_check,                                    # Basic API health check
+            self.test_purchase_invoice_journal_entry_accounting,       # CRITICAL: Purchase Invoice JE Accounting Fix
         ]
         
         passed = 0
