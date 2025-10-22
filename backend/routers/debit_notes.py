@@ -215,6 +215,16 @@ async def create_debit_note(body: Dict[str, Any]):
     # Validate items using centralized validator
     validate_items(body.get("items", []), "Debit Note")
     
+    # CRITICAL: Validate line item quantities are integers only (no decimals)
+    items = body.get("items", [])
+    for idx, item in enumerate(items):
+        qty = item.get("quantity", 0)
+        if not isinstance(qty, int) and (isinstance(qty, float) and not qty.is_integer()):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Line item {idx + 1}: Quantity must be a whole number (integer), not decimal. Received: {qty}"
+            )
+    
     # Get items from body
     items = body.get("items", [])
     
