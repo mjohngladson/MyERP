@@ -8,7 +8,9 @@ router = APIRouter(prefix="/api/financial/payment-allocation", tags=["payment_al
 
 allocations_coll = db.payment_allocations
 payments_coll = db.payments
-invoices_coll = db.sales_invoices
+# Don't hardcode collection - will be determined based on payment type
+sales_invoices_coll = db.sales_invoices
+purchase_invoices_coll = db.purchase_invoices
 
 
 def now_utc():
