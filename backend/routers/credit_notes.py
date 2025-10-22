@@ -37,8 +37,12 @@ def generate_credit_note_number():
 
 
 async def create_credit_note_accounting_entries(credit_note: Dict[str, Any]):
-    """Create reversal journal entry and adjust payment for credit note"""
-    from database import journal_entries_collection, payments_collection, accounts_collection
+    """Create reversal journal entry and adjust linked invoice if applicable"""
+    from database import (
+        journal_entries_collection, payments_collection, accounts_collection,
+        sales_invoices_collection, payment_allocations_collection
+    )
+    from cn_dn_enhanced_helpers import adjust_invoice_for_credit_note
     
     # Get accounts
     receivables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
@@ -53,7 +57,7 @@ async def create_credit_note_accounting_entries(credit_note: Dict[str, Any]):
     tax_amt = credit_note.get("tax_amount", 0)
     sales_amt = total_amt - tax_amt
     
-    # Create reversal journal entry
+    # Create standard reversal journal entry
     je_accounts = []
     je_accounts.append({
         "account_id": sales_return_account["id"],
@@ -100,27 +104,34 @@ async def create_credit_note_accounting_entries(credit_note: Dict[str, Any]):
     }
     await journal_entries_collection.insert_one(journal_entry)
     
-    # Find and adjust related payment entry if linked to invoice
-    if credit_note.get("reference_invoice_id"):
-        # Find payment for the original invoice
-        payment = await payments_collection.find_one({
-            "party_id": credit_note.get("customer_id"),
-            "payment_type": "Receive",
-            "reference_number": credit_note.get("reference_invoice")
-        })
-        
-        if payment:
-            # Reduce the payment amount by credit note amount
-            new_amount = payment.get("amount", 0) - total_amt
-            await payments_collection.update_one(
-                {"id": payment["id"]},
-                {"$set": {
-                    "amount": max(0, new_amount),
-                    "base_amount": max(0, new_amount),
-                    "unallocated_amount": max(0, payment.get("unallocated_amount", 0) - total_amt),
-                    "updated_at": now_utc()
-                }}
-            )
+    # If linked to invoice, adjust invoice balance and handle refund workflow
+    adjustment_je_id, refund_id = await adjust_invoice_for_credit_note(
+        credit_note,
+        sales_invoices_collection,
+        payment_allocations_collection,
+        payments_collection,
+        journal_entries_collection,
+        accounts_collection
+    )
+    
+    # Update credit note with audit trail
+    audit_update = {
+        "standard_journal_entry_id": je_id,
+        "updated_at": now_utc()
+    }
+    
+    if adjustment_je_id:
+        audit_update["invoice_adjustment_je_id"] = adjustment_je_id
+        audit_update["invoice_adjusted"] = True
+    
+    if refund_id:
+        audit_update["refund_payment_id"] = refund_id
+        audit_update["refund_issued"] = True
+    
+    await credit_notes_collection.update_one(
+        {"id": credit_note.get("id")},
+        {"$set": audit_update}
+    )
     
     return je_id
 
