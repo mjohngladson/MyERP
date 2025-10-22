@@ -10,18 +10,49 @@ echo "🔧 GiLi ERP - Backend URL Auto-Fix Script"
 echo "=================================================="
 echo ""
 
-# Detect current preview URL from hostname or environment
-CURRENT_HOSTNAME=$(hostname)
-echo "📍 Current hostname: $CURRENT_HOSTNAME"
+# Detect current preview URL from multiple sources
 
-# Extract the preview URL pattern (e.g., erp-debug-1)
-if [[ $CURRENT_HOSTNAME =~ erp-[a-zA-Z0-9-]+ ]]; then
-    PREVIEW_PREFIX="${BASH_REMATCH[0]}"
-    CURRENT_BACKEND_URL="https://${PREVIEW_PREFIX}.preview.emergentagent.com"
-    echo "✅ Detected backend URL: $CURRENT_BACKEND_URL"
-else
-    echo "❌ Could not detect preview URL from hostname"
-    echo "Please run: ./fix-backend-url.sh <your-backend-url>"
+# Method 1: Check frontend .env file
+if [ -f /app/frontend/.env ]; then
+    DETECTED_URL=$(grep "REACT_APP_BACKEND_URL=" /app/frontend/.env | tail -1 | cut -d'=' -f2 | tr -d '"' | tr -d ' ')
+    if [ ! -z "$DETECTED_URL" ] && [[ $DETECTED_URL =~ preview.emergentagent.com ]]; then
+        CURRENT_BACKEND_URL="$DETECTED_URL"
+        echo "✅ Detected URL from .env: $CURRENT_BACKEND_URL"
+    fi
+fi
+
+# Method 2: Try to detect from actual running frontend process
+if [ -z "$CURRENT_BACKEND_URL" ]; then
+    # Check supervisor logs for actual URL being used
+    if [ -f /var/log/supervisor/frontend.out.log ]; then
+        DETECTED_URL=$(grep -o "https://[^\"']*preview.emergentagent.com" /var/log/supervisor/frontend.out.log | head -1)
+        if [ ! -z "$DETECTED_URL" ]; then
+            CURRENT_BACKEND_URL="$DETECTED_URL"
+            echo "✅ Detected URL from logs: $CURRENT_BACKEND_URL"
+        fi
+    fi
+fi
+
+# Method 3: Try hostname pattern
+if [ -z "$CURRENT_BACKEND_URL" ]; then
+    CURRENT_HOSTNAME=$(hostname)
+    if [[ $CURRENT_HOSTNAME =~ erp-[a-zA-Z0-9-]+ ]]; then
+        PREVIEW_PREFIX="${BASH_REMATCH[0]}"
+        CURRENT_BACKEND_URL="https://${PREVIEW_PREFIX}.preview.emergentagent.com"
+        echo "✅ Detected URL from hostname: $CURRENT_BACKEND_URL"
+    fi
+fi
+
+# If still not detected, require manual input
+if [ -z "$CURRENT_BACKEND_URL" ]; then
+    echo "❌ Could not auto-detect backend URL"
+    echo ""
+    echo "Please run with your backend URL:"
+    echo "  ./fix-backend-url.sh https://your-url.preview.emergentagent.com"
+    echo ""
+    echo "To find your URL, check:"
+    echo "  1. Your browser address bar when accessing the app"
+    echo "  2. Run: grep REACT_APP_BACKEND_URL /app/frontend/.env"
     exit 1
 fi
 
