@@ -11124,28 +11124,28 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on P&L STATEMENT CORRECTNESS"""
-        print("🚀 Starting GiLi Backend API Testing Suite - P&L STATEMENT CORRECTNESS TEST")
+        """Run backend tests focusing on BALANCE SHEET VERIFICATION - CORRECT DEBIT NOTE TAX ACCOUNTING"""
+        print("🚀 Starting GiLi Backend API Testing Suite - BALANCE SHEET VERIFICATION")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 P&L STATEMENT CORRECTNESS TEST:")
-        print("   USER REQUEST: Verify P&L shows Net Purchases, Sales Returns, and excludes tax accounts")
-        print("   TEST SCENARIO: Create SI, PI, DN, CN and verify P&L structure")
-        print("   EXPECTED P&L:")
-        print("      - Sales Revenue: ₹1000 (tax excluded)")
-        print("      - Sales Returns: ₹300 (tax excluded)")
-        print("      - Net Sales: ₹700")
-        print("      - Purchases: ₹600 (tax excluded)")
-        print("      - Purchase Returns: ₹200 (tax excluded)")
-        print("      - Net Purchases: ₹400")
-        print("      - Gross Profit: ₹300")
-        print("      - Net Profit: ₹300")
-        print("      - NO tax accounts (Input Tax Credit, Output Tax Payable)")
+        print("🎯 BALANCE SHEET VERIFICATION - CORRECT DEBIT NOTE TAX ACCOUNTING:")
+        print("   USER REQUEST: Verify Balance Sheet shows correct accounting after Purchase Invoice and Debit Note")
+        print("   CRITICAL ISSUE: Debit Note tax should create 'Tax Payable (GST Reversal)' LIABILITY, not reduce 'Input Tax Credit' ASSET")
+        print("   TEST SCENARIO: Create PI (₹100+18%=₹118) and DN (₹90+18%=₹106.20)")
+        print("   EXPECTED BALANCE SHEET:")
+        print("      ASSETS:")
+        print("        - Input Tax Credit: ₹18.00 (from PI only - DN doesn't touch this)")
+        print("      LIABILITIES:")
+        print("        - Accounts Payable: ₹11.80 (₹118 from PI - ₹106.20 from DN)")
+        print("        - Output Tax Payable (GST Reversal): ₹16.20 (from DN tax reversal)")
+        print("      EQUITY:")
+        print("        - Net Loss: (₹10.00) (from P&L: Purchases ₹100 - Purchase Returns ₹90)")
+        print("   ACCOUNTING EQUATION: Assets ₹18 = Liabilities ₹28 + Equity (₹10) = ₹18 ✅")
         print("=" * 80)
         
-        # Tests to run (P&L STATEMENT CORRECTNESS as requested in review)
+        # Tests to run (BALANCE SHEET VERIFICATION as requested in review)
         tests_to_run = [
-            self.test_health_check,                          # Basic API health check
-            self.test_comprehensive_pl_verification,         # NEW: Comprehensive P&L verification
+            self.test_health_check,                                      # Basic API health check
+            self.test_balance_sheet_verification_debit_note_tax_accounting,  # NEW: Balance Sheet verification
         ]
         
         passed = 0
