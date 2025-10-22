@@ -1057,6 +1057,13 @@ class BackendTester:
                 if response.status == 200:
                     data = await response.json()
                     
+                    # Debug: Print all accounts in Trial Balance
+                    print(f"\nDEBUG: Trial Balance Accounts:")
+                    for acc in data.get("accounts", []):
+                        print(f"  - {acc['account_name']} ({acc['root_type']}): Dr ₹{acc['debit_balance']}, Cr ₹{acc['credit_balance']}")
+                    print(f"DEBUG: Total Debits: ₹{data.get('total_debits')}, Total Credits: ₹{data.get('total_credits')}")
+                    print(f"DEBUG: Is Balanced: {data.get('is_balanced')}\n")
+                    
                     # Extract account balances
                     accounts = data.get("accounts", [])
                     account_map = {acc["account_name"]: acc for acc in accounts}
