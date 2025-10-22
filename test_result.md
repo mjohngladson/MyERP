@@ -351,6 +351,7 @@ test_plan:
     - "Payment Allocation API Testing - COMPLETED ✅ (ALL CRUD OPERATIONS AND VALIDATIONS VERIFIED - 19/19 TESTS PASSED WITH 100% SUCCESS RATE)"
     - "Bank Reconciliation API Testing - COMPLETED ✅ (COMPLETE WORKFLOW TESTED - 11/11 TESTS PASSED WITH 100% SUCCESS RATE)"
     - "General Settings Extended Testing - COMPLETED ✅ (FINANCIAL SETTINGS FOR BANK RECONCILIATION AND PAYMENT ALLOCATION VERIFIED)"
+    - "Purchase Invoice Journal Entry Accounting Fix Testing - COMPLETED ✅ (CORRECT ACCOUNTING VERIFIED - INPUT TAX CREDIT WORKING - 100% SUCCESS RATE)"
   critical_issues_found: []
   resolved_issues:
     - "Payment Entry Module fully implemented - all CRUD operations working with comprehensive validations"
@@ -358,6 +359,8 @@ test_plan:
     - "Payment validations implemented - party_id, party_name, payment_type, party_type, amount, payment_date, payment_method all required"
     - "Payment update functionality working - draft payments can be updated, paid payments protected"
     - "Payment deletion functionality working - draft payments can be deleted, paid payments protected with proper error messages"
+    - "Purchase Invoice Journal Entry accounting fixed - now uses Input Tax Credit (Asset) for purchase tax instead of Tax Payable (Liability)"
+    - "Chart of Accounts data issue fixed - 'Purchases' account (code 5100) was incorrectly named 'Purchase Return', now corrected"
     - "Dashboard integration working - payment totals calculation and filtering working correctly"
     - "Base amount calculation with exchange rates working correctly"
     - "All Payment Entry API endpoints returning proper HTTP status codes and error messages"
