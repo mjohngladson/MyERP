@@ -103,11 +103,11 @@ user_problem_statement: "Fix Balance Sheet to include Net Profit in Equity secti
 backend:
   - task: "Balance Sheet Net Profit/Loss Inclusion"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/financial.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
