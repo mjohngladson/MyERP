@@ -48,6 +48,7 @@ stock_settings_collection = db.stock_settings
 accounts_collection = db.accounts
 journal_entries_collection = db.journal_entries
 payments_collection = db.payments
+payment_allocations_collection = db.payment_allocations
 bank_accounts_collection = db.bank_accounts
 bank_transactions_collection = db.bank_transactions
 tax_rates_collection = db.tax_rates
