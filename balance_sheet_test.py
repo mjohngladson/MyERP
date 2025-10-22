@@ -306,7 +306,7 @@ class BalanceSheetTester:
                 "due_date": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
                 "items": [{
                     "item_id": item["id"],
-                    "item_name": item["item_name"],
+                    "item_name": item["name"],
                     "quantity": 1,
                     "rate": 50.0,
                     "amount": 50.0,
