@@ -173,7 +173,11 @@ async def get_payment_allocations(payment_id: str):
 @router.get("/invoices/{invoice_id}/payments")
 async def get_invoice_payments(invoice_id: str):
     """Get all payment allocations for a specific invoice"""
-    invoice = await invoices_coll.find_one({"id": invoice_id})
+    # Try to find invoice in both collections
+    invoice = await sales_invoices_coll.find_one({"id": invoice_id})
+    if not invoice:
+        invoice = await purchase_invoices_coll.find_one({"id": invoice_id})
+    
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
