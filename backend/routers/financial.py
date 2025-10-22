@@ -813,12 +813,17 @@ async def get_profit_loss_statement(
             
             # Revenue section
             if root_type == "Income":
-                if "sales return" in account_name:
-                    sales_returns += amount
+                if "sales return" in account_name or "return" in account_name and "sales" in account_name:
+                    # Sales Returns are contra-revenue (debited by CN)
+                    # Amount will be negative (credit - debit = 0 - 300 = -300)
+                    # Use absolute value for display
+                    sales_returns += abs(amount)
+                elif "purchase return" in account_name or "return" in account_name and "purchase" in account_name:
+                    # Purchase Returns are contra-expense (credited by DN)
+                    # Amount will be positive (credit - debit = 200 - 0 = 200)
+                    purchase_returns += abs(amount)
                 elif "sales" in account_name or "revenue" in account_name:
                     sales_revenue += amount
-                elif "purchase return" in account_name:
-                    purchase_returns += amount
                 else:
                     other_income += amount
             
