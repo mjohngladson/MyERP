@@ -113,9 +113,12 @@ async def get_sales_invoices(
         transformed_invoices = []
         for invoice in invoices:
             try:
+                # Remove MongoDB _id but preserve UUID id field
                 if "_id" in invoice:
-                    invoice["id"] = str(invoice["_id"])
                     del invoice["_id"]
+                # Only set id from _id if no id field exists
+                if "id" not in invoice or not invoice["id"]:
+                    invoice["id"] = f"inv-{str(uuid.uuid4())[:8]}"
                 invoice.setdefault("invoice_number", f"INV-{str(uuid.uuid4())[:8]}")
                 invoice.setdefault("customer_name", "Unknown Customer")
                 invoice.setdefault("total_amount", 0.0)
