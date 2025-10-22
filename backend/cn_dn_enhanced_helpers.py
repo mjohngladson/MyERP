@@ -144,7 +144,7 @@ async def adjust_invoice_for_credit_note(
     invoice_outstanding = new_invoice_total - total_allocated
     
     # Scenario 1: Invoice fully paid (or over-paid) - Issue refund
-    if total_allocated >= invoice_total:
+    if total_allocated >= new_invoice_total:
         # Create refund payment entry
         refund_entry_id = str(uuid.uuid4())
         refund_payment = {
@@ -155,12 +155,12 @@ async def adjust_invoice_for_credit_note(
             "party_id": credit_note.get("customer_id"),
             "party_name": credit_note.get("customer_name"),
             "payment_date": credit_note.get("credit_note_date") or now_utc(),
-            "amount": min(cn_amount, invoice_total),  # Refund up to invoice amount
+            "amount": min(cn_amount, original_invoice_total),  # Refund up to invoice amount
             "payment_method": "Bank Transfer",
             "reference_number": f"CN-{credit_note.get('credit_note_number')}",
             "currency": "INR",
             "exchange_rate": 1.0,
-            "base_amount": min(cn_amount, invoice_total),
+            "base_amount": min(cn_amount, original_invoice_total),
             "status": "draft",  # Draft until processed
             "description": f"Refund for Credit Note {credit_note.get('credit_note_number')}",
             "unallocated_amount": 0.0,
