@@ -286,8 +286,13 @@ async def update_allocation(allocation_id: str, payload: Dict[str, Any]):
     if amount_diff > current_unallocated:
         raise HTTPException(status_code=400, detail=f"Insufficient unallocated amount. Available: {current_unallocated}")
     
-    # Get invoice and validate
-    invoice = await invoices_coll.find_one({"id": invoice_id})
+    # Get invoice and validate - search in both collections
+    invoice = await sales_invoices_coll.find_one({"id": invoice_id})
+    invoices_coll_to_update = sales_invoices_coll
+    if not invoice:
+        invoice = await purchase_invoices_coll.find_one({"id": invoice_id})
+        invoices_coll_to_update = purchase_invoices_coll
+    
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
@@ -311,10 +316,10 @@ async def update_allocation(allocation_id: str, payload: Dict[str, Any]):
         {"$set": {"unallocated_amount": new_unallocated, "updated_at": now_utc()}}
     )
     
-    # Update invoice payment status
+    # Update invoice payment status using the correct collection
     total_allocated = new_amount + other_allocated
     if total_allocated >= invoice_total:
-        await invoices_coll.update_one(
+        await invoices_coll_to_update.update_one(
             {"id": invoice_id},
             {"$set": {"status": "paid", "payment_status": "Paid", "updated_at": now_utc()}}
         )
