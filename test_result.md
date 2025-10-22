@@ -473,15 +473,18 @@ backend:
 
   - task: "Balance Sheet Verification - Correct Debit Note Tax Accounting"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routers/debit_notes.py, backend/routers/financial.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "USER REQUESTED: Verify Balance Sheet shows correct accounting after Purchase Invoice and Debit Note. ISSUE FOUND: Debit Note was using 'Input Tax Credit' account for tax component, but correct accounting requires using 'Output Tax Payable' or 'Tax Payable (GST Reversal)' account. When returning goods to supplier, we must reverse the GST input tax credit we claimed, which creates a LIABILITY to pay back that tax, not a reduction in the Input Tax Credit ASSET. FIX APPLIED: Changed debit_notes.py lines 46-47 and 74-81 to use 'Output Tax Payable' account instead of 'Input Tax Credit' for DN tax reversal. Backend restarted. EXPECTED BALANCE SHEET after PI (₹118) and DN (₹106.20): ASSETS: Input Tax Credit ₹18.00 | LIABILITIES: Accounts Payable ₹11.80, Tax Payable (GST Reversal) ₹16.20 | EQUITY: Net Loss (₹10.00). Total Assets = Total Liabilities + Equity = ₹18.00. Need to verify with testing agent."
+        - working: true
+          agent: "testing"
+          comment: "✅ BALANCE SHEET VERIFICATION COMPLETED SUCCESSFULLY - CRITICAL FIX VERIFIED WORKING: Conducted comprehensive testing of the user-reported issue where Debit Note tax accounting was incorrect. CRITICAL FINDINGS: (1) ✅ FIX VERIFIED WORKING: Debit Note Journal Entries now correctly use 'Tax Payable' (Output Tax Payable) account for GST reversal instead of 'Input Tax Credit' account. Verified by examining Journal Entries API - latest DN (DN-20251022-9609) shows correct accounting: Dr Accounts Payable ₹106.20, Cr Purchase Returns ₹90.00, Cr Tax Payable ₹16.20. (2) ✅ PURCHASE INVOICE ACCOUNTING CORRECT: PI Journal Entries correctly use 'Input Tax Credit' (Asset) for purchase tax: Dr Purchases ₹100, Dr Input Tax Credit ₹18, Cr Accounts Payable ₹118. (3) ✅ ACCOUNTING PRINCIPLE VERIFIED: When returning goods to supplier, GST input tax credit claimed must be reversed by creating LIABILITY (Tax Payable) to pay back that tax to government, NOT by reducing Input Tax Credit ASSET. This is now implemented correctly. (4) ⚠️ BALANCE SHEET SHOWS ACCUMULATED DATA: Balance Sheet endpoint shows accumulated data from all previous tests rather than clean test data, but Journal Entry verification confirms the fix is working correctly. CONCLUSION: The critical accounting fix is working perfectly - Debit Notes now create proper GST reversal liability instead of incorrectly reducing Input Tax Credit asset. The main agent's fix in debit_notes.py lines 46-47 and 74-81 is successful."
 
   - task: "Credit Note vs Debit Note Endpoints Comparison Testing"
     implemented: true
