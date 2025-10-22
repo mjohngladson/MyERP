@@ -281,20 +281,26 @@ class CNDNEnhancedTester:
             url = f"{self.base_url}/api/financial/payment-allocation/allocate"
             payload = {
                 "payment_id": payment_id,
-                "invoice_id": invoice_id,
-                "invoice_type": invoice_type,
-                "allocated_amount": amount,
-                "notes": "Test allocation"
+                "allocations": [
+                    {
+                        "invoice_id": invoice_id,
+                        "allocated_amount": amount,
+                        "notes": "Test allocation"
+                    }
+                ]
             }
             
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    # Response is wrapped in success/allocation structure
-                    allocation_id = data.get("allocation", {}).get("id")
-                    if allocation_id:
-                        self.created_resources["payment_allocations"].append(allocation_id)
-                    return allocation_id
+                    # Response returns list of created allocations
+                    allocations = data.get("allocations", [])
+                    if allocations and len(allocations) > 0:
+                        allocation_id = allocations[0].get("id")
+                        if allocation_id:
+                            self.created_resources["payment_allocations"].append(allocation_id)
+                        return allocation_id
+                    return None
                 else:
                     text = await resp.text()
                     print(f"Error creating payment allocation: {resp.status} - {text}")
