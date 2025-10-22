@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 import hashlib
 
 # Get MongoDB URL from environment
-MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/gili_erp')
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+DB_NAME = os.environ.get('DB_NAME', 'test_database')
 
 def hash_password(password: str) -> str:
     """Simple password hashing (in production, use bcrypt)"""
