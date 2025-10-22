@@ -279,8 +279,10 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    # Response is wrapped in success/allocation structure
                     allocation_id = data.get("allocation", {}).get("id")
-                    self.created_resources["payment_allocations"].append(allocation_id)
+                    if allocation_id:
+                        self.created_resources["payment_allocations"].append(allocation_id)
                     return allocation_id
                 else:
                     text = await resp.text()
