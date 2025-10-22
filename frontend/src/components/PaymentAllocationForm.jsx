@@ -42,9 +42,12 @@ const PaymentAllocationForm = ({ payment, onClose, onSuccess }) => {
       const data = await res.json();
       
       // Filter for unpaid or partially paid invoices
+      // Include invoices without payment_status field (default to unpaid)
       const unpaidInvoices = (Array.isArray(data) ? data : data.invoices || []).filter(
-        inv => inv.payment_status !== 'Paid'
+        inv => !inv.payment_status || inv.payment_status === 'Unpaid' || inv.payment_status === 'Partially Paid'
       );
+      
+      console.log('Loaded invoices:', unpaidInvoices.length, 'from', (Array.isArray(data) ? data : data.invoices || []).length, 'total');
       setInvoices(unpaidInvoices);
     } catch (err) {
       console.error('Failed to load invoices:', err);
