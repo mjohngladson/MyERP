@@ -250,45 +250,10 @@ async def adjust_invoice_for_credit_note(
             {"$set": update_data}
         )
         
-        # Create adjustment JE to reduce AR
-        ar_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
-        sales_return_account = await accounts_coll.find_one({"account_name": {"$regex": "Sales Return", "$options": "i"}})
-        
-        if ar_account and sales_return_account:
-            adjustment_je_id = str(uuid.uuid4())
-            adjustment_je = {
-                "id": adjustment_je_id,
-                "entry_number": f"JE-ADJ-{credit_note.get('credit_note_number', '')}",
-                "posting_date": credit_note.get("credit_note_date") or now_utc(),
-                "reference": f"{credit_note.get('credit_note_number', '')} for {invoice.get('invoice_number')}",
-                "description": f"Invoice balance adjustment for Credit Note {credit_note.get('credit_note_number')}",
-                "voucher_type": "Credit Note Adjustment",
-                "voucher_id": credit_note.get("id"),
-                "accounts": [
-                    {
-                        "account_id": sales_return_account["id"],
-                        "account_name": sales_return_account["account_name"],
-                        "debit_amount": cn_amount,
-                        "credit_amount": 0,
-                        "description": f"Sales return for CN {credit_note.get('credit_note_number')}"
-                    },
-                    {
-                        "account_id": ar_account["id"],
-                        "account_name": ar_account["account_name"],
-                        "debit_amount": 0,
-                        "credit_amount": cn_amount,
-                        "description": f"Reduce A/R for invoice {invoice.get('invoice_number')}"
-                    }
-                ],
-                "total_debit": cn_amount,
-                "total_credit": cn_amount,
-                "status": "posted",
-                "is_auto_generated": True,
-                "company_id": credit_note.get("company_id", "default_company"),
-                "created_at": now_utc(),
-                "updated_at": now_utc()
-            }
-            await journal_entries_coll.insert_one(adjustment_je)
+        # NO adjustment JE needed - the standard CN JE already handles all accounting
+        # Standard CN JE: Dr Sales Return, Dr Tax, Cr AR
+        # This already reduces AR and reverses revenue/tax
+        # Invoice adjustment is just a data update, not a new accounting entry
     
     return adjustment_je_id, refund_entry_id
 
