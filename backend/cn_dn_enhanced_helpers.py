@@ -490,44 +490,9 @@ async def adjust_invoice_for_debit_note(
             {"$set": update_data}
         )
         
-        # Create adjustment JE to reduce AP
-        ap_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
-        purchase_return_account = await accounts_coll.find_one({"account_name": {"$regex": "Purchase Return", "$options": "i"}})
-        
-        if ap_account and purchase_return_account:
-            adjustment_je_id = str(uuid.uuid4())
-            adjustment_je = {
-                "id": adjustment_je_id,
-                "entry_number": f"JE-ADJ-{debit_note.get('debit_note_number', '')}",
-                "posting_date": debit_note.get("debit_note_date") or now_utc(),
-                "reference": f"{debit_note.get('debit_note_number', '')} for {invoice.get('invoice_number')}",
-                "description": f"Invoice balance adjustment for Debit Note {debit_note.get('debit_note_number')}",
-                "voucher_type": "Debit Note Adjustment",
-                "voucher_id": debit_note.get("id"),
-                "accounts": [
-                    {
-                        "account_id": ap_account["id"],
-                        "account_name": ap_account["account_name"],
-                        "debit_amount": dn_amount,
-                        "credit_amount": 0,
-                        "description": f"Reduce A/P for invoice {invoice.get('invoice_number')}"
-                    },
-                    {
-                        "account_id": purchase_return_account["id"],
-                        "account_name": purchase_return_account["account_name"],
-                        "debit_amount": 0,
-                        "credit_amount": dn_amount,
-                        "description": f"Purchase return for DN {debit_note.get('debit_note_number')}"
-                    }
-                ],
-                "total_debit": dn_amount,
-                "total_credit": dn_amount,
-                "status": "posted",
-                "is_auto_generated": True,
-                "company_id": debit_note.get("company_id", "default_company"),
-                "created_at": now_utc(),
-                "updated_at": now_utc()
-            }
-            await journal_entries_coll.insert_one(adjustment_je)
+        # NO adjustment JE needed - the standard DN JE already handles all accounting
+        # Standard DN JE: Dr AP, Cr Purchase Return, Cr Input Tax
+        # This already reduces AP and reverses expense/tax
+        # Invoice adjustment is just a data update, not a new accounting entry
     
     return adjustment_je_id, refund_entry_id
