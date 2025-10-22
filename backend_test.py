@@ -10509,7 +10509,7 @@ class BackendTester:
                 "status": "submitted"
             }
             
-            async with self.session.post(f"{self.base_url}/api/selling/credit-notes", json=cn_payload, headers=headers) as response:
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=cn_payload, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()
                     cn_id = data.get("credit_note", {}).get("id")
