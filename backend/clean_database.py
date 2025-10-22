@@ -19,12 +19,13 @@ async def clean_database():
     print("DATABASE CLEANUP SCRIPT")
     print("=" * 70)
     print(f"MongoDB URL: {MONGO_URL}")
+    print(f"Database Name: {DB_NAME}")
     print(f"Timestamp: {datetime.now().isoformat()}")
     print("=" * 70)
     
     # Connect to MongoDB
     client = AsyncIOMotorClient(MONGO_URL)
-    db = client.get_default_database()
+    db = client[DB_NAME]
     
     # Collections to clean
     collections_to_clean = {
