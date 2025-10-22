@@ -98,43 +98,49 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #===================================================================================================
 
-user_problem_statement: "Fix Balance Sheet to include Net Profit in Equity section and show proper Assets = Liabilities + Equity equation"
+user_problem_statement: "Fix two critical issues: (1) Prevent DN creation when amount exceeds PI (even in draft), (2) Restrict line item quantities to integers only"
 
 backend:
-  - task: "Balance Sheet Net Profit/Loss Inclusion"
+  - task: "Debit Note Over-Credit Prevention - Draft + Submitted"
     implemented: true
-    working: true
-    file: "backend/routers/financial.py"
+    working: "NA"
+    file: "backend/routers/debit_notes.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "USER REPORTED ISSUE: After creating SI of ₹118, Balance Sheet shows Assets=₹118, Liabilities & Equity=0 (WRONG). Expected: Assets=₹118 (Accounts Receivable), Liabilities=₹18 (Output Tax Payable), Equity=₹100 (Net Profit/Retained Earnings). ROOT CAUSE: Balance Sheet endpoint (financial.py lines 877-948) was only showing accounts with direct journal entry transactions in the equity section, but was NOT calculating and including the current period Net Profit/Loss from Income and Expense accounts. FIX IMPLEMENTED: (1) Modified Balance Sheet calculation to iterate through ALL journal entry accounts including Income and Expense types (lines 924-943). (2) Calculate income_total and expense_total from journal entries (excluding tax accounts). (3) Calculate current_period_profit = income_total - expense_total. (4) Add 'Current Period Net Profit' (or 'Net Loss' if negative) to equity_list if amount > 0.01. (5) Added is_balanced check and variance calculation to response. (6) Changed is_group filter from False to {'$ne': True} to include accounts with None value (same fix as P&L). EXPECTED RESULTS: After SI of ₹118 (₹100 + ₹18 tax): Assets: Accounts Receivable ₹118, Liabilities: Output Tax Payable ₹18, Equity: Current Period Net Profit ₹100, Total Assets = ₹118, Total Liabilities = ₹18, Total Equity = ₹100, Total L+E = ₹118, is_balanced = true. Backend restarted successfully. Need comprehensive testing with multiple scenarios."
-        - working: true
-          agent: "testing"
-          comment: "COMPREHENSIVE TESTING COMPLETED: Tested 2 critical scenarios. SCENARIO 1 (Single Sales Invoice): Created SI with ₹100 + 18% tax = ₹118. Balance Sheet shows: Assets=₹136, Liabilities=₹46, Equity=₹90 (Current Period Net Profit). ✅ is_balanced=true, variance=0, Assets = Liabilities + Equity equation holds. ✅ Current Period Net Profit appears in Equity section. ✅ Output Tax Payable appears in Liabilities. ✅ Accounts Receivable appears in Assets. SCENARIO 2 (SI + PI): Added Purchase Invoice ₹50 + 18% tax = ₹59. Balance Sheet shows: Assets=₹145, Liabilities=₹105, Equity=₹40 (Current Period Net Profit reduced). ✅ is_balanced=true, variance=0, Assets = Liabilities + Equity equation holds. ✅ Input Tax Credit appears in Assets. ✅ Accounts Payable appears in Liabilities. CRITICAL FIX VERIFIED: The Balance Sheet now correctly includes Current Period Net Profit/Loss in the Equity section and maintains the fundamental accounting equation Assets = Liabilities + Equity. All critical validations passed."
-
+          comment: "USER REPORTED ISSUE 1: When DN amount exceeds Purchase Invoice amount, alert shows but DN is still created in draft status. Expected: DN should NOT be created at all (even in draft). ROOT CAUSE: The over-credit validation in cn_dn_enhanced_helpers.py (lines 298-310) was only executed when status='submitted' (via create_debit_note_accounting_entries). Draft DNs bypassed this validation entirely. FIX IMPLEMENTED: (1) Moved over-credit validation from helper to create_debit_note endpoint (debit_notes.py lines 230-244). (2) Validation now runs BEFORE DN document is created in database, for both draft and submitted status. (3) Raises HTTPException 400 with clear error message: 'Debit Note creation rejected: Amount (₹X) exceeds available balance. Invoice original total: ₹Y, Already debited: ₹Z, Available for debit: ₹W. Cannot create Debit Note (even in draft) that exceeds invoice amount.' (4) Same fix applied to Credit Notes (credit_notes.py lines 235-248). EXPECTED: Creating DN with amount > available PI balance should fail with HTTP 400 error, no DN created in database."
+  
+  - task: "Line Item Quantity Integer Validation"
+    implemented: true
+    working: "NA"
+    file: "backend/routers/debit_notes.py, credit_notes.py, invoices.py, purchase_invoices.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "USER REPORTED ISSUE 2: Line item quantities should not allow decimal/float values, only integers. FIX IMPLEMENTED: Added quantity validation in all transaction endpoints: (1) Debit Notes (debit_notes.py lines 222-228). (2) Credit Notes (credit_notes.py lines 221-227). (3) Sales Invoices (invoices.py lines 176-182). (4) Purchase Invoices (purchase_invoices.py lines 153-159). Validation logic: For each line item, check if quantity is integer or (if float) whether it represents whole number using is_integer(). If decimal detected, raise HTTPException 400: 'Line item X: Quantity must be a whole number (integer), not decimal. Received: Y'. Validation runs BEFORE any calculations or database insertion. EXPECTED: Creating any transaction with decimal quantity (e.g., 1.5, 2.3) should fail with HTTP 400 error."
 
 frontend: []
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 1
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Balance Sheet Net Profit/Loss Inclusion"
+    - "Debit Note Over-Credit Prevention - Draft + Submitted"
+    - "Line Item Quantity Integer Validation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
-    - agent: "testing"
-      message: "TESTING COMPLETE: Balance Sheet fix verified successfully. Tested 2 comprehensive scenarios with Sales Invoices and Purchase Invoices. ✅ CRITICAL FIX WORKING: Balance Sheet now includes Current Period Net Profit/Loss in Equity section. ✅ Balance Sheet equation verified: Assets = Liabilities + Equity (is_balanced=true, variance=0). ✅ Tax accounts appear in correct sections (Input Tax Credit in Assets, Output Tax Payable in Liabilities). ✅ All accounting principles followed. The fix resolves the user-reported issue where Equity was showing 0. Now Equity correctly shows Current Period Net Profit calculated from Income and Expense accounts."
-
     - agent: "main"
-      message: "USER REQUEST: Fix Balance Sheet equation. After creating SI of ₹118, Balance Sheet shows Assets=₹118, Liabilities & Equity=0 (incorrect). Expected: Assets ₹118 = Liabilities ₹18 (Output Tax Payable) + Equity ₹100 (Net Profit). TASK: Test comprehensive Balance Sheet scenarios: (1) Clean database and create fresh SI (₹100 + 18% tax = ₹118). (2) Verify Balance Sheet shows: Assets (Accounts Receivable ₹118), Liabilities (Output Tax Payable ₹18), Equity (Current Period Net Profit ₹100). (3) Verify is_balanced = true and Assets = Liabilities + Equity. (4) Test additional scenarios: SI + PI combination, with Credit Notes and Debit Notes, multiple transactions. (5) Verify tax accounts (Input Tax Credit, Output Tax Payable) appear in correct Balance Sheet sections. All balance calculations must follow accounting principles and Balance Sheet must be balanced."
+      message: "USER REQUESTS: (1) Prevent DN creation when amount exceeds PI (even in draft status). (2) Restrict line item quantities to integers only. TASKS FOR TESTING: SCENARIO 1 - DN Over-Credit Prevention: (1) Create Purchase Invoice: ₹100 + 18% tax = ₹118. (2) Attempt to create Debit Note: ₹150 (exceeds PI) with status='draft' → Should FAIL with HTTP 400 error, no DN created. (3) Attempt to create DN: ₹150 with status='submitted' → Should FAIL with HTTP 400 error, no DN created. (4) Create valid DN: ₹50 + tax = ₹59 (within PI balance) with status='draft' → Should SUCCEED. (5) Attempt to create another DN: ₹100 (would exceed remaining balance ₹59) → Should FAIL. SCENARIO 2 - Quantity Integer Validation: (1) Attempt to create Sales Invoice with item quantity=1.5 → Should FAIL with HTTP 400 error. (2) Attempt to create Purchase Invoice with item quantity=2.3 → Should FAIL. (3) Attempt to create Credit Note with quantity=0.5 → Should FAIL. (4) Attempt to create Debit Note with quantity=3.7 → Should FAIL. (5) Create Sales Invoice with quantity=5 (integer) → Should SUCCEED. CRITICAL: Verify no documents are created in database when validation fails. Verify error messages are clear and helpful."
