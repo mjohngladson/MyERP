@@ -26,12 +26,19 @@ const PaymentAllocationForm = ({ payment, onClose, onSuccess }) => {
       
       // Use correct endpoint based on party type
       const endpoint = isCustomer 
-        ? `${base}/api/invoices?${partyQuery}&limit=100`
+        ? `${base}/api/invoices/?${partyQuery}&limit=100`
         : `${base}/api/purchase/invoices?${partyQuery}&limit=100`;
       
       const res = await fetch(endpoint, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        redirect: 'follow'
       });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch invoices:', res.status, res.statusText);
+        return;
+      }
+      
       const data = await res.json();
       
       // Filter for unpaid or partially paid invoices
