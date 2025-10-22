@@ -308,8 +308,11 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    # Response is wrapped in success/payment structure
                     payment = data.get("payment", {})
-                    self.created_resources["payments"].append(payment.get("id"))
+                    payment_id = payment.get("id")
+                    if payment_id:
+                        self.created_resources["payments"].append(payment_id)
                     return payment
                 else:
                     text = await resp.text()
