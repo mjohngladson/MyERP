@@ -334,4 +334,4 @@ Same for Debit Notes under `/api/buying/debit-notes`
 - ✅ Changes live in preview environment
 - ✅ Ready for testing
 
-**Frontend URL**: https://erp-debug-1.preview.emergentagent.com
+**Frontend URL**: https://gili-erp-fix.preview.emergentagent.com

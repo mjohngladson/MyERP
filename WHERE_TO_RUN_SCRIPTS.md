@@ -155,13 +155,13 @@ If you can't run the script, you can manually edit the file:
 
    **For Preview:**
    ```bash
-   REACT_APP_BACKEND_URL=https://erp-debug-1.preview.emergentagent.com
+   REACT_APP_BACKEND_URL=https://gili-erp-fix.preview.emergentagent.com
    # REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app
    ```
 
    **For Railway:**
    ```bash
-   # REACT_APP_BACKEND_URL=https://erp-debug-1.preview.emergentagent.com
+   # REACT_APP_BACKEND_URL=https://gili-erp-fix.preview.emergentagent.com
    REACT_APP_BACKEND_URL=https://myerp-production.up.railway.app
    ```
 

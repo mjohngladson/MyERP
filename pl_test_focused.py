@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BACKEND_URL = "https://erp-debug-1.preview.emergentagent.com"
+BACKEND_URL = "https://gili-erp-fix.preview.emergentagent.com"
 
 async def test_pl_verification():
     """Test P&L statement verification with clean data"""

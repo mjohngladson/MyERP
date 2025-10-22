@@ -9,7 +9,7 @@ import aiohttp
 import json
 from datetime import datetime
 
-BACKEND_URL = "https://erp-debug-1.preview.emergentagent.com"
+BACKEND_URL = "https://gili-erp-fix.preview.emergentagent.com"
 
 async def test_railway_connection_issue():
     """Test and document the Railway database connection issue"""
