@@ -130,8 +130,10 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    supplier_id = data.get("supplier", {}).get("id")
-                    self.created_resources["suppliers"].append(supplier_id)
+                    # Response is the supplier object directly, not wrapped
+                    supplier_id = data.get("id")
+                    if supplier_id:
+                        self.created_resources["suppliers"].append(supplier_id)
                     return supplier_id
                 return None
         except Exception as e:
