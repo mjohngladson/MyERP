@@ -184,7 +184,7 @@ class CNDNEnhancedTester:
             
             print(f"Using item: {item}")
             
-            url = f"{self.base_url}/api/invoices"
+            url = f"{self.base_url}/api/invoices/"  # Note: trailing slash required
             payload = {
                 "customer_id": customer_id,
                 "customer_name": customer_name,
