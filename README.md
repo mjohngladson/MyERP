@@ -2,13 +2,22 @@
 
 ## 🚀 Quick Start After Forking
 
-**IMPORTANT:** If you just forked this project, run this command first:
+**GOOD NEWS:** Backend URL configuration is now **automatically fixed on startup!**
+
+After forking, the system will:
+- ✅ Auto-detect the new backend URL
+- ✅ Update all configuration files
+- ✅ Restart services with correct settings
+
+Just wait **60-90 seconds** after forking, then login!
+
+### Manual Fix (Optional)
+
+If auto-fix doesn't work or you need to force an update:
 
 ```bash
 cd /app && ./fix-backend-url.sh
 ```
-
-This fixes the backend URL configuration issue that occurs after forking. Wait 60 seconds after running, then refresh your browser.
 
 📖 **Full documentation:** See [POST_FORK_SETUP.md](POST_FORK_SETUP.md)
 
