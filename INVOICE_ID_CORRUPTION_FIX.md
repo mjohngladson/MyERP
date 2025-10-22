@@ -199,7 +199,7 @@ All new invoices created with proper UUID:
 - ✅ Changes live in preview environment
 - ✅ Both Sales and Purchase invoice allocation working
 
-**Frontend URL**: https://retail-nexus-18.preview.emergentagent.com
+**Frontend URL**: https://erp-gili-1.preview.emergentagent.com
 
 ## Related Documentation
 

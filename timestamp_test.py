@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 
 # Get backend URL from environment
-BACKEND_URL = "https://retail-nexus-18.preview.emergentagent.com"
+BACKEND_URL = "https://erp-gili-1.preview.emergentagent.com"
 
 class TimestampTrackingTester:
     def __init__(self):

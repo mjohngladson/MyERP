@@ -8,7 +8,7 @@ import asyncio
 import aiohttp
 import json
 
-BACKEND_URL = "https://retail-nexus-18.preview.emergentagent.com"
+BACKEND_URL = "https://erp-gili-1.preview.emergentagent.com"
 
 async def investigate_calculation_error():
     """

@@ -153,7 +153,7 @@ Indicates:
 - ✅ Changes live in preview environment
 - ✅ Ready for testing
 
-**Frontend URL**: https://retail-nexus-18.preview.emergentagent.com
+**Frontend URL**: https://erp-gili-1.preview.emergentagent.com
 
 ## Related Documentation
 

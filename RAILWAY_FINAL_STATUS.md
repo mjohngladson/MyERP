@@ -39,13 +39,13 @@ Your CORS error confirms the environment variable fix is working perfectly. The 
 allow_origins=[
     "*",  # Wildcard doesn't work with credentials
     "https://ui-production-ccf6.up.railway.app",
-    "https://retail-nexus-18.preview.emergentagent.com",
+    "https://erp-gili-1.preview.emergentagent.com",
 ]
 
 # ✅ NEW (Fixed):
 allow_origins=[
     "https://ui-production-ccf6.up.railway.app",  # Your Railway frontend
-    "https://retail-nexus-18.preview.emergentagent.com",
+    "https://erp-gili-1.preview.emergentagent.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
