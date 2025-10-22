@@ -76,12 +76,74 @@ async def adjust_invoice_for_credit_note(
     }).to_list(length=1000)
     
     total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
-    invoice_outstanding = invoice_total - total_allocated
+    new_invoice_total = current_invoice_total - cn_amount
     
     adjustment_je_id = None
     refund_entry_id = None
+    reversed_allocations = []
     
-    # Scenario 1: Invoice fully paid - Issue refund
+    # STEP 1: Handle payment allocation reversal if needed
+    if total_allocated > new_invoice_total:
+        # Need to reverse excess allocations
+        excess_allocation = total_allocated - new_invoice_total
+        remaining_to_reverse = excess_allocation
+        
+        # Reverse allocations (LIFO - most recent first)
+        sorted_allocations = sorted(allocations, key=lambda x: x.get("created_at", ""), reverse=True)
+        
+        for allocation in sorted_allocations:
+            if remaining_to_reverse <= 0:
+                break
+            
+            alloc_amount = float(allocation.get("allocated_amount", 0))
+            amount_to_reverse = min(alloc_amount, remaining_to_reverse)
+            
+            # Update or delete allocation
+            if amount_to_reverse >= alloc_amount:
+                # Delete entire allocation
+                await payment_allocations_coll.delete_one({"id": allocation["id"]})
+            else:
+                # Reduce allocation amount
+                new_alloc_amount = alloc_amount - amount_to_reverse
+                await payment_allocations_coll.update_one(
+                    {"id": allocation["id"]},
+                    {"$set": {
+                        "allocated_amount": new_alloc_amount,
+                        "updated_at": now_utc()
+                    }}
+                )
+            
+            # Update payment's unallocated amount
+            payment = await payments_coll.find_one({"id": allocation["payment_id"]})
+            if payment:
+                new_unallocated = float(payment.get("unallocated_amount", 0)) + amount_to_reverse
+                await payments_coll.update_one(
+                    {"id": allocation["payment_id"]},
+                    {"$set": {
+                        "unallocated_amount": new_unallocated,
+                        "updated_at": now_utc()
+                    }}
+                )
+            
+            reversed_allocations.append({
+                "allocation_id": allocation["id"],
+                "payment_id": allocation["payment_id"],
+                "amount_reversed": amount_to_reverse
+            })
+            
+            remaining_to_reverse -= amount_to_reverse
+        
+        # Recalculate total allocated after reversals
+        allocations = await payment_allocations_coll.find({
+            "invoice_id": reference_invoice_id,
+            "status": "active"
+        }).to_list(length=1000)
+        total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
+    
+    # STEP 2: Determine scenario (fully paid vs partially paid)
+    invoice_outstanding = new_invoice_total - total_allocated
+    
+    # Scenario 1: Invoice fully paid (or over-paid) - Issue refund
     if total_allocated >= invoice_total:
         # Create refund payment entry
         refund_entry_id = str(uuid.uuid4())
