@@ -228,17 +228,14 @@ async def create_sales_invoice(invoice_data: dict):
             
             # If creating directly with submitted status, trigger workflow
             if invoice_data.get("status") == "submitted":
-                from database import journal_entries_collection, payments_collection, accounts_collection
+                from database import journal_entries_collection, accounts_collection
                 
-                # Create Journal Entry and Payment Entry
+                # Create Journal Entry only (Payment Entry created separately by user)
                 je_id = await create_journal_entry_for_sales_invoice(
                     invoice_id, invoice_data, journal_entries_collection, accounts_collection
                 )
-                payment_id = await create_payment_entry_for_sales_invoice(
-                    invoice_data, payments_collection
-                )
                 
-                return {"success": True, "message": "Invoice created, Journal Entry and Payment Entry created", "invoice": invoice_data, "journal_entry_id": je_id, "payment_entry_id": payment_id}
+                return {"success": True, "message": "Invoice created and Journal Entry generated", "invoice": invoice_data, "journal_entry_id": je_id}
             
             return {"success": True, "message": "Invoice created successfully", "invoice": invoice_data}
         else:
