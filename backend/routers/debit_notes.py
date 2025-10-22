@@ -43,7 +43,8 @@ async def create_debit_note_accounting_entries(debit_note: Dict[str, Any]):
     
     payables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
     purchase_return_account = await accounts_collection.find_one({"account_name": {"$regex": "Purchase Return|Returns Outward", "$options": "i"}})
-    tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Tax", "$options": "i"}})
+    # Use Input Tax Credit for debit note tax reversal (asset account)
+    input_tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Input Tax", "$options": "i"}})
     
     if not payables_account or not purchase_return_account:
         return
