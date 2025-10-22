@@ -250,8 +250,11 @@ class CNDNEnhancedTester:
             async with self.session.post(url, json=payload, headers=self.get_headers()) as resp:
                 if resp.status == 200:
                     data = await resp.json()
+                    # Response is wrapped in success/invoice structure
                     invoice = data.get("invoice", {})
-                    self.created_resources["purchase_invoices"].append(invoice.get("id"))
+                    invoice_id = invoice.get("id")
+                    if invoice_id:
+                        self.created_resources["purchase_invoices"].append(invoice_id)
                     return invoice
                 else:
                     text = await resp.text()
