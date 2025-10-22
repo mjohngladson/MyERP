@@ -448,7 +448,7 @@ class BalanceSheetTester:
                 "credit_note_date": datetime.now().strftime("%Y-%m-%d"),
                 "items": [{
                     "item_id": item["id"],
-                    "item_name": item["item_name"],
+                    "item_name": item["name"],
                     "quantity": 1,
                     "rate": 30.0,
                     "amount": 30.0,
