@@ -71,13 +71,13 @@ async def create_debit_note_accounting_entries(debit_note: Dict[str, Any]):
         }
     ]
     
-    if tax_account and tax_amt > 0:
+    if input_tax_account and tax_amt > 0:
         je_accounts.append({
-            "account_id": tax_account["id"],
-            "account_name": tax_account["account_name"],
+            "account_id": input_tax_account["id"],
+            "account_name": input_tax_account["account_name"],
             "debit_amount": 0,
             "credit_amount": tax_amt,
-            "description": f"Tax reversal for DN {debit_note.get('debit_note_number', '')}"
+            "description": f"Input Tax Credit reversal for DN {debit_note.get('debit_note_number', '')}"
         })
     
     je_id = str(uuid.uuid4())
