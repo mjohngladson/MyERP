@@ -198,17 +198,14 @@ async def create_purchase_invoice(payload: dict):
             
             # If creating directly with submitted status, trigger workflow
             if payload.get('status') == 'submitted':
-                from database import journal_entries_collection, payments_collection, accounts_collection
+                from database import journal_entries_collection, accounts_collection
                 
-                # Create Journal Entry and Payment Entry
+                # Create Journal Entry only (Payment Entry created separately)
                 je_id = await create_journal_entry_for_purchase_invoice(
                     invoice_id, payload, journal_entries_collection, accounts_collection
                 )
-                payment_id = await create_payment_entry_for_purchase_invoice(
-                    payload, payments_collection
-                )
                 
-                return { 'success': True, 'invoice': payload, 'message': 'Purchase Invoice created, Journal Entry and Payment Entry created', 'journal_entry_id': je_id, 'payment_entry_id': payment_id }
+                return { 'success': True, 'invoice': payload, 'message': 'Purchase Invoice created and Journal Entry generated', 'journal_entry_id': je_id }
             
             return { 'success': True, 'invoice': payload }
         raise HTTPException(status_code=500, detail='Failed to create purchase invoice')
