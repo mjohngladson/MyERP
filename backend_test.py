@@ -1359,6 +1359,367 @@ class BackendTester:
             self.log_test("Workflow Automation Direct Submit", False, f"Error during workflow testing: {str(e)}")
             return False
 
+
+    async def test_debit_note_over_credit_prevention(self):
+        """Test DN over-credit prevention - CRITICAL FIX VALIDATION"""
+        try:
+            print("🔄 Testing Debit Note Over-Credit Prevention (Draft + Submitted)")
+            
+            # STEP 1: Create Purchase Invoice (₹118)
+            pi_payload = {
+                "supplier_name": "Test Supplier DN Prevention",
+                "items": [{"item_name": "Product A", "quantity": 1, "rate": 100, "amount": 100}],
+                "subtotal": 100,
+                "tax_rate": 18,
+                "tax_amount": 18,
+                "total_amount": 118,
+                "status": "submitted"
+            }
+            
+            pi_id = None
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=pi_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        pi_id = data["invoice"].get("id")
+                        self.log_test("DN Prevention - Step 1: Create PI (₹118)", True, 
+                                    f"PI created: {data['invoice'].get('invoice_number')}", 
+                                    {"pi_id": pi_id, "total": 118})
+                    else:
+                        self.log_test("DN Prevention - Step 1: Create PI", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DN Prevention - Step 1: Create PI", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not pi_id:
+                self.log_test("DN Prevention Test", False, "Cannot proceed without Purchase Invoice")
+                return False
+            
+            # STEP 2: Attempt DN with Excessive Amount (Draft) - Should FAIL
+            dn_draft_payload = {
+                "reference_invoice_id": pi_id,
+                "supplier_name": "Test Supplier DN Prevention",
+                "items": [{"item_name": "Product A", "quantity": 1, "rate": 150, "amount": 150}],
+                "subtotal": 150,
+                "tax_rate": 18,
+                "tax_amount": 27,
+                "total_amount": 177,
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_draft_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "rejected" in error_msg.lower() and "exceeds available balance" in error_msg.lower():
+                        self.log_test("DN Prevention - Step 2: Reject DN Draft (₹177 > ₹118)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("DN Prevention - Step 2: Reject DN Draft", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DN Prevention - Step 2: Reject DN Draft", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # Verify NO DN created in database
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes") as response:
+                if response.status == 200:
+                    dns = await response.json()
+                    dn_count = len([dn for dn in dns if dn.get("supplier_name") == "Test Supplier DN Prevention"])
+                    if dn_count == 0:
+                        self.log_test("DN Prevention - Step 2b: Verify NO DN Created", True, 
+                                    "Database check passed: 0 DNs found", {"dn_count": dn_count})
+                    else:
+                        self.log_test("DN Prevention - Step 2b: Verify NO DN Created", False, 
+                                    f"Found {dn_count} DNs, expected 0", {"dns": dns})
+                        return False
+            
+            # STEP 3: Attempt DN with Excessive Amount (Submitted) - Should FAIL
+            dn_submitted_payload = {
+                "reference_invoice_id": pi_id,
+                "supplier_name": "Test Supplier DN Prevention",
+                "items": [{"item_name": "Product A", "quantity": 1, "rate": 150, "amount": 150}],
+                "subtotal": 150,
+                "tax_rate": 18,
+                "tax_amount": 27,
+                "total_amount": 177,
+                "status": "submitted"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_submitted_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "exceeds available balance" in error_msg.lower():
+                        self.log_test("DN Prevention - Step 3: Reject DN Submitted (₹177 > ₹118)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("DN Prevention - Step 3: Reject DN Submitted", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DN Prevention - Step 3: Reject DN Submitted", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # STEP 4: Valid DN Within Balance (₹59) - Should SUCCEED
+            dn_valid_payload = {
+                "reference_invoice_id": pi_id,
+                "supplier_name": "Test Supplier DN Prevention",
+                "items": [{"item_name": "Product A", "quantity": 1, "rate": 50, "amount": 50}],
+                "subtotal": 50,
+                "tax_rate": 18,
+                "tax_amount": 9,
+                "total_amount": 59,
+                "status": "draft"
+            }
+            
+            dn_id = None
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_valid_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "debit_note" in data:
+                        dn_id = data["debit_note"].get("id")
+                        self.log_test("DN Prevention - Step 4: Create Valid DN (₹59)", True, 
+                                    f"DN created: {data['debit_note'].get('debit_note_number')}", 
+                                    {"dn_id": dn_id, "total": 59})
+                    else:
+                        self.log_test("DN Prevention - Step 4: Create Valid DN", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DN Prevention - Step 4: Create Valid DN", False, 
+                                f"Expected HTTP 200, got {response.status}: {response_text}")
+                    return False
+            
+            # Verify 1 DN created
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes") as response:
+                if response.status == 200:
+                    dns = await response.json()
+                    dn_count = len([dn for dn in dns if dn.get("supplier_name") == "Test Supplier DN Prevention"])
+                    if dn_count == 1:
+                        self.log_test("DN Prevention - Step 4b: Verify 1 DN Created", True, 
+                                    "Database check passed: 1 DN found", {"dn_count": dn_count})
+                    else:
+                        self.log_test("DN Prevention - Step 4b: Verify 1 DN Created", False, 
+                                    f"Found {dn_count} DNs, expected 1", {"dns": dns})
+                        return False
+            
+            # STEP 5: Attempt Second DN Exceeding Remaining Balance - Should FAIL
+            dn_second_payload = {
+                "reference_invoice_id": pi_id,
+                "supplier_name": "Test Supplier DN Prevention",
+                "items": [{"item_name": "Product A", "quantity": 1, "rate": 100, "amount": 100}],
+                "subtotal": 100,
+                "tax_rate": 18,
+                "tax_amount": 18,
+                "total_amount": 118,
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_second_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "exceeds available balance" in error_msg.lower() and "59" in error_msg:
+                        self.log_test("DN Prevention - Step 5: Reject Second DN (₹118 > ₹59 remaining)", True, 
+                                    f"Correctly rejected with cumulative tracking: {error_msg}", data)
+                    else:
+                        self.log_test("DN Prevention - Step 5: Reject Second DN", False, 
+                                    f"Wrong error message (should show ₹59 available): {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("DN Prevention - Step 5: Reject Second DN", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # Final verification: Still only 1 DN in database
+            async with self.session.get(f"{self.base_url}/api/buying/debit-notes") as response:
+                if response.status == 200:
+                    dns = await response.json()
+                    dn_count = len([dn for dn in dns if dn.get("supplier_name") == "Test Supplier DN Prevention"])
+                    if dn_count == 1:
+                        self.log_test("DN Prevention - Step 5b: Final Verification (Still 1 DN)", True, 
+                                    "Database check passed: Only 1 DN exists", {"dn_count": dn_count})
+                    else:
+                        self.log_test("DN Prevention - Step 5b: Final Verification", False, 
+                                    f"Found {dn_count} DNs, expected 1", {"dns": dns})
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("DN Over-Credit Prevention Test", False, f"Error: {str(e)}")
+            return False
+
+    async def test_quantity_integer_validation(self):
+        """Test quantity integer validation across all transaction types - CRITICAL FIX VALIDATION"""
+        try:
+            print("🔄 Testing Quantity Integer Validation (All Transaction Types)")
+            
+            # STEP 1: Sales Invoice with Decimal Quantity - Should FAIL
+            si_decimal_payload = {
+                "customer_name": "Test Customer Qty Validation",
+                "items": [{"item_name": "Product B", "quantity": 1.5, "rate": 100, "amount": 150}],
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices", json=si_decimal_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "whole number" in error_msg.lower() and "1.5" in error_msg:
+                        self.log_test("Qty Validation - Step 1: Reject SI Decimal Qty (1.5)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("Qty Validation - Step 1: Reject SI Decimal Qty", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Qty Validation - Step 1: Reject SI Decimal Qty", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # Verify NO SI created
+            async with self.session.get(f"{self.base_url}/api/invoices") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    si_count = len([inv for inv in invoices if inv.get("customer_name") == "Test Customer Qty Validation"])
+                    if si_count == 0:
+                        self.log_test("Qty Validation - Step 1b: Verify NO SI Created", True, 
+                                    "Database check passed: 0 SIs found", {"si_count": si_count})
+                    else:
+                        self.log_test("Qty Validation - Step 1b: Verify NO SI Created", False, 
+                                    f"Found {si_count} SIs, expected 0")
+                        return False
+            
+            # STEP 2: Purchase Invoice with Decimal Quantity - Should FAIL
+            pi_decimal_payload = {
+                "supplier_name": "Test Supplier Qty Validation",
+                "items": [{"item_name": "Product C", "quantity": 2.3, "rate": 50, "amount": 115}],
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=pi_decimal_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "whole number" in error_msg.lower() and "2.3" in error_msg:
+                        self.log_test("Qty Validation - Step 2: Reject PI Decimal Qty (2.3)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("Qty Validation - Step 2: Reject PI Decimal Qty", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Qty Validation - Step 2: Reject PI Decimal Qty", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # STEP 3: Credit Note with Decimal Quantity - Should FAIL
+            cn_decimal_payload = {
+                "customer_name": "Test Customer Qty Validation",
+                "items": [{"item_name": "Product D", "quantity": 0.5, "rate": 100, "amount": 50}],
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/sales/credit-notes", json=cn_decimal_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "whole number" in error_msg.lower() and "0.5" in error_msg:
+                        self.log_test("Qty Validation - Step 3: Reject CN Decimal Qty (0.5)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("Qty Validation - Step 3: Reject CN Decimal Qty", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Qty Validation - Step 3: Reject CN Decimal Qty", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # STEP 4: Debit Note with Decimal Quantity - Should FAIL
+            dn_decimal_payload = {
+                "supplier_name": "Test Supplier Qty Validation",
+                "items": [{"item_name": "Product E", "quantity": 3.7, "rate": 50, "amount": 185}],
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_decimal_payload) as response:
+                if response.status == 400:
+                    data = await response.json()
+                    error_msg = data.get("detail", "")
+                    if "whole number" in error_msg.lower() and "3.7" in error_msg:
+                        self.log_test("Qty Validation - Step 4: Reject DN Decimal Qty (3.7)", True, 
+                                    f"Correctly rejected: {error_msg}", data)
+                    else:
+                        self.log_test("Qty Validation - Step 4: Reject DN Decimal Qty", False, 
+                                    f"Wrong error message: {error_msg}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Qty Validation - Step 4: Reject DN Decimal Qty", False, 
+                                f"Expected HTTP 400, got {response.status}: {response_text}")
+                    return False
+            
+            # STEP 5: Valid Sales Invoice with Integer Quantity - Should SUCCEED
+            si_valid_payload = {
+                "customer_name": "Test Customer Qty Validation",
+                "items": [{"item_name": "Product F", "quantity": 5, "rate": 100, "amount": 500}],
+                "subtotal": 500,
+                "tax_rate": 18,
+                "tax_amount": 90,
+                "total_amount": 590,
+                "status": "draft"
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/invoices", json=si_valid_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        self.log_test("Qty Validation - Step 5: Accept SI Integer Qty (5)", True, 
+                                    f"SI created: {data['invoice'].get('invoice_number')}", 
+                                    {"total": 590, "quantity": 5})
+                    else:
+                        self.log_test("Qty Validation - Step 5: Accept SI Integer Qty", False, 
+                                    f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Qty Validation - Step 5: Accept SI Integer Qty", False, 
+                                f"Expected HTTP 200, got {response.status}: {response_text}")
+                    return False
+            
+            # Verify 1 SI created
+            async with self.session.get(f"{self.base_url}/api/invoices") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    si_count = len([inv for inv in invoices if inv.get("customer_name") == "Test Customer Qty Validation"])
+                    if si_count == 1:
+                        self.log_test("Qty Validation - Step 5b: Verify 1 SI Created", True, 
+                                    "Database check passed: 1 SI found", {"si_count": si_count})
+                    else:
+                        self.log_test("Qty Validation - Step 5b: Verify 1 SI Created", False, 
+                                    f"Found {si_count} SIs, expected 1")
+                        return False
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Quantity Integer Validation Test", False, f"Error: {str(e)}")
+            return False
+
     async def run_validation_tests(self):
         """Run comprehensive validation system tests for Quotations and Sales Orders"""
         print("🚀 Starting GiLi Validation System Testing Suite")
