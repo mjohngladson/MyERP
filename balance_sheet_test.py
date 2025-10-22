@@ -270,16 +270,16 @@ class BalanceSheetTester:
             headers = {"Authorization": f"Bearer {self.token}"}
             
             # Get supplier and item
-            async with self.session.get(f"{self.base_url}/api/purchase/suppliers", headers=headers) as response:
+            async with self.session.get(f"{self.base_url}/api/master/suppliers", headers=headers) as response:
                 suppliers = await response.json()
-                if not suppliers:
+                if not suppliers or len(suppliers) == 0:
                     self.log_test("Scenario 2 - Prerequisites", False, "No suppliers found")
                     return False
                 supplier = suppliers[0]
             
-            async with self.session.get(f"{self.base_url}/api/master-data/items", headers=headers) as response:
+            async with self.session.get(f"{self.base_url}/api/master/items", headers=headers) as response:
                 items = await response.json()
-                if not items:
+                if not items or len(items) == 0:
                     self.log_test("Scenario 2 - Prerequisites", False, "No items found")
                     return False
                 item = items[0]
