@@ -994,6 +994,11 @@ class BackendTester:
                         pi_id = data["invoice"].get("id")
                         pi_number = data["invoice"].get("invoice_number")
                         pi_total = data["invoice"].get("total_amount")
+                        
+                        # Debug: Print full response to understand structure
+                        print(f"DEBUG: Purchase Invoice Response: {data}")
+                        print(f"DEBUG: PI ID: {pi_id}")
+                        
                         self.log_test("Trial Balance - Step 1: Create Purchase Invoice", True, 
                                     f"Purchase Invoice created: {pi_number}, Total: ₹{pi_total}, JE created: {data.get('journal_entry_id')}", 
                                     {"pi_id": pi_id, "pi_number": pi_number, "total": pi_total})
