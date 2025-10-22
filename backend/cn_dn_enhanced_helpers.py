@@ -1,10 +1,17 @@
 """
 Enhanced Credit Note and Debit Note Helpers
 Handles invoice balance adjustments, AR/AP adjustments, and refund workflows
+
+Features:
+- Validates CN/DN amount against remaining available credit
+- Tracks cumulative CN/DN amounts per invoice
+- Automatically reverses excess payment allocations
+- Prevents over-crediting invoices
 """
 from datetime import datetime, timezone
 import uuid
 from typing import Dict, Optional, Tuple
+from fastapi import HTTPException
 
 
 def now_utc():
@@ -21,7 +28,19 @@ async def adjust_invoice_for_credit_note(
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Adjust linked sales invoice when credit note is issued
+    
+    Validations:
+    - Checks cumulative CN amount doesn't exceed original invoice total
+    - Prevents over-crediting
+    
+    Actions:
+    - Tracks CN in invoice's credit_notes array
+    - Updates total_credit_notes_amount
+    - Reverses excess payment allocations if needed
+    - Creates refund or adjustment journal entries
+    
     Returns: (adjustment_journal_entry_id, refund_entry_id)
+    Raises: HTTPException if validation fails
     """
     reference_invoice_id = credit_note.get("reference_invoice_id")
     if not reference_invoice_id:
@@ -30,10 +49,25 @@ async def adjust_invoice_for_credit_note(
     # Get the linked invoice
     invoice = await sales_invoices_coll.find_one({"id": reference_invoice_id})
     if not invoice:
-        return None, None
+        raise HTTPException(status_code=404, detail="Referenced invoice not found")
     
     cn_amount = float(credit_note.get("total_amount", 0))
-    invoice_total = float(invoice.get("total_amount", 0))
+    original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
+    current_invoice_total = float(invoice.get("total_amount", 0))
+    
+    # VALIDATION 1: Check cumulative CN amount
+    existing_cn_amount = float(invoice.get("total_credit_notes_amount", 0))
+    total_cn_after_this = existing_cn_amount + cn_amount
+    
+    if total_cn_after_this > original_invoice_total:
+        available_for_cn = original_invoice_total - existing_cn_amount
+        raise HTTPException(
+            status_code=400,
+            detail=f"Credit Note amount (₹{cn_amount}) exceeds available balance. "
+                   f"Invoice original total: ₹{original_invoice_total}, "
+                   f"Already credited: ₹{existing_cn_amount}, "
+                   f"Available for credit: ₹{available_for_cn}"
+        )
     
     # Get payment allocations for this invoice
     allocations = await payment_allocations_coll.find({
