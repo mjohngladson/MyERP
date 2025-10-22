@@ -240,12 +240,20 @@ async def create_credit_note(body: Dict[str, Any]):
     total_amount = discounted_total + tax_amount
     
     # CRITICAL: Validate CN amount doesn't exceed available SI balance (even for draft)
+    # Calculate cumulative CN amount by querying ALL existing CNs (draft + submitted) for this SI
     if reference_invoice_id:
         from database import sales_invoices_collection
         invoice = await sales_invoices_collection.find_one({"id": reference_invoice_id})
         if invoice:
             original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
-            existing_cn_amount = float(invoice.get("total_credit_notes_amount", 0))
+            
+            # CRITICAL FIX: Query credit_notes_collection to get total of ALL CNs (both draft and submitted)
+            # instead of relying on 'total_credit_notes_amount' field which only tracks submitted CNs
+            existing_cns = await credit_notes_collection.find({
+                "reference_invoice_id": reference_invoice_id
+            }).to_list(length=1000)
+            existing_cn_amount = sum(float(cn.get("total_amount", 0)) for cn in existing_cns)
+            
             total_cn_after_this = existing_cn_amount + total_amount
             
             if total_cn_after_this > original_invoice_total:
