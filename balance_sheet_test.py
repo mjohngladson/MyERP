@@ -320,7 +320,7 @@ class BalanceSheetTester:
                 "company_id": "default_company"
             }
             
-            async with self.session.post(f"{self.base_url}/api/purchase-invoices", json=purchase_invoice_data, headers=headers) as response:
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=purchase_invoice_data, headers=headers) as response:
                 if response.status == 200:
                     print(f"✅ Purchase Invoice created: {purchase_invoice_data['invoice_number']}")
                 else:
