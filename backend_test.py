@@ -969,6 +969,204 @@ class BackendTester:
             self.log_test("Sales Order Validations", False, f"Error during sales order validation testing: {str(e)}")
             return False
 
+    async def test_trial_balance_after_purchase_invoice_and_debit_note(self):
+        """Test Trial Balance correctness after Purchase Invoice and Debit Note"""
+        try:
+            print("🔄 Testing Trial Balance Correctness After Purchase Invoice and Debit Note")
+            
+            # STEP 1: Create Purchase Invoice with status='submitted'
+            # ₹100 + 18% tax = ₹118
+            pi_payload = {
+                "supplier_name": "Test Supplier for Trial Balance",
+                "items": [
+                    {"item_name": "Test Item", "quantity": 1, "rate": 100}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            pi_id = None
+            async with self.session.post(f"{self.base_url}/api/purchase/invoices", json=pi_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        pi_id = data["invoice"].get("id")
+                        pi_number = data["invoice"].get("invoice_number")
+                        pi_total = data["invoice"].get("total_amount")
+                        self.log_test("Trial Balance - Step 1: Create Purchase Invoice", True, 
+                                    f"Purchase Invoice created: {pi_number}, Total: ₹{pi_total}, JE created: {data.get('journal_entry_id')}", 
+                                    {"pi_id": pi_id, "pi_number": pi_number, "total": pi_total})
+                    else:
+                        self.log_test("Trial Balance - Step 1: Create Purchase Invoice", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Trial Balance - Step 1: Create Purchase Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not pi_id:
+                self.log_test("Trial Balance Test", False, "Cannot proceed without Purchase Invoice")
+                return False
+            
+            # STEP 2: Create Debit Note linked to PI with status='submitted'
+            # ₹50 + 18% tax = ₹59
+            dn_payload = {
+                "supplier_name": "Test Supplier for Trial Balance",
+                "reference_invoice_id": pi_id,
+                "items": [
+                    {"item_name": "Test Item", "quantity": 1, "rate": 50, "amount": 50}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "reason": "Return",
+                "status": "submitted"  # Direct submit to create JE
+            }
+            
+            dn_id = None
+            async with self.session.post(f"{self.base_url}/api/buying/debit-notes", json=dn_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "debit_note" in data:
+                        dn_id = data["debit_note"].get("id")
+                        dn_number = data["debit_note"].get("debit_note_number")
+                        dn_total = data["debit_note"].get("total_amount")
+                        self.log_test("Trial Balance - Step 2: Create Debit Note", True, 
+                                    f"Debit Note created: {dn_number}, Total: ₹{dn_total}, linked to PI: {pi_id}", 
+                                    {"dn_id": dn_id, "dn_number": dn_number, "total": dn_total})
+                    else:
+                        self.log_test("Trial Balance - Step 2: Create Debit Note", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Trial Balance - Step 2: Create Debit Note", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not dn_id:
+                self.log_test("Trial Balance Test", False, "Cannot proceed without Debit Note")
+                return False
+            
+            # STEP 3: Get Trial Balance and verify account balances
+            async with self.session.get(f"{self.base_url}/api/financial/reports/trial-balance") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    
+                    # Extract account balances
+                    accounts = data.get("accounts", [])
+                    account_map = {acc["account_name"]: acc for acc in accounts}
+                    
+                    # Expected balances:
+                    # Purchases (Expense): Dr ₹100
+                    # Input Tax Credit (Asset): Dr ₹9 (₹18 - ₹9)
+                    # Purchase Returns (Income): Cr ₹50
+                    # Accounts Payable (Liability): Cr ₹59 (₹118 - ₹59)
+                    
+                    validation_results = []
+                    
+                    # Check Purchases account
+                    purchases_acc = None
+                    for acc in accounts:
+                        if "purchase" in acc["account_name"].lower() and "return" not in acc["account_name"].lower():
+                            purchases_acc = acc
+                            break
+                    
+                    if purchases_acc:
+                        if purchases_acc.get("root_type") == "Expense" and purchases_acc.get("debit_balance") == 100.0:
+                            validation_results.append(("Purchases", True, f"Dr ₹{purchases_acc.get('debit_balance')}"))
+                        else:
+                            validation_results.append(("Purchases", False, f"Expected Dr ₹100, got Dr ₹{purchases_acc.get('debit_balance')}, Cr ₹{purchases_acc.get('credit_balance')}"))
+                    else:
+                        validation_results.append(("Purchases", False, "Account not found in Trial Balance"))
+                    
+                    # Check Input Tax Credit account
+                    itc_acc = None
+                    for acc in accounts:
+                        if "input tax" in acc["account_name"].lower() or "itc" in acc["account_name"].lower():
+                            itc_acc = acc
+                            break
+                    
+                    if itc_acc:
+                        if itc_acc.get("root_type") == "Asset" and itc_acc.get("debit_balance") == 9.0:
+                            validation_results.append(("Input Tax Credit", True, f"Dr ₹{itc_acc.get('debit_balance')}"))
+                        else:
+                            validation_results.append(("Input Tax Credit", False, f"Expected Dr ₹9, got Dr ₹{itc_acc.get('debit_balance')}, Cr ₹{itc_acc.get('credit_balance')}"))
+                    else:
+                        validation_results.append(("Input Tax Credit", False, "Account not found in Trial Balance"))
+                    
+                    # Check Purchase Returns account
+                    pr_acc = None
+                    for acc in accounts:
+                        if "purchase return" in acc["account_name"].lower() or "returns outward" in acc["account_name"].lower():
+                            pr_acc = acc
+                            break
+                    
+                    if pr_acc:
+                        if pr_acc.get("root_type") == "Income" and pr_acc.get("credit_balance") == 50.0:
+                            validation_results.append(("Purchase Returns", True, f"Cr ₹{pr_acc.get('credit_balance')}"))
+                        else:
+                            validation_results.append(("Purchase Returns", False, f"Expected Cr ₹50, got Dr ₹{pr_acc.get('debit_balance')}, Cr ₹{pr_acc.get('credit_balance')}"))
+                    else:
+                        validation_results.append(("Purchase Returns", False, "Account not found in Trial Balance"))
+                    
+                    # Check Accounts Payable account
+                    ap_acc = None
+                    for acc in accounts:
+                        if "accounts payable" in acc["account_name"].lower() or "payable" in acc["account_name"].lower():
+                            ap_acc = acc
+                            break
+                    
+                    if ap_acc:
+                        if ap_acc.get("root_type") == "Liability" and ap_acc.get("credit_balance") == 59.0:
+                            validation_results.append(("Accounts Payable", True, f"Cr ₹{ap_acc.get('credit_balance')}"))
+                        else:
+                            validation_results.append(("Accounts Payable", False, f"Expected Cr ₹59, got Dr ₹{ap_acc.get('debit_balance')}, Cr ₹{ap_acc.get('credit_balance')}"))
+                    else:
+                        validation_results.append(("Accounts Payable", False, "Account not found in Trial Balance"))
+                    
+                    # Check totals
+                    total_debits = data.get("total_debits", 0)
+                    total_credits = data.get("total_credits", 0)
+                    is_balanced = data.get("is_balanced", False)
+                    
+                    if total_debits == 109.0:
+                        validation_results.append(("Total Debits", True, f"₹{total_debits}"))
+                    else:
+                        validation_results.append(("Total Debits", False, f"Expected ₹109, got ₹{total_debits}"))
+                    
+                    if total_credits == 109.0:
+                        validation_results.append(("Total Credits", True, f"₹{total_credits}"))
+                    else:
+                        validation_results.append(("Total Credits", False, f"Expected ₹109, got ₹{total_credits}"))
+                    
+                    if is_balanced:
+                        validation_results.append(("Is Balanced", True, "true"))
+                    else:
+                        validation_results.append(("Is Balanced", False, f"Expected true, got {is_balanced}"))
+                    
+                    # Log all validation results
+                    all_passed = all(result[1] for result in validation_results)
+                    
+                    if all_passed:
+                        self.log_test("Trial Balance - Step 3: Verify Account Balances", True, 
+                                    f"All {len(validation_results)} validations passed", 
+                                    {"validations": validation_results, "trial_balance": data})
+                    else:
+                        failed_validations = [v for v in validation_results if not v[1]]
+                        self.log_test("Trial Balance - Step 3: Verify Account Balances", False, 
+                                    f"{len(failed_validations)} validations failed: {failed_validations}", 
+                                    {"validations": validation_results, "trial_balance": data})
+                        return False
+                    
+                    return True
+                else:
+                    response_text = await response.text()
+                    self.log_test("Trial Balance - Step 3: Get Trial Balance", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+        except Exception as e:
+            self.log_test("Trial Balance Test", False, f"Error during trial balance testing: {str(e)}")
+            return False
+
     async def test_workflow_automation_on_direct_submit(self):
         """Test workflow automation for documents created directly with status='submitted'"""
         try:
