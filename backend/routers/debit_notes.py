@@ -43,8 +43,10 @@ async def create_debit_note_accounting_entries(debit_note: Dict[str, Any]):
     
     payables_account = await accounts_collection.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
     purchase_return_account = await accounts_collection.find_one({"account_name": {"$regex": "Purchase Return|Returns Outward", "$options": "i"}})
-    # Use Input Tax Credit for debit note tax reversal (asset account)
-    input_tax_account = await accounts_collection.find_one({"account_name": {"$regex": "Input Tax", "$options": "i"}})
+    # Use Output Tax Payable for debit note tax reversal (liability account)
+    # When we return goods to supplier, we must reverse the GST input tax credit we claimed
+    # This creates a liability to pay back that tax to the government
+    tax_payable_account = await accounts_collection.find_one({"account_name": {"$regex": "Output Tax|Tax Payable", "$options": "i"}})
     
     if not payables_account or not purchase_return_account:
         return
