@@ -105,14 +105,16 @@ async def test_payment_reversal():
                 print(f"❌ Payment creation failed: {text}")
                 return
             payment_data = await resp.json()
-            # Response might be wrapped or direct
-            payment = payment_data.get("payment", payment_data) if isinstance(payment_data, dict) else payment_data
-            payment_id = payment.get("id")
+            payment_id = payment_data.get("payment_id")
+            print(f"✅ Payment Created: ID={payment_id}")
+        
+        # Fetch the full payment details
+        async with session.get(f"{BACKEND_URL}/api/financial/payments/{payment_id}", headers=headers) as resp:
+            payment = await resp.json()
             payment_number = payment.get("payment_number")
-            print(f"✅ Payment Created: {payment_number}")
+            print(f"   Number: {payment_number}")
             print(f"   Amount: ₹{payment.get('amount')}")
             print(f"   Unallocated: ₹{payment.get('unallocated_amount', payment.get('amount'))}")
-            print(f"   ID: {payment_id}")
         
         # Step 3: Allocate Payment to Invoice
         print("\n🔗 Step 5: Allocating Payment to Invoice...")
