@@ -231,7 +231,7 @@ class CNDNEnhancedTester:
             if not item:
                 return None
             
-            url = f"{self.base_url}/api/purchase/invoices"
+            url = f"{self.base_url}/api/purchase/invoices/"  # Note: trailing slash required
             payload = {
                 "supplier_id": supplier_id,
                 "supplier_name": supplier_name,
