@@ -229,6 +229,11 @@ async def create_credit_note(body: Dict[str, Any]):
     tax_amount = (discounted_total * tax_rate) / 100
     total_amount = discounted_total + tax_amount
     
+    # Set default credit_note_date if not provided (CRITICAL for journal entry posting_date)
+    credit_note_date = body.get("credit_note_date")
+    if not credit_note_date:
+        credit_note_date = now_utc().strftime("%Y-%m-%d")
+    
     doc = {
         "id": str(uuid.uuid4()),
         "credit_note_number": generate_credit_note_number(),
@@ -238,7 +243,7 @@ async def create_credit_note(body: Dict[str, Any]):
         "customer_phone": body.get("customer_phone"),
         "customer_address": body.get("customer_address"),
         
-        "credit_note_date": body.get("credit_note_date"),
+        "credit_note_date": credit_note_date,
         "reference_invoice_id": reference_invoice_id,
         "reference_invoice": reference_invoice_number,
         "reason": body.get("reason", "Return"),
