@@ -40,9 +40,19 @@ cd /app
 ./fix-backend-url.sh
 ```
 
-### What the Script Does
+### How Automatic Fix Works
 
-1. ✅ **Auto-detects** your current preview URL from the hostname
+The system includes `/app/auto-fix-on-startup.sh` which runs automatically via supervisor:
+
+1. ✅ Runs on every system startup (priority 1 - before other services)
+2. ✅ Checks if backend URL configuration is correct
+3. ✅ Tests if backend is accessible
+4. ✅ If issues detected, automatically runs the fix script
+5. ✅ Logs all actions to `/var/log/auto-fix-backend-url.log`
+
+### What the Fix Script Does
+
+1. ✅ **Auto-detects** your current preview URL from environment/logs/hostname
 2. ✅ **Updates** `/app/frontend/.env` with correct backend URL
 3. ✅ **Updates** `/etc/supervisor/conf.d/supervisord.conf` with correct environment variable
 4. ✅ **Cleans** frontend build cache to force rebuild
