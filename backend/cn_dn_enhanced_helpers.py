@@ -322,116 +322,53 @@ async def adjust_invoice_for_debit_note(
     # STEP 2: Determine scenario (fully paid vs partially paid)
     invoice_outstanding = new_invoice_total - total_allocated
     
-    # Scenario 1: Invoice fully paid - Receive refund from supplier
-    if total_allocated >= new_invoice_total:
-        # Create refund receipt entry
-        refund_entry_id = str(uuid.uuid4())
-        refund_payment = {
-            "id": refund_entry_id,
-            "payment_number": f"REFR-{debit_note.get('debit_note_number', '')}",
-            "payment_type": "Receive",  # Receiving refund from supplier
-            "party_type": "Supplier",
-            "party_id": debit_note.get("supplier_id"),
-            "party_name": debit_note.get("supplier_name"),
-            "payment_date": debit_note.get("debit_note_date") or now_utc(),
-            "amount": min(dn_amount, original_invoice_total),
-            "payment_method": "Bank Transfer",
-            "reference_number": f"DN-{debit_note.get('debit_note_number')}",
-            "currency": "INR",
-            "exchange_rate": 1.0,
-            "base_amount": min(dn_amount, original_invoice_total),
-            "status": "draft",
-            "description": f"Refund for Debit Note {debit_note.get('debit_note_number')}",
-            "unallocated_amount": 0.0,
-            "company_id": debit_note.get("company_id", "default_company"),
-            "created_at": now_utc(),
-            "updated_at": now_utc()
-        }
-        await payments_coll.insert_one(refund_payment)
-        
-        # Create journal entry for refund receipt
-        cash_account = await accounts_coll.find_one({"account_name": {"$regex": "Cash|Bank", "$options": "i"}})
-        ap_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Payable", "$options": "i"}})
-        
-        if cash_account and ap_account:
-            adjustment_je_id = str(uuid.uuid4())
-            refund_je = {
-                "id": adjustment_je_id,
-                "entry_number": f"JE-REFR-{debit_note.get('debit_note_number', '')}",
-                "posting_date": debit_note.get("debit_note_date") or now_utc(),
-                "reference": debit_note.get("debit_note_number", ""),
-                "description": f"Refund received for Debit Note {debit_note.get('debit_note_number')} against Invoice {invoice.get('invoice_number')}",
-                "voucher_type": "Refund Receipt",
-                "voucher_id": debit_note.get("id"),
-                "accounts": [
-                    {
-                        "account_id": cash_account["id"],
-                        "account_name": cash_account["account_name"],
-                        "debit_amount": min(dn_amount, invoice_total),
-                        "credit_amount": 0,
-                        "description": "Cash refund received"
-                    },
-                    {
-                        "account_id": ap_account["id"],
-                        "account_name": ap_account["account_name"],
-                        "debit_amount": 0,
-                        "credit_amount": min(dn_amount, invoice_total),
-                        "description": "Reduce A/P for refund"
-                    }
-                ],
-                "total_debit": min(dn_amount, invoice_total),
-                "total_credit": min(dn_amount, invoice_total),
-                "status": "posted",
-                "is_auto_generated": True,
-                "company_id": debit_note.get("company_id", "default_company"),
-                "created_at": now_utc(),
-                "updated_at": now_utc()
-            }
-            await journal_entries_coll.insert_one(refund_je)
+    # BUSINESS REQUIREMENT CHANGE (Jan 2025):
+    # Payment entries (refunds) are now created MANUALLY, not automatically
+    # This applies to both fully paid and partially paid scenarios
+    # The system will only:
+    # 1. Update invoice balance and DN tracking
+    # 2. Reverse excess payment allocations if needed
+    # 3. Keep standard DN journal entry (Dr AP, Cr Purchase Return, Cr Tax)
     
-    # Scenario 2: Invoice not fully paid - Reduce outstanding
+    # Update invoice with cumulative tracking (applies to all scenarios)
+    existing_debit_notes = invoice.get("debit_notes", [])
+    existing_debit_notes.append(debit_note.get("id"))
+    
+    update_data = {
+        "total_amount": new_invoice_total,
+        "original_total_amount": original_invoice_total,  # Preserve original
+        "total_debit_notes_amount": total_dn_after_this,
+        "debit_notes": existing_debit_notes,
+        "updated_at": now_utc(),
+        "debit_note_applied": True,
+        "last_debit_note_id": debit_note.get("id"),
+        "last_debit_note_amount": dn_amount
+    }
+    
+    # Add reversal tracking if any allocations were reversed
+    if reversed_allocations:
+        update_data["payment_allocations_reversed"] = True
+        update_data["reversed_allocations_count"] = len(reversed_allocations)
+        update_data["total_amount_reversed"] = sum(r["amount_reversed"] for r in reversed_allocations)
+    
+    # Recalculate payment status
+    if total_allocated >= new_invoice_total and new_invoice_total > 0:
+        update_data["payment_status"] = "Paid"
+        update_data["status"] = "paid"
+    elif total_allocated > 0:
+        update_data["payment_status"] = "Partially Paid"
     else:
-        # Reduce invoice total amount
-        new_invoice_total = max(0, current_invoice_total - dn_amount)
-        
-        # STEP 3: Update invoice with cumulative tracking
-        existing_debit_notes = invoice.get("debit_notes", [])
-        existing_debit_notes.append(debit_note.get("id"))
-        
-        update_data = {
-            "total_amount": new_invoice_total,
-            "original_total_amount": original_invoice_total,  # Preserve original
-            "total_debit_notes_amount": total_dn_after_this,
-            "debit_notes": existing_debit_notes,
-            "updated_at": now_utc(),
-            "debit_note_applied": True,
-            "last_debit_note_id": debit_note.get("id"),
-            "last_debit_note_amount": dn_amount
-        }
-        
-        # Add reversal tracking if any allocations were reversed
-        if reversed_allocations:
-            update_data["payment_allocations_reversed"] = True
-            update_data["reversed_allocations_count"] = len(reversed_allocations)
-            update_data["total_amount_reversed"] = sum(r["amount_reversed"] for r in reversed_allocations)
-        
-        # Recalculate payment status
-        if total_allocated >= new_invoice_total and new_invoice_total > 0:
-            update_data["payment_status"] = "Paid"
-            update_data["status"] = "paid"
-        elif total_allocated > 0:
-            update_data["payment_status"] = "Partially Paid"
-        else:
-            update_data["payment_status"] = "Unpaid"
-        
-        await purchase_invoices_coll.update_one(
-            {"id": reference_invoice_id},
-            {"$set": update_data}
-        )
-        
-        # NO adjustment JE needed - the standard DN JE already handles all accounting
-        # Standard DN JE: Dr AP, Cr Purchase Return, Cr Input Tax
-        # This already reduces AP and reverses expense/tax
-        # Invoice adjustment is just a data update, not a new accounting entry
+        update_data["payment_status"] = "Unpaid"
+    
+    await purchase_invoices_coll.update_one(
+        {"id": reference_invoice_id},
+        {"$set": update_data}
+    )
+    
+    # NO automatic payment entries created
+    # Users must create refund payment entries manually when needed
+    # The standard DN JE (Dr AP, Cr Purchase Return, Cr Tax) already handles accounting impact
+    adjustment_je_id = None
+    refund_entry_id = None
     
     return adjustment_je_id, refund_entry_id
