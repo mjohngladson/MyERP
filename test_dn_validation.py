@@ -157,20 +157,24 @@ async def test_dn_validation():
             async with session.get(f"{BACKEND_URL}/api/buying/debit-notes") as response:
                 if response.status == 200:
                     dns = await response.json()
-                    dn_count = len(dns)
                     
-                    print(f"  Number of DNs in database: {dn_count}")
+                    # Filter DNs linked to our test PI
+                    test_dns = [dn for dn in dns if dn.get("reference_invoice_id") == pi_id or dn.get("reference_invoice") == pi_number]
+                    dn_count = len(test_dns)
+                    
+                    print(f"  Total DNs in database: {len(dns)}")
+                    print(f"  DNs linked to test PI ({pi_number}): {dn_count}")
                     print()
                     
                     if dn_count == 0:
-                        print("  ✅ VALIDATION WORKING: NO DN created in database")
+                        print("  ✅ VALIDATION WORKING: NO DN created in database for test PI")
                         print("  ✅ TEST PASSED")
                     else:
                         print("  ❌ CRITICAL BUG: DN was created in database despite validation error!")
                         print("  ❌ TEST FAILED")
                         print()
-                        print("  DNs found in database:")
-                        for dn in dns:
+                        print("  DNs linked to test PI:")
+                        for dn in test_dns:
                             print(f"    - {dn.get('debit_note_number')}: ₹{dn.get('total_amount')} (status: {dn.get('status')})")
                         print()
                         print("  This confirms the user's report: Error message appears but DN is still created")
