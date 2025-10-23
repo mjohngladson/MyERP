@@ -190,6 +190,8 @@ async def adjust_invoice_for_credit_note(
     # NO automatic payment entries created
     # Users must create refund payment entries manually when needed
     # The standard CN JE (Dr Sales Return, Dr Tax, Cr AR) already handles accounting impact
+    adjustment_je_id = None
+    refund_entry_id = None
     
     return adjustment_je_id, refund_entry_id
 
