@@ -37,9 +37,10 @@ async def adjust_invoice_for_credit_note(
     - Tracks CN in invoice's credit_notes array
     - Updates total_credit_notes_amount
     - Reverses excess payment allocations if needed
-    - Creates refund or adjustment journal entries
+    - **NOTE: Payment entries (refunds) must be created manually**
+    - **Automatic payment entry creation has been disabled as per business requirement**
     
-    Returns: (adjustment_journal_entry_id, refund_entry_id)
+    Returns: (adjustment_journal_entry_id, refund_entry_id) - Both will be None as payment entries are manual
     Raises: HTTPException if validation fails
     """
     reference_invoice_id = credit_note.get("reference_invoice_id")
