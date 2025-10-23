@@ -290,7 +290,7 @@ class DNCNPaymentTester:
             
             if si_id:
                 try:
-                    async with self.session.delete(f"{self.base_url}/api/sales/invoices/{si_id}") as response:
+                    async with self.session.delete(f"{self.base_url}/api/invoices/{si_id}") as response:
                         if response.status == 200:
                             print(f"  ✅ Deleted SI: {si_id}")
                 except:
