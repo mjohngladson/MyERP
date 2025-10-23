@@ -11,7 +11,7 @@ import os
 import uuid
 import io
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 # Get backend URL from environment - Use the same URL as frontend
 BACKEND_URL = "https://erp-integrity.preview.emergentagent.com"
