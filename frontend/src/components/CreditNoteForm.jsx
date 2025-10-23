@@ -33,7 +33,7 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
         const [itemsRes, customersRes, invoicesRes] = await Promise.all([
           api.items.list('', 100),
           api.master.customers.list('', 100),
-          api.get('/invoices', { params: { limit: 200 } })
+          api.get('/invoices/', { params: { limit: 200 } })  // Added trailing slash to avoid FastAPI redirect
         ]);
         
         // Handle different response structures
