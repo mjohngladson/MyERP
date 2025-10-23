@@ -195,8 +195,9 @@ async def create_sales_invoice(invoice_data: dict):
         invoice_data["created_at"] = now_iso
         invoice_data["updated_at"] = now_iso
         
-        # Set default status if not provided (matches Purchase Invoice pattern)
+        # Set default status and payment_status if not provided
         invoice_data.setdefault("status", "draft")
+        invoice_data.setdefault("payment_status", "Unpaid")
 
         # CRITICAL: Preserve customer_id and enrich from customer master if found
         # Pattern matches Purchase Invoice logic to prevent customer_id loss
