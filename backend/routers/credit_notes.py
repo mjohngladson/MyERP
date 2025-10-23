@@ -242,7 +242,7 @@ async def create_credit_note(body: Dict[str, Any]):
     # CRITICAL: Validate CN amount doesn't exceed available SI balance (even for draft)
     # Calculate cumulative CN amount by querying ALL existing CNs (draft + submitted) for this SI
     if reference_invoice_id:
-        from database import sales_invoices_collection
+        from database import sales_invoices_collection, payment_allocations_collection
         invoice = await sales_invoices_collection.find_one({"id": reference_invoice_id})
         if invoice:
             original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
@@ -266,6 +266,42 @@ async def create_credit_note(body: Dict[str, Any]):
                            f"Available for credit: ₹{available_for_cn:.2f}. "
                            f"Cannot create Credit Note (even in draft) that exceeds invoice amount."
                 )
+            
+            # NEW VALIDATION: Check payment allocations
+            # CN should not be created if it would make allocated payments exceed the new invoice total
+            allocations = await payment_allocations_collection.find({
+                "invoice_id": reference_invoice_id,
+                "status": "active"
+            }).to_list(length=1000)
+            
+            total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
+            
+            if total_allocated > 0:
+                # Calculate what the invoice total would be after this CN
+                new_invoice_total_after_cn = original_invoice_total - total_cn_after_this
+                
+                # If allocated payments exceed the new invoice total, CN cannot be created
+                if total_allocated > new_invoice_total_after_cn:
+                    # Calculate maximum CN amount that would still leave invoice >= allocated payments
+                    max_cn_amount = original_invoice_total - existing_cn_amount - total_allocated
+                    
+                    if max_cn_amount <= 0:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"❌ Credit Note creation rejected: Invoice has ₹{total_allocated:.2f} in allocated payments. "
+                                   f"Invoice total: ₹{original_invoice_total:.2f}, Already credited: ₹{existing_cn_amount:.2f}. "
+                                   f"Cannot create Credit Note because the invoice is fully allocated to payments. "
+                                   f"Please reverse or reduce payment allocations first before creating Credit Note."
+                        )
+                    else:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"❌ Credit Note creation rejected: CN amount (₹{total_amount:.2f}) would make allocated payments exceed invoice total. "
+                                   f"Invoice total: ₹{original_invoice_total:.2f}, Already credited: ₹{existing_cn_amount:.2f}, "
+                                   f"Allocated payments: ₹{total_allocated:.2f}. "
+                                   f"Maximum CN amount allowed: ₹{max_cn_amount:.2f}. "
+                                   f"After CN, invoice total would be ₹{new_invoice_total_after_cn:.2f} but ₹{total_allocated:.2f} is already allocated to payments."
+                        )
     
     # Set default credit_note_date if not provided (CRITICAL for journal entry posting_date)
     credit_note_date = body.get("credit_note_date")
