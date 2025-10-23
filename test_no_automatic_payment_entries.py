@@ -61,7 +61,7 @@ class DNCNPaymentTester:
     async def get_journal_entries_count(self, voucher_type: str):
         """Get count of journal entries for specific voucher type"""
         try:
-            async with self.session.get(f"{self.base_url}/api/journal-entries?limit=500") as response:
+            async with self.session.get(f"{self.base_url}/api/financial/journal-entries?limit=500") as response:
                 if response.status == 200:
                     data = await response.json()
                     if isinstance(data, list):
