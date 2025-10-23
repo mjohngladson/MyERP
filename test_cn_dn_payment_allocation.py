@@ -287,7 +287,7 @@ class PaymentAllocationTester:
         async with self.session.post(f"{self.base_url}/api/financial/payments", json=pmt_payload) as response:
             if response.status == 200:
                 data = await response.json()
-                pmt_id = data["payment"]["id"]
+                pmt_id = data["payment_id"]
                 self.created_resources["payments"].append(pmt_id)
                 self.log_test("2.2 Create Payment", True, f"Payment ID: {pmt_id}, Amount: ₹60")
             else:
