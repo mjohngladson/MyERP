@@ -45,7 +45,7 @@ async def migrate_customer_supplier_ids():
     
     # Update sales invoices
     print("Step 3: Updating sales invoices...")
-    invoices_collection = db['invoices']
+    invoices_collection = db['sales_invoices']  # Correct collection name
     invoices_updated = 0
     async for invoice in invoices_collection.find():
         customer_name = invoice.get('customer_name')
