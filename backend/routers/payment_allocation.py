@@ -124,7 +124,7 @@ async def allocate_payment_to_invoices(payload: Dict[str, Any]):
         elif new_allocated > 0:
             await invoices_coll.update_one(
                 {"id": invoice_id},
-                {"$set": {"payment_status": "Partially Paid", "updated_at": now_utc()}}
+                {"$set": {"status": "partially_paid", "payment_status": "Partially Paid", "updated_at": now_utc()}}
             )
     
     # Update payment's unallocated amount
