@@ -11,7 +11,7 @@ import os
 
 # MongoDB connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-DB_NAME = 'gili_erp'
+DB_NAME = os.environ.get('DB_NAME', 'gili_production')
 
 async def migrate_customer_supplier_ids():
     """Migrate all customer/supplier references from ObjectId to UUID"""
