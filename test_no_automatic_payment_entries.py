@@ -220,8 +220,14 @@ class DNCNPaymentTester:
             async with self.session.post(f"{self.base_url}/api/invoices", json=si_payload) as response:
                 if response.status == 200:
                     data = await response.json()
-                    si_id = data.get("invoice", {}).get("id")
-                    si_total = data.get("invoice", {}).get("total_amount")
+                    # Sales invoices endpoint returns a list or a dict
+                    if isinstance(data, list):
+                        si_data = data[0] if len(data) > 0 else {}
+                    else:
+                        si_data = data.get("invoice", data)
+                    
+                    si_id = si_data.get("id")
+                    si_total = si_data.get("total_amount")
                     self.log_test("Create Sales Invoice", True, f"SI ID: {si_id}, Total: ₹{si_total}")
                 else:
                     error_text = await response.text()
