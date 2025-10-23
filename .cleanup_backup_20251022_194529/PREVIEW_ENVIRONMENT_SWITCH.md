@@ -7,14 +7,14 @@
 
 ### 1. Frontend Environment (.env)
 - **File**: `/app/frontend/.env`
-- **URL**: `https://gili-erp-fix.preview.emergentagent.com`
+- **URL**: `https://erp-accounting-8.preview.emergentagent.com`
 - **Status**: ✅ Already configured correctly
 
 ### 2. Supervisor Configuration
 - **File**: `/etc/supervisor/conf.d/supervisord.conf`
 - **Section**: `[program:frontend]`
 - **Before**: `REACT_APP_BACKEND_URL="https://myerp-production.up.railway.app"`
-- **After**: `REACT_APP_BACKEND_URL="https://gili-erp-fix.preview.emergentagent.com"`
+- **After**: `REACT_APP_BACKEND_URL="https://erp-accounting-8.preview.emergentagent.com"`
 
 ### 3. Service Restart
 ```bash
@@ -27,7 +27,7 @@ sudo supervisorctl update
 
 ✅ **Frontend Process Environment**: Confirmed via `/proc/<pid>/environ`
 ```
-REACT_APP_BACKEND_URL=https://gili-erp-fix.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com
 ```
 
 ✅ **Services Status**: All services running
@@ -37,15 +37,15 @@ REACT_APP_BACKEND_URL=https://gili-erp-fix.preview.emergentagent.com
 
 ## Current Configuration
 
-**Frontend URL**: https://gili-erp-fix.preview.emergentagent.com (port 3000)
-**Backend URL**: https://gili-erp-fix.preview.emergentagent.com/api
+**Frontend URL**: https://erp-accounting-8.preview.emergentagent.com (port 3000)
+**Backend URL**: https://erp-accounting-8.preview.emergentagent.com/api
 **Environment**: Preview (Emergent Platform)
 
 ## Testing Access
 
 The application is now configured for preview environment testing:
-- Frontend accessible at: https://gili-erp-fix.preview.emergentagent.com
-- Backend API at: https://gili-erp-fix.preview.emergentagent.com/api
+- Frontend accessible at: https://erp-accounting-8.preview.emergentagent.com
+- Backend API at: https://erp-accounting-8.preview.emergentagent.com/api
 - All API calls from frontend will use the preview backend
 
 ## Features Ready for Testing

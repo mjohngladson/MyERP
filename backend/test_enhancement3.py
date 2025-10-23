@@ -8,7 +8,7 @@ import aiohttp
 import json
 from datetime import datetime, timezone
 
-BACKEND_URL = "https://gili-erp-fix.preview.emergentagent.com"
+BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
 
 async def test_payment_reversal():
     """Test payment allocation auto-reversal"""

@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
 # Backend URL
-BACKEND_URL = "https://gili-erp-fix.preview.emergentagent.com"
+BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
 
 class CNDNEnhancedTester:
     def __init__(self):

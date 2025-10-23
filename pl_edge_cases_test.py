@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timedelta
 
 # Backend URL
-BACKEND_URL = "https://gili-erp-fix.preview.emergentagent.com"
+BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
 
 async def test_pl_edge_cases():
     """Test P&L statement edge cases"""

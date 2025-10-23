@@ -204,7 +204,7 @@ Login: ✅ SUCCESS
 - [ ] Modified Dockerfile (DONE ✅ - by AI)
 - [ ] Go to Railway Dashboard
 - [ ] Frontend Service → Variables tab
-- [ ] Add: `REACT_APP_BACKEND_URL=https://gili-erp-fix.preview.emergentagent.com`
+- [ ] Add: `REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com`
 - [ ] Make sure it's a BUILD-TIME variable
 - [ ] Trigger new deployment
 - [ ] Wait for build to complete
