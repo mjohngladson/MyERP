@@ -326,7 +326,7 @@ async def update_allocation(allocation_id: str, payload: Dict[str, Any]):
     elif total_allocated > 0:
         await invoices_coll_to_update.update_one(
             {"id": invoice_id},
-            {"$set": {"payment_status": "Partially Paid", "updated_at": now_utc()}}
+            {"$set": {"status": "partially_paid", "payment_status": "Partially Paid", "updated_at": now_utc()}}
         )
     
     updated_allocation = await allocations_coll.find_one({"id": allocation_id})
