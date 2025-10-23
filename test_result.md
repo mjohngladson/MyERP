@@ -90,6 +90,12 @@
 #
 # 5. Call the testing agent with specific instructions referring to test_result.md
 #
+# 6. MANDATORY TEST DATA CLEANUP:
+#    - Testing agent MUST delete ALL test data after EVERY test run
+#    - This includes: test invoices, test payments, test allocations, test customers/suppliers, test CNs/DNs
+#    - Testing agent should report cleanup summary: "Deleted X invoices, Y payments, Z allocations"
+#    - Main agent should verify cleanup was performed before marking test as complete
+#
 # IMPORTANT: Main agent must ALWAYS update test_result.md BEFORE calling the testing agent, as it relies on this file to understand what to test next.
 
 #===================================================================================================
