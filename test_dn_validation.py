@@ -63,6 +63,7 @@ async def test_dn_validation():
         
         pi_id = None
         pi_total = None
+        pi_number = None
         
         try:
             async with session.post(f"{BACKEND_URL}/api/purchase/invoices", json=pi_payload) as response:
@@ -77,8 +78,17 @@ async def test_dn_validation():
                         pi_total = data["invoice"].get("total_amount")
                         pi_number = data["invoice"].get("invoice_number")
                         print(f"  ✅ PI Created: {pi_number}")
-                        print(f"     ID: {pi_id}")
+                        print(f"     ID from response: {pi_id}")
                         print(f"     Total: ₹{pi_total}")
+                        
+                        # Query the PI back to get the actual stored ID
+                        async with session.get(f"{BACKEND_URL}/api/purchase/invoices/{pi_id}") as get_resp:
+                            if get_resp.status == 200:
+                                pi_data = await get_resp.json()
+                                pi_id = pi_data.get("id")
+                                print(f"     ID from database: {pi_id}")
+                            else:
+                                print(f"     ⚠️  Could not verify PI ID from database")
                     else:
                         print(f"  ❌ Invalid response structure")
                         return
