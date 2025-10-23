@@ -144,117 +144,52 @@ async def adjust_invoice_for_credit_note(
     # STEP 2: Determine scenario (fully paid vs partially paid)
     invoice_outstanding = new_invoice_total - total_allocated
     
-    # Scenario 1: Invoice fully paid (or over-paid) - Issue refund
-    if total_allocated >= new_invoice_total:
-        # Create refund payment entry
-        refund_entry_id = str(uuid.uuid4())
-        refund_payment = {
-            "id": refund_entry_id,
-            "payment_number": f"REF-{credit_note.get('credit_note_number', '')}",
-            "payment_type": "Pay",  # Refund is outgoing payment
-            "party_type": "Customer",
-            "party_id": credit_note.get("customer_id"),
-            "party_name": credit_note.get("customer_name"),
-            "payment_date": credit_note.get("credit_note_date") or now_utc(),
-            "amount": min(cn_amount, original_invoice_total),  # Refund up to invoice amount
-            "payment_method": "Bank Transfer",
-            "reference_number": f"CN-{credit_note.get('credit_note_number')}",
-            "currency": "INR",
-            "exchange_rate": 1.0,
-            "base_amount": min(cn_amount, original_invoice_total),
-            "status": "draft",  # Draft until processed
-            "description": f"Refund for Credit Note {credit_note.get('credit_note_number')}",
-            "unallocated_amount": 0.0,
-            "company_id": credit_note.get("company_id", "default_company"),
-            "created_at": now_utc(),
-            "updated_at": now_utc()
-        }
-        await payments_coll.insert_one(refund_payment)
-        
-        # Create journal entry for refund
-        cash_account = await accounts_coll.find_one({"account_name": {"$regex": "Cash|Bank", "$options": "i"}})
-        ar_account = await accounts_coll.find_one({"account_name": {"$regex": "Accounts Receivable", "$options": "i"}})
-        
-        if cash_account and ar_account:
-            adjustment_je_id = str(uuid.uuid4())
-            refund_je = {
-                "id": adjustment_je_id,
-                "entry_number": f"JE-REF-{credit_note.get('credit_note_number', '')}",
-                "posting_date": credit_note.get("credit_note_date") or now_utc(),
-                "reference": credit_note.get("credit_note_number", ""),
-                "description": f"Refund for Credit Note {credit_note.get('credit_note_number')} against Invoice {invoice.get('invoice_number')}",
-                "voucher_type": "Refund",
-                "voucher_id": credit_note.get("id"),
-                "accounts": [
-                    {
-                        "account_id": ar_account["id"],
-                        "account_name": ar_account["account_name"],
-                        "debit_amount": min(cn_amount, invoice_total),
-                        "credit_amount": 0,
-                        "description": "Reduce A/R for refund"
-                    },
-                    {
-                        "account_id": cash_account["id"],
-                        "account_name": cash_account["account_name"],
-                        "debit_amount": 0,
-                        "credit_amount": min(cn_amount, invoice_total),
-                        "description": "Cash refund to customer"
-                    }
-                ],
-                "total_debit": min(cn_amount, invoice_total),
-                "total_credit": min(cn_amount, invoice_total),
-                "status": "posted",
-                "is_auto_generated": True,
-                "company_id": credit_note.get("company_id", "default_company"),
-                "created_at": now_utc(),
-                "updated_at": now_utc()
-            }
-            await journal_entries_coll.insert_one(refund_je)
+    # BUSINESS REQUIREMENT CHANGE (Jan 2025):
+    # Payment entries (refunds) are now created MANUALLY, not automatically
+    # This applies to both fully paid and partially paid scenarios
+    # The system will only:
+    # 1. Update invoice balance and CN tracking
+    # 2. Reverse excess payment allocations if needed
+    # 3. Keep standard CN journal entry (Dr Sales Return, Dr Tax, Cr AR)
     
-    # Scenario 2: Invoice partially/not paid - Reduce outstanding
+    # Update invoice with cumulative tracking (applies to all scenarios)
+    existing_credit_notes = invoice.get("credit_notes", [])
+    existing_credit_notes.append(credit_note.get("id"))
+    
+    update_data = {
+        "total_amount": new_invoice_total,
+        "original_total_amount": original_invoice_total,  # Preserve original
+        "total_credit_notes_amount": total_cn_after_this,
+        "credit_notes": existing_credit_notes,
+        "updated_at": now_utc(),
+        "credit_note_applied": True,
+        "last_credit_note_id": credit_note.get("id"),
+        "last_credit_note_amount": cn_amount
+    }
+    
+    # Add reversal tracking if any allocations were reversed
+    if reversed_allocations:
+        update_data["payment_allocations_reversed"] = True
+        update_data["reversed_allocations_count"] = len(reversed_allocations)
+        update_data["total_amount_reversed"] = sum(r["amount_reversed"] for r in reversed_allocations)
+    
+    # Recalculate payment status
+    if total_allocated >= new_invoice_total and new_invoice_total > 0:
+        update_data["payment_status"] = "Paid"
+        update_data["status"] = "paid"
+    elif total_allocated > 0:
+        update_data["payment_status"] = "Partially Paid"
     else:
-        # Reduce invoice total amount
-        new_invoice_total = max(0, current_invoice_total - cn_amount)
-        
-        # STEP 3: Update invoice with cumulative tracking
-        existing_credit_notes = invoice.get("credit_notes", [])
-        existing_credit_notes.append(credit_note.get("id"))
-        
-        update_data = {
-            "total_amount": new_invoice_total,
-            "original_total_amount": original_invoice_total,  # Preserve original
-            "total_credit_notes_amount": total_cn_after_this,
-            "credit_notes": existing_credit_notes,
-            "updated_at": now_utc(),
-            "credit_note_applied": True,
-            "last_credit_note_id": credit_note.get("id"),
-            "last_credit_note_amount": cn_amount
-        }
-        
-        # Add reversal tracking if any allocations were reversed
-        if reversed_allocations:
-            update_data["payment_allocations_reversed"] = True
-            update_data["reversed_allocations_count"] = len(reversed_allocations)
-            update_data["total_amount_reversed"] = sum(r["amount_reversed"] for r in reversed_allocations)
-        
-        # Recalculate payment status
-        if total_allocated >= new_invoice_total and new_invoice_total > 0:
-            update_data["payment_status"] = "Paid"
-            update_data["status"] = "paid"
-        elif total_allocated > 0:
-            update_data["payment_status"] = "Partially Paid"
-        else:
-            update_data["payment_status"] = "Unpaid"
-        
-        await sales_invoices_coll.update_one(
-            {"id": reference_invoice_id},
-            {"$set": update_data}
-        )
-        
-        # NO adjustment JE needed - the standard CN JE already handles all accounting
-        # Standard CN JE: Dr Sales Return, Dr Tax, Cr AR
-        # This already reduces AR and reverses revenue/tax
-        # Invoice adjustment is just a data update, not a new accounting entry
+        update_data["payment_status"] = "Unpaid"
+    
+    await sales_invoices_coll.update_one(
+        {"id": reference_invoice_id},
+        {"$set": update_data}
+    )
+    
+    # NO automatic payment entries created
+    # Users must create refund payment entries manually when needed
+    # The standard CN JE (Dr Sales Return, Dr Tax, Cr AR) already handles accounting impact
     
     return adjustment_je_id, refund_entry_id
 
