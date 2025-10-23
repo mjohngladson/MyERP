@@ -13952,6 +13952,148 @@ class BackendTester:
         print("\n" + "=" * 80)
         return passed, failed
 
+
+    async def test_invoice_customer_id_uuid_format(self):
+        """Test that NEW sales invoices use UUID format for customer_id from creation"""
+        try:
+            print("🔄 Testing Sales Invoice customer_id UUID Format")
+            
+            # Import MongoDB client for direct database verification
+            from motor.motor_asyncio import AsyncIOMotorClient
+            mongo_client = AsyncIOMotorClient('mongodb://localhost:27017')
+            test_db = mongo_client['gili_production']
+            
+            # STEP 1: Get list of customers to find a valid customer with UUID
+            async with self.session.get(f"{self.base_url}/api/master/customers") as response:
+                if response.status == 200:
+                    customers = await response.json()
+                    if len(customers) == 0:
+                        self.log_test("Invoice UUID Test - Get Customers", False, "No customers found in database")
+                        return False
+                    
+                    # Find first customer with UUID format
+                    valid_customer = None
+                    for customer in customers:
+                        customer_id = customer.get("id", "")
+                        # UUID format: 36 characters with hyphens (e.g., 061c68bc-6be0-4591-88c5-271244cc7dc0)
+                        if len(customer_id) == 36 and customer_id.count('-') == 4:
+                            valid_customer = customer
+                            break
+                    
+                    if not valid_customer:
+                        self.log_test("Invoice UUID Test - Get Customers", False, "No customers with UUID format found")
+                        return False
+                    
+                    customer_id = valid_customer.get("id")
+                    customer_name = valid_customer.get("name")
+                    self.log_test("Invoice UUID Test - Get Customers", True, 
+                                f"Found customer with UUID: {customer_name} (ID: {customer_id})", 
+                                {"customer_id": customer_id, "customer_name": customer_name})
+                else:
+                    self.log_test("Invoice UUID Test - Get Customers", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 2: Create a NEW sales invoice with this customer
+            invoice_payload = {
+                "customer_id": customer_id,
+                "customer_name": customer_name,
+                "items": [
+                    {"item_name": "UUID Test Item", "quantity": 2, "rate": 50, "amount": 100}
+                ],
+                "subtotal": 100,
+                "tax_rate": 18,
+                "tax_amount": 18,
+                "total_amount": 118,
+                "status": "draft"
+            }
+            
+            created_invoice_id = None
+            created_invoice_number = None
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        created_invoice_id = data["invoice"].get("id")
+                        created_invoice_number = data["invoice"].get("invoice_number")
+                        self.log_test("Invoice UUID Test - Create Invoice", True, 
+                                    f"Created invoice {created_invoice_number} (ID: {created_invoice_id})", 
+                                    {"invoice_id": created_invoice_id, "invoice_number": created_invoice_number})
+                    else:
+                        self.log_test("Invoice UUID Test - Create Invoice", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Invoice UUID Test - Create Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not created_invoice_id:
+                self.log_test("Invoice UUID Test", False, "Cannot proceed without created invoice")
+                return False
+            
+            # STEP 3: Immediately query MongoDB to check the customer_id format
+            invoice_doc = await test_db.sales_invoices.find_one({"id": created_invoice_id})
+            if not invoice_doc:
+                # Try with invoice_number as fallback
+                invoice_doc = await test_db.sales_invoices.find_one({"invoice_number": created_invoice_number})
+            
+            if not invoice_doc:
+                self.log_test("Invoice UUID Test - MongoDB Query", False, 
+                            f"Invoice not found in MongoDB with ID {created_invoice_id} or number {created_invoice_number}")
+                return False
+            
+            stored_customer_id = invoice_doc.get("customer_id", "")
+            self.log_test("Invoice UUID Test - MongoDB Query", True, 
+                        f"Retrieved invoice from MongoDB, customer_id: {stored_customer_id}", 
+                        {"stored_customer_id": stored_customer_id, "invoice_number": created_invoice_number})
+            
+            # STEP 4: Verify the customer_id is in UUID format
+            # UUID format: 36 characters with 4 hyphens (e.g., 061c68bc-6be0-4591-88c5-271244cc7dc0)
+            # ObjectId format: 24 hexadecimal characters (e.g., 68f924b234f06b0b3e50332a)
+            
+            is_uuid_format = len(stored_customer_id) == 36 and stored_customer_id.count('-') == 4
+            is_objectid_format = len(stored_customer_id) == 24 and stored_customer_id.count('-') == 0
+            
+            if is_uuid_format:
+                # Verify it matches the customer UUID from master record
+                if stored_customer_id == customer_id:
+                    self.log_test("Invoice UUID Test - Format Verification", True, 
+                                f"✅ PASS: customer_id is in UUID format and matches customer master record: {stored_customer_id}", 
+                                {"format": "UUID (36 chars with hyphens)", "matches_master": True})
+                else:
+                    self.log_test("Invoice UUID Test - Format Verification", False, 
+                                f"customer_id is UUID format but doesn't match master record. Stored: {stored_customer_id}, Expected: {customer_id}", 
+                                {"stored": stored_customer_id, "expected": customer_id})
+                    return False
+            elif is_objectid_format:
+                self.log_test("Invoice UUID Test - Format Verification", False, 
+                            f"❌ FAIL: customer_id is in ObjectId format (24 hex chars): {stored_customer_id}. Expected UUID format (36 chars with hyphens)", 
+                            {"format": "ObjectId (24 hex chars)", "stored_customer_id": stored_customer_id})
+                return False
+            else:
+                self.log_test("Invoice UUID Test - Format Verification", False, 
+                            f"customer_id format is neither UUID nor ObjectId: {stored_customer_id} (length: {len(stored_customer_id)})", 
+                            {"stored_customer_id": stored_customer_id, "length": len(stored_customer_id)})
+                return False
+            
+            # STEP 5: Cleanup - Delete the test invoice
+            async with self.session.delete(f"{self.base_url}/api/invoices/{created_invoice_id}") as response:
+                if response.status == 200:
+                    self.log_test("Invoice UUID Test - Cleanup", True, f"Deleted test invoice {created_invoice_number}")
+                else:
+                    self.log_test("Invoice UUID Test - Cleanup", False, f"Failed to delete test invoice, HTTP {response.status}")
+            
+            # Close MongoDB connection
+            mongo_client.close()
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Invoice UUID Test", False, f"Error during UUID format testing: {str(e)}")
+            import traceback
+            print(f"DEBUG: Exception traceback:\n{traceback.format_exc()}")
+            return False
+
+
 async def main():
     """Main function to run Purchase Invoice Journal Entry Accounting Tests"""
     async with BackendTester() as tester:
