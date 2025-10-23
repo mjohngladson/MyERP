@@ -249,12 +249,12 @@ async def delete_allocation(allocation_id: str):
         if total_allocated == 0:
             await invoices_coll_to_update.update_one(
                 {"id": invoice_id},
-                {"$set": {"payment_status": "Unpaid", "updated_at": now_utc()}}
+                {"$set": {"status": "submitted", "payment_status": "Unpaid", "updated_at": now_utc()}}
             )
         elif total_allocated < invoice_total:
             await invoices_coll_to_update.update_one(
                 {"id": invoice_id},
-                {"$set": {"status": "submitted", "payment_status": "Partially Paid", "updated_at": now_utc()}}
+                {"$set": {"status": "partially_paid", "payment_status": "Partially Paid", "updated_at": now_utc()}}
             )
     
     return {
