@@ -136,7 +136,7 @@ class PaymentAllocationTester:
         si_payload = {
             "customer_id": customer_id,
             "customer_name": "Test Customer Allocation",
-            "invoice_date": "2025-01-23",
+            "invoice_date": "2025-01-24",  # Use different date to avoid JE collision
             "items": [{"item_name": "Widget", "quantity": 10, "rate": 10, "amount": 100}],
             "discount_amount": 0,
             "tax_rate": 18,
