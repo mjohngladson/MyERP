@@ -194,20 +194,24 @@ async def create_sales_invoice(invoice_data: dict):
         now_iso = datetime.now(timezone.utc)
         invoice_data["created_at"] = now_iso
         invoice_data["updated_at"] = now_iso
+        
+        # Set default status if not provided (matches Purchase Invoice pattern)
+        invoice_data.setdefault("status", "draft")
 
-        # CRITICAL: Ensure customer_id is always set in UUID format
-        # First try to use provided customer_id, then lookup by customer_name
+        # CRITICAL: Preserve customer_id and enrich from customer master if found
+        # Pattern matches Purchase Invoice logic to prevent customer_id loss
         if invoice_data.get("customer_id"):
+            # Customer ID provided - enrich details from master if customer exists
             customer = await customers_collection.find_one({"id": invoice_data["customer_id"]})
             if customer:
-                # Use the UUID from customer master record (not the provided ID)
-                invoice_data["customer_id"] = customer.get("id")
-                invoice_data["customer_name"] = customer.get("name")
+                # Enrich with customer details (but keep the provided customer_id)
+                invoice_data["customer_name"] = customer.get("name", invoice_data.get("customer_name", ""))
                 invoice_data["customer_email"] = customer.get("email", "")
                 invoice_data["customer_phone"] = customer.get("phone", "")
                 invoice_data["customer_address"] = customer.get("address", "")
+            # Note: customer_id is preserved even if lookup fails
         elif invoice_data.get("customer_name"):
-            # If no customer_id provided, lookup by name to get UUID
+            # Only customer_name provided - lookup to get UUID
             customer = await customers_collection.find_one({"name": invoice_data["customer_name"]})
             if customer:
                 invoice_data["customer_id"] = customer.get("id")  # Set UUID from master record
