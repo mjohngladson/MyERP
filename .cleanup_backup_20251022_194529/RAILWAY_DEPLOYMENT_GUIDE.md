@@ -23,12 +23,12 @@ Modified `/app/frontend/Dockerfile` to accept the backend URL as a build argumen
 
 3. **Add the following environment variable:**
    - Variable Name: `REACT_APP_BACKEND_URL`
-   - Value: `https://erp-accounting-8.preview.emergentagent.com` (or your backend URL)
+   - Value: `https://erp-integrity.preview.emergentagent.com` (or your backend URL)
    - **Important**: Make sure this is set as a **Build-time variable** (not just runtime)
 
 4. **Verify the configuration:**
    ```
-   REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com
+   REACT_APP_BACKEND_URL=https://erp-integrity.preview.emergentagent.com
    ```
 
 5. **Trigger a new deployment:**
@@ -64,7 +64,7 @@ Modified `/app/frontend/Dockerfile` to accept the backend URL as a build argumen
    - Navigate to your frontend URL
    - Open browser DevTools (F12) → Network tab
    - Try to login with credentials: `admin@gili.com` / `admin123`
-   - Verify the API call goes to: `https://erp-accounting-8.preview.emergentagent.com/api/auth/login`
+   - Verify the API call goes to: `https://erp-integrity.preview.emergentagent.com/api/auth/login`
    - Should receive JSON response with `success: true` and JWT token
 
 3. **Check for the fix:**
@@ -129,7 +129,7 @@ Modified `/app/frontend/Dockerfile` to accept the backend URL as a build argumen
 ### Frontend (.env)
 ```bash
 # Railway production backend URL
-REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://erp-integrity.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ```
 

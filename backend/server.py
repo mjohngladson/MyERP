@@ -41,7 +41,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_origins=[
         "https://ui-production-ccf6.up.railway.app",  # Railway frontend
-        "https://erp-accounting-8.preview.emergentagent.com",  # Development frontend  
+        "https://erp-integrity.preview.emergentagent.com",  # Development frontend  
         "http://localhost:3000",  # Local development
         "http://127.0.0.1:3000",  # Local development
     ],

@@ -1,7 +1,7 @@
 # Supervisor Configuration URL Fix
 
 ## Problem
-The frontend application was pointing to Railway backend URL (`https://myerp-production.up.railway.app`) instead of Preview backend URL (`https://erp-accounting-8.preview.emergentagent.com`), despite the `.env` file being correctly configured.
+The frontend application was pointing to Railway backend URL (`https://myerp-production.up.railway.app`) instead of Preview backend URL (`https://erp-integrity.preview.emergentagent.com`), despite the `.env` file being correctly configured.
 
 ## Root Cause
 The issue was in the supervisor configuration file at `/etc/supervisor/conf.d/supervisord.conf`. The `REACT_APP_BACKEND_URL` environment variable was hardcoded in the supervisor config, overriding the `.env` file:
@@ -18,7 +18,7 @@ Updated the supervisor configuration to use the Preview backend URL:
 ```ini
 [program:frontend]
 command=yarn start
-environment=HOST="0.0.0.0",PORT="3000",REACT_APP_BACKEND_URL="https://erp-accounting-8.preview.emergentagent.com",DANGEROUSLY_DISABLE_HOST_CHECK="true"
+environment=HOST="0.0.0.0",PORT="3000",REACT_APP_BACKEND_URL="https://erp-integrity.preview.emergentagent.com",DANGEROUSLY_DISABLE_HOST_CHECK="true"
 ```
 
 ## Fix Applied
@@ -28,9 +28,9 @@ environment=HOST="0.0.0.0",PORT="3000",REACT_APP_BACKEND_URL="https://erp-accoun
 
 ## Verification
 - Process environment check: `ps auxe | grep "react-scripts" | grep REACT_APP_BACKEND_URL`
-  - Result: `REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com` ✅
+  - Result: `REACT_APP_BACKEND_URL=https://erp-integrity.preview.emergentagent.com` ✅
 
-- Backend API test: `curl https://erp-accounting-8.preview.emergentagent.com/api/financial/accounts`
+- Backend API test: `curl https://erp-integrity.preview.emergentagent.com/api/financial/accounts`
   - Result: Returns correct Chart of Accounts data ✅
 
 - Frontend application now successfully connects to Preview backend

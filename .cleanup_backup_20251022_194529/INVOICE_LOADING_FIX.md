@@ -153,7 +153,7 @@ Indicates:
 - ✅ Changes live in preview environment
 - ✅ Ready for testing
 
-**Frontend URL**: https://erp-accounting-8.preview.emergentagent.com
+**Frontend URL**: https://erp-integrity.preview.emergentagent.com
 
 ## Related Documentation
 

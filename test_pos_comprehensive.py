@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 async def comprehensive_pos_test():
-    base_url = 'https://erp-accounting-8.preview.emergentagent.com'
+    base_url = 'https://erp-integrity.preview.emergentagent.com'
     
     async with aiohttp.ClientSession() as session:
         print('🚀 Comprehensive PoS Integration API Testing')

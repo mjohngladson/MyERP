@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 
 async def test_pos_endpoints():
-    base_url = 'https://erp-accounting-8.preview.emergentagent.com'
+    base_url = 'https://erp-integrity.preview.emergentagent.com'
     
     async with aiohttp.ClientSession() as session:
         print('🔍 Testing PoS Integration Endpoints')

@@ -15,7 +15,7 @@ When you fork this project to a new environment, the frontend will fail to conne
 
 - ❌ Login page loads but login fails silently
 - ❌ Browser console shows CORS errors pointing to old URL (e.g., `erp-gili-1.preview.emergentagent.com`)
-- ❌ Console log shows: `Using backend URL from env: https://erp-accounting-8.preview.emergentagent.com`
+- ❌ Console log shows: `Using backend URL from env: https://erp-integrity.preview.emergentagent.com`
 
 ## Automatic Fix on Startup
 
@@ -63,7 +63,7 @@ The system includes `/app/auto-fix-on-startup.sh` which runs automatically via s
 If auto-detection doesn't work, you can specify the URL manually:
 
 ```bash
-./fix-backend-url.sh https://erp-accounting-8.preview.emergentagent.com
+./fix-backend-url.sh https://erp-integrity.preview.emergentagent.com
 ```
 
 ## Manual Fix (If Script Fails)
@@ -74,14 +74,14 @@ If the automated script doesn't work, follow these manual steps:
 
 Your backend URL follows this pattern:
 ```
-https://erp-accounting-8.preview.emergentagent.com
+https://erp-integrity.preview.emergentagent.com
 ```
 
 You can find it by running:
 ```bash
 hostname
 # Output: erp-debug-1 (example)
-# Your URL: https://erp-accounting-8.preview.emergentagent.com
+# Your URL: https://erp-integrity.preview.emergentagent.com
 ```
 
 ### Step 2: Update Supervisor Config
@@ -105,7 +105,7 @@ sudo nano /etc/supervisor/conf.d/supervisord.conf
 nano /app/frontend/.env
 
 # Update this line:
-REACT_APP_BACKEND_URL=https://erp-accounting-8.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://erp-integrity.preview.emergentagent.com
 
 # Save and exit
 ```
@@ -161,7 +161,7 @@ After running the fix, verify these items:
 
 **Solution:** Run with manual URL:
 ```bash
-./fix-backend-url.sh https://erp-accounting-8.preview.emergentagent.com
+./fix-backend-url.sh https://erp-integrity.preview.emergentagent.com
 ```
 
 ### Issue: Services won't start

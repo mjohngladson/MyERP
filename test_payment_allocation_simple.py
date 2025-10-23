@@ -7,7 +7,7 @@ Focuses on the core validation logic
 import requests
 import json
 
-BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
+BACKEND_URL = "https://erp-integrity.preview.emergentagent.com"
 
 def test_payment_allocation_validation():
     """Test that CN cannot be created when it would violate payment allocation"""

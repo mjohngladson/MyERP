@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
+BACKEND_URL = "https://erp-integrity.preview.emergentagent.com"
 
 class DNCNPaymentTester:
     def __init__(self):

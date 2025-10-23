@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 # Get backend URL from environment - Use the same URL as frontend
-BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
+BACKEND_URL = "https://erp-integrity.preview.emergentagent.com"
 
 class BackendTester:
     def __init__(self):

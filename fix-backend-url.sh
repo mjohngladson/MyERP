@@ -38,7 +38,7 @@ if [ -z "$CURRENT_BACKEND_URL" ]; then
     CURRENT_HOSTNAME=$(hostname)
     if [[ $CURRENT_HOSTNAME =~ erp-[a-zA-Z0-9-]+ ]]; then
         PREVIEW_PREFIX="${BASH_REMATCH[0]}"
-        CURRENT_BACKEND_URL="https://erp-accounting-8.preview.emergentagent.com"
+        CURRENT_BACKEND_URL="https://erp-integrity.preview.emergentagent.com"
         echo "✅ Detected URL from hostname: $CURRENT_BACKEND_URL"
     fi
 fi
@@ -48,7 +48,7 @@ if [ -z "$CURRENT_BACKEND_URL" ]; then
     echo "❌ Could not auto-detect backend URL"
     echo ""
     echo "Please run with your backend URL:"
-    echo "  ./fix-backend-url.sh https://erp-accounting-8.preview.emergentagent.com"
+    echo "  ./fix-backend-url.sh https://erp-integrity.preview.emergentagent.com"
     echo ""
     echo "To find your URL, check:"
     echo "  1. Your browser address bar when accessing the app"

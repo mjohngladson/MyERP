@@ -9,7 +9,7 @@ import aiohttp
 import json
 from datetime import datetime
 
-BACKEND_URL = "https://erp-accounting-8.preview.emergentagent.com"
+BACKEND_URL = "https://erp-integrity.preview.emergentagent.com"
 
 async def test_dn_validation():
     """Test DN validation - ensure DN is NOT created when amount exceeds PI"""
