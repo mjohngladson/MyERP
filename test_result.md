@@ -103,9 +103,9 @@ user_problem_statement: "Fix two critical issues: (1) Prevent DN creation when a
 backend:
   - task: "Debit Note Over-Credit Prevention - Draft + Submitted"
     implemented: true
-    working: false
+    working: true
     file: "backend/routers/debit_notes.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "critical"
     needs_retesting: false
     status_history:
@@ -115,6 +115,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "TESTING RESULTS (13 sub-tests): ✅ PASSED 6/7 core tests, ❌ FAILED 1/7 cumulative tracking test. PASSED TESTS: (1) PI Creation ₹118 - SUCCESS. (2) Reject DN Draft ₹177 > ₹118 - CORRECTLY REJECTED with error 'Debit Note creation rejected: Amount (₹177.00) exceeds available balance'. (3) Verify NO DN created in DB - CONFIRMED 0 DNs. (4) Reject DN Submitted ₹177 > ₹118 - CORRECTLY REJECTED. (5) Create Valid DN ₹59 - SUCCESS. (6) Verify 1 DN created - CONFIRMED. FAILED TEST: (7) Reject Second DN ₹118 when only ₹59 remaining - INCORRECTLY ALLOWED, second DN was created with HTTP 200. ROOT CAUSE: Cumulative DN tracking NOT working. The validation at debit_notes.py lines 240-258 checks invoice.get('total_debit_notes_amount', 0) but this field is ONLY updated when DN status='submitted' (via adjust_invoice_for_debit_note helper in cn_dn_enhanced_helpers.py line 465). Draft DNs are NOT tracked in this field. REQUIRED FIX: Instead of relying on 'total_debit_notes_amount' field, the validation should query debit_notes_collection to calculate total amount of ALL DNs (both draft and submitted) linked to this PI: existing_dns = await debit_notes_collection.find({'reference_invoice_id': reference_invoice_id}).to_list(length=1000); existing_dn_amount = sum(float(dn.get('total_amount', 0)) for dn in existing_dns). SEVERITY: HIGH - Multiple draft DNs can exceed PI amount."
+        - working: true
+          agent: "testing"
+          comment: "RE-TESTING AFTER FIX (10 comprehensive tests): ✅ ALL TESTS PASSED 100%. SINGLE DN VALIDATION TESTS: (1) Create PI ₹118 - SUCCESS. (2) Attempt DN ₹177 > PI ₹118 with status='draft' - CORRECTLY REJECTED HTTP 400 with error 'Debit Note creation rejected: Amount (₹177.00) exceeds available balance. Invoice original total: ₹118.00, Already debited: ₹0.00, Available for debit: ₹118.00'. (3) Verify NO DN created in database - CONFIRMED 0 DNs linked to test PI. CUMULATIVE DN TRACKING TESTS: (4) Create first DN ₹59 (draft) - SUCCESS, remaining balance ₹59. (5) Attempt second DN ₹118 (would total ₹177 > PI ₹118) - CORRECTLY REJECTED HTTP 400 with error 'Already debited: ₹59.00, Available for debit: ₹59.00'. (6) Verify only 1 DN in database - CONFIRMED. (7) Create valid second DN ₹59 (totals exactly ₹118) - SUCCESS. (8) Verify 2 DNs in database totaling ₹118 - CONFIRMED. FIX VERIFICATION: The fix at debit_notes.py lines 248-253 correctly queries debit_notes_collection to calculate cumulative DN amount from ALL DNs (both draft and submitted): 'existing_dns = await debit_notes_collection.find({\"reference_invoice_id\": reference_invoice_id}).to_list(length=1000); existing_dn_amount = sum(float(dn.get(\"total_amount\", 0)) for dn in existing_dns)'. This replaces the previous broken approach that relied on invoice.get('total_debit_notes_amount') field. VALIDATION: (1) Single DN validation working perfectly. (2) Cumulative DN tracking working perfectly. (3) Error messages clear and include cumulative amounts. (4) No DNs created in database when validation fails. (5) Valid DNs within remaining balance are accepted. FIX IS PRODUCTION-READY AND WORKING 100% AS EXPECTED."
   
   - task: "Line Item Quantity Integer Validation"
     implemented: true
