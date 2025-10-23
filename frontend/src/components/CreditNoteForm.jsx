@@ -33,13 +33,25 @@ const CreditNoteForm = ({ creditNoteId, onBack, onSave }) => {
         const [itemsRes, customersRes, invoicesRes] = await Promise.all([
           api.items.list('', 100),
           api.master.customers.list('', 100),
-          api.get('/invoices', { params: { limit: 200 } })
+          api.get('/sales/invoices', { params: { limit: 200 } })
         ]);
-        setMasterItems(itemsRes.data || []);
-        setCustomers(customersRes.data || []);
-        setInvoices(invoicesRes.data || []);
+        
+        // Handle different response structures
+        const items = Array.isArray(itemsRes) ? itemsRes : (itemsRes?.data || []);
+        const customersList = Array.isArray(customersRes) ? customersRes : (customersRes?.data || []);
+        const invoicesList = Array.isArray(invoicesRes) ? invoicesRes : (invoicesRes?.data || []);
+        
+        console.log('Loaded customers:', customersList);
+        console.log('Loaded invoices:', invoicesList);
+        setMasterItems(items);
+        setCustomers(customersList);
+        setInvoices(invoicesList);
       } catch (e) {
         console.error('Failed to load master data:', e);
+        // Set empty arrays on error
+        setMasterItems([]);
+        setCustomers([]);
+        setInvoices([]);
       }
     };
     loadMasterData();
