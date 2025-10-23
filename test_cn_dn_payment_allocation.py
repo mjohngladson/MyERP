@@ -132,15 +132,15 @@ class PaymentAllocationTester:
                 self.log_test("1.0 Create Customer", False, f"HTTP {response.status}: {text}")
                 return False
         
-        # Step 1: Create Sales Invoice
+        # Step 1: Create Sales Invoice (draft first to avoid JE collision)
         si_payload = {
             "customer_id": customer_id,
             "customer_name": "Test Customer Allocation",
-            "invoice_date": "2025-01-24",  # Use different date to avoid JE collision
+            "invoice_date": "2025-01-24",
             "items": [{"item_name": "Widget", "quantity": 10, "rate": 10, "amount": 100}],
             "discount_amount": 0,
             "tax_rate": 18,
-            "status": "submitted"
+            "status": "draft"  # Create as draft first
         }
         
         async with self.session.post(f"{self.base_url}/api/invoices/", json=si_payload) as response:
@@ -149,10 +149,19 @@ class PaymentAllocationTester:
                 si_id = data["invoice"]["id"]
                 si_total = data["invoice"]["total_amount"]
                 self.created_resources["invoices"].append(si_id)
-                self.log_test("1.1 Create Sales Invoice", True, f"SI ID: {si_id}, Total: ₹{si_total}")
+                self.log_test("1.1 Create Sales Invoice (Draft)", True, f"SI ID: {si_id}, Total: ₹{si_total}")
             else:
                 text = await response.text()
-                self.log_test("1.1 Create Sales Invoice", False, f"HTTP {response.status}: {text}")
+                self.log_test("1.1 Create Sales Invoice (Draft)", False, f"HTTP {response.status}: {text}")
+                return False
+        
+        # Submit the invoice
+        async with self.session.put(f"{self.base_url}/api/invoices/{si_id}", json={"status": "submitted"}) as response:
+            if response.status == 200:
+                self.log_test("1.1b Submit Sales Invoice", True, f"SI {si_id} submitted")
+            else:
+                text = await response.text()
+                self.log_test("1.1b Submit Sales Invoice", False, f"HTTP {response.status}: {text}")
                 return False
         
         # Step 2: Create Payment and Allocate Fully
