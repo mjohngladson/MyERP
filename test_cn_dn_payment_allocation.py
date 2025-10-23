@@ -124,7 +124,7 @@ class PaymentAllocationTester:
         async with self.session.post(f"{self.base_url}/api/master/customers", json=cust_payload) as response:
             if response.status == 200:
                 data = await response.json()
-                customer_id = data["customer"]["id"]
+                customer_id = data["id"]
                 self.created_resources["customers"].append(customer_id)
                 self.log_test("1.0 Create Customer", True, f"Customer ID: {customer_id}")
             else:
