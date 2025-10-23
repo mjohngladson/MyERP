@@ -195,10 +195,22 @@ async def create_sales_invoice(invoice_data: dict):
         invoice_data["created_at"] = now_iso
         invoice_data["updated_at"] = now_iso
 
+        # CRITICAL: Ensure customer_id is always set in UUID format
+        # First try to use provided customer_id, then lookup by customer_name
         if invoice_data.get("customer_id"):
             customer = await customers_collection.find_one({"id": invoice_data["customer_id"]})
             if customer:
+                # Use the UUID from customer master record (not the provided ID)
+                invoice_data["customer_id"] = customer.get("id")
                 invoice_data["customer_name"] = customer.get("name")
+                invoice_data["customer_email"] = customer.get("email", "")
+                invoice_data["customer_phone"] = customer.get("phone", "")
+                invoice_data["customer_address"] = customer.get("address", "")
+        elif invoice_data.get("customer_name"):
+            # If no customer_id provided, lookup by name to get UUID
+            customer = await customers_collection.find_one({"name": invoice_data["customer_name"]})
+            if customer:
+                invoice_data["customer_id"] = customer.get("id")  # Set UUID from master record
                 invoice_data["customer_email"] = customer.get("email", "")
                 invoice_data["customer_phone"] = customer.get("phone", "")
                 invoice_data["customer_address"] = customer.get("address", "")
