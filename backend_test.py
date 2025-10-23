@@ -1102,10 +1102,18 @@ class BackendTester:
             async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment_payload) as response:
                 if response.status == 200:
                     data = await response.json()
-                    if data.get("success") and "payment" in data:
-                        payment_id = data["payment"].get("id")
-                        payment_number = data["payment"].get("payment_number")
+                    if data.get("success"):
+                        # Response format: {"success": True, "message": "...", "payment_id": "..."}
+                        payment_id = data.get("payment_id")
                         test_data["payments"].append(payment_id)
+                        
+                        # Get payment details to get payment_number
+                        async with self.session.get(f"{self.base_url}/api/financial/payments/{payment_id}") as get_response:
+                            if get_response.status == 200:
+                                payment_details = await get_response.json()
+                                payment_number = payment_details.get("payment_number", "N/A")
+                            else:
+                                payment_number = "N/A"
                         
                         self.log_test("Payment Allocation - Create Payment", True, 
                                     f"Payment created: {payment_number}, Amount: ₹590", 
