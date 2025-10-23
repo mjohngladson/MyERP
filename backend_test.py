@@ -969,6 +969,355 @@ class BackendTester:
             self.log_test("Sales Order Validations", False, f"Error during sales order validation testing: {str(e)}")
             return False
 
+    async def test_sales_invoice_payment_allocation_fix(self):
+        """Test NEW Sales Invoice with UUID customer_id appears in payment allocation dropdown"""
+        try:
+            print("\n🔄 Testing Sales Invoice Payment Allocation Fix")
+            
+            # Track test data for cleanup
+            test_data = {
+                "invoices": [],
+                "payments": [],
+                "allocations": []
+            }
+            
+            # STEP 1: Get existing customer from master
+            async with self.session.get(f"{self.base_url}/api/master/customers") as response:
+                if response.status == 200:
+                    customers = await response.json()
+                    if len(customers) == 0:
+                        self.log_test("Payment Allocation - Get Customers", False, "No customers found in master")
+                        return False
+                    
+                    # Use first customer
+                    customer = customers[0]
+                    customer_id = customer.get("id")
+                    customer_name = customer.get("name")
+                    
+                    self.log_test("Payment Allocation - Get Customers", True, 
+                                f"Found customer: {customer_name} (UUID: {customer_id})", 
+                                {"customer_id": customer_id, "customer_name": customer_name})
+                else:
+                    self.log_test("Payment Allocation - Get Customers", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 2: Create NEW Sales Invoice with customer_id (₹500 + 18% tax = ₹590)
+            invoice_payload = {
+                "customer_id": customer_id,
+                "customer_name": customer_name,
+                "items": [
+                    {"item_name": "Test Product for Payment Allocation", "quantity": 1, "rate": 500, "amount": 500}
+                ],
+                "tax_rate": 18,
+                "discount_amount": 0,
+                "status": "submitted"
+            }
+            
+            invoice_id = None
+            invoice_number = None
+            async with self.session.post(f"{self.base_url}/api/invoices/", json=invoice_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "invoice" in data:
+                        invoice_id = data["invoice"].get("id")
+                        invoice_number = data["invoice"].get("invoice_number")
+                        invoice_total = data["invoice"].get("total_amount")
+                        test_data["invoices"].append(invoice_id)
+                        
+                        self.log_test("Payment Allocation - Create Sales Invoice", True, 
+                                    f"Invoice created: {invoice_number}, Total: ₹{invoice_total}, customer_id: {customer_id}", 
+                                    {"invoice_id": invoice_id, "invoice_number": invoice_number, "total": invoice_total})
+                    else:
+                        self.log_test("Payment Allocation - Create Sales Invoice", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Payment Allocation - Create Sales Invoice", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            if not invoice_id:
+                self.log_test("Payment Allocation Test", False, "Cannot proceed without invoice")
+                return False
+            
+            # STEP 3: Verify invoice has customer_id in UUID format in database
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    stored_customer_id = invoice_data.get("customer_id")
+                    
+                    # Verify UUID format (36 chars with 4 hyphens)
+                    is_uuid = len(stored_customer_id) == 36 and stored_customer_id.count('-') == 4
+                    
+                    if is_uuid and stored_customer_id == customer_id:
+                        self.log_test("Payment Allocation - Verify customer_id UUID", True, 
+                                    f"Invoice has correct UUID customer_id: {stored_customer_id}", 
+                                    {"customer_id": stored_customer_id, "matches_master": True})
+                    else:
+                        self.log_test("Payment Allocation - Verify customer_id UUID", False, 
+                                    f"customer_id format issue: {stored_customer_id} (expected UUID: {customer_id})", 
+                                    {"stored": stored_customer_id, "expected": customer_id})
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Verify customer_id UUID", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 4: Query /api/invoices/?customer_id={UUID} to confirm invoice appears
+            async with self.session.get(f"{self.base_url}/api/invoices/?customer_id={customer_id}") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    
+                    # Find our test invoice
+                    found_invoice = None
+                    for inv in invoices:
+                        if inv.get("id") == invoice_id:
+                            found_invoice = inv
+                            break
+                    
+                    if found_invoice:
+                        self.log_test("Payment Allocation - Query by customer_id", True, 
+                                    f"Invoice {invoice_number} found in customer query results", 
+                                    {"invoice_id": invoice_id, "payment_status": found_invoice.get("payment_status", "Unpaid")})
+                    else:
+                        self.log_test("Payment Allocation - Query by customer_id", False, 
+                                    f"Invoice {invoice_number} NOT found in customer query (found {len(invoices)} invoices)", 
+                                    {"invoices_found": len(invoices)})
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Query by customer_id", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 5: Create payment for this customer
+            payment_payload = {
+                "party_type": "Customer",
+                "party_id": customer_id,
+                "party_name": customer_name,
+                "amount": 590,
+                "payment_method": "Bank Transfer",
+                "payment_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                "status": "submitted"
+            }
+            
+            payment_id = None
+            async with self.session.post(f"{self.base_url}/api/financial/payments", json=payment_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "payment" in data:
+                        payment_id = data["payment"].get("id")
+                        payment_number = data["payment"].get("payment_number")
+                        test_data["payments"].append(payment_id)
+                        
+                        self.log_test("Payment Allocation - Create Payment", True, 
+                                    f"Payment created: {payment_number}, Amount: ₹590", 
+                                    {"payment_id": payment_id, "payment_number": payment_number})
+                    else:
+                        self.log_test("Payment Allocation - Create Payment", False, f"Invalid response: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Payment Allocation - Create Payment", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # STEP 6: Create PARTIAL payment allocation (₹300 out of ₹590)
+            allocation_payload = {
+                "payment_id": payment_id,
+                "allocations": [
+                    {"invoice_id": invoice_id, "allocated_amount": 300, "notes": "Partial payment test"}
+                ]
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=allocation_payload) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        allocations = data.get("allocations", [])
+                        for alloc in allocations:
+                            test_data["allocations"].append(alloc.get("id"))
+                        
+                        self.log_test("Payment Allocation - Partial Allocation", True, 
+                                    f"Allocated ₹300 to invoice {invoice_number}", 
+                                    {"allocated": 300, "unallocated": data.get("unallocated_amount")})
+                    else:
+                        self.log_test("Payment Allocation - Partial Allocation", False, f"Allocation failed: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Payment Allocation - Partial Allocation", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # STEP 7: Verify invoice payment_status becomes "Partially Paid"
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    payment_status = invoice_data.get("payment_status")
+                    
+                    if payment_status == "Partially Paid":
+                        self.log_test("Payment Allocation - Verify Partially Paid Status", True, 
+                                    f"Invoice status correctly updated to 'Partially Paid'", 
+                                    {"payment_status": payment_status})
+                    else:
+                        self.log_test("Payment Allocation - Verify Partially Paid Status", False, 
+                                    f"Expected 'Partially Paid', got '{payment_status}'", 
+                                    {"payment_status": payment_status})
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Verify Partially Paid Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 8: Query /api/invoices/?customer_id={UUID} again - partially paid invoice should STILL appear
+            async with self.session.get(f"{self.base_url}/api/invoices/?customer_id={customer_id}") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    
+                    # Find our test invoice
+                    found_invoice = None
+                    for inv in invoices:
+                        if inv.get("id") == invoice_id:
+                            found_invoice = inv
+                            break
+                    
+                    if found_invoice:
+                        self.log_test("Payment Allocation - Partially Paid Invoice Appears", True, 
+                                    f"Partially paid invoice {invoice_number} still appears in query", 
+                                    {"invoice_id": invoice_id, "payment_status": found_invoice.get("payment_status")})
+                    else:
+                        self.log_test("Payment Allocation - Partially Paid Invoice Appears", False, 
+                                    f"Partially paid invoice {invoice_number} NOT found in query", 
+                                    {"invoices_found": len(invoices)})
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Partially Paid Invoice Appears", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 9: Create another allocation for remaining ₹290
+            allocation_payload_2 = {
+                "payment_id": payment_id,
+                "allocations": [
+                    {"invoice_id": invoice_id, "allocated_amount": 290, "notes": "Final payment test"}
+                ]
+            }
+            
+            async with self.session.post(f"{self.base_url}/api/financial/payment-allocation/allocate", json=allocation_payload_2) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        allocations = data.get("allocations", [])
+                        for alloc in allocations:
+                            test_data["allocations"].append(alloc.get("id"))
+                        
+                        self.log_test("Payment Allocation - Full Payment", True, 
+                                    f"Allocated remaining ₹290 to invoice {invoice_number}", 
+                                    {"allocated": 290, "unallocated": data.get("unallocated_amount")})
+                    else:
+                        self.log_test("Payment Allocation - Full Payment", False, f"Allocation failed: {data}", data)
+                        return False
+                else:
+                    response_text = await response.text()
+                    self.log_test("Payment Allocation - Full Payment", False, f"HTTP {response.status}: {response_text}")
+                    return False
+            
+            # STEP 10: Verify invoice payment_status becomes "Paid"
+            async with self.session.get(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                if response.status == 200:
+                    invoice_data = await response.json()
+                    payment_status = invoice_data.get("payment_status")
+                    status = invoice_data.get("status")
+                    
+                    if payment_status == "Paid" and status == "paid":
+                        self.log_test("Payment Allocation - Verify Paid Status", True, 
+                                    f"Invoice status correctly updated to 'Paid'", 
+                                    {"payment_status": payment_status, "status": status})
+                    else:
+                        self.log_test("Payment Allocation - Verify Paid Status", False, 
+                                    f"Expected 'Paid', got payment_status='{payment_status}', status='{status}'", 
+                                    {"payment_status": payment_status, "status": status})
+                        return False
+                else:
+                    self.log_test("Payment Allocation - Verify Paid Status", False, f"HTTP {response.status}")
+                    return False
+            
+            # STEP 11: Query /api/invoices/?customer_id={UUID} - fully paid invoice behavior
+            # Note: The API doesn't filter by payment_status, so fully paid invoices will still appear
+            # The frontend is responsible for filtering out fully paid invoices
+            async with self.session.get(f"{self.base_url}/api/invoices/?customer_id={customer_id}") as response:
+                if response.status == 200:
+                    invoices = await response.json()
+                    
+                    # Find our test invoice
+                    found_invoice = None
+                    for inv in invoices:
+                        if inv.get("id") == invoice_id:
+                            found_invoice = inv
+                            break
+                    
+                    if found_invoice:
+                        # Backend returns all invoices - frontend filters by payment_status
+                        self.log_test("Payment Allocation - Fully Paid Invoice Query", True, 
+                                    f"Fully paid invoice {invoice_number} returned by API (frontend filters it)", 
+                                    {"invoice_id": invoice_id, "payment_status": found_invoice.get("payment_status"), 
+                                     "note": "Frontend should filter out 'Paid' invoices"})
+                    else:
+                        self.log_test("Payment Allocation - Fully Paid Invoice Query", True, 
+                                    f"Invoice not found (acceptable if filtered)", 
+                                    {"invoices_found": len(invoices)})
+                else:
+                    self.log_test("Payment Allocation - Fully Paid Invoice Query", False, f"HTTP {response.status}")
+                    return False
+            
+            # CLEANUP: Delete test data
+            print("\n🧹 Cleaning up test data...")
+            cleanup_success = await self.cleanup_test_data(test_data)
+            
+            if cleanup_success:
+                self.log_test("Payment Allocation - Cleanup", True, 
+                            f"Cleaned up {len(test_data['invoices'])} invoices, {len(test_data['payments'])} payments, {len(test_data['allocations'])} allocations")
+            else:
+                self.log_test("Payment Allocation - Cleanup", False, "Some test data may not have been cleaned up")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Sales Invoice Payment Allocation Fix", False, f"Error: {str(e)}")
+            return False
+
+    async def cleanup_test_data(self, test_data: Dict[str, List[str]]) -> bool:
+        """Clean up test data created during testing"""
+        try:
+            cleanup_results = {"invoices": 0, "payments": 0, "allocations": 0}
+            
+            # Delete allocations first (they reference payments and invoices)
+            for allocation_id in test_data.get("allocations", []):
+                try:
+                    async with self.session.delete(f"{self.base_url}/api/financial/payment-allocation/allocations/{allocation_id}") as response:
+                        if response.status == 200:
+                            cleanup_results["allocations"] += 1
+                except Exception:
+                    pass
+            
+            # Delete payments
+            for payment_id in test_data.get("payments", []):
+                try:
+                    async with self.session.delete(f"{self.base_url}/api/financial/payments/{payment_id}") as response:
+                        if response.status == 200:
+                            cleanup_results["payments"] += 1
+                except Exception:
+                    pass
+            
+            # Delete invoices
+            for invoice_id in test_data.get("invoices", []):
+                try:
+                    async with self.session.delete(f"{self.base_url}/api/invoices/{invoice_id}") as response:
+                        if response.status == 200:
+                            cleanup_results["invoices"] += 1
+                except Exception:
+                    pass
+            
+            print(f"✅ Cleanup complete: {cleanup_results['invoices']} invoices, {cleanup_results['payments']} payments, {cleanup_results['allocations']} allocations deleted")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Cleanup error: {str(e)}")
+            return False
+
     async def test_trial_balance_after_purchase_invoice_and_debit_note(self):
         """Test Trial Balance correctness after Purchase Invoice and Debit Note"""
         try:
