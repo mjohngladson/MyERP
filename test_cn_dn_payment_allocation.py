@@ -232,8 +232,27 @@ class PaymentAllocationTester:
         print("SCENARIO 2: Credit Note on Partially Allocated Invoice")
         print("="*80)
         
+        # Step 0: Create Customer
+        cust_payload = {
+            "name": "Test Customer Partial",
+            "email": "test.partial@example.com",
+            "phone": "+91 9999999992"
+        }
+        
+        async with self.session.post(f"{self.base_url}/api/master/customers", json=cust_payload) as response:
+            if response.status == 200:
+                data = await response.json()
+                customer_id = data["customer"]["id"]
+                self.created_resources["customers"].append(customer_id)
+                self.log_test("2.0 Create Customer", True, f"Customer ID: {customer_id}")
+            else:
+                text = await response.text()
+                self.log_test("2.0 Create Customer", False, f"HTTP {response.status}: {text}")
+                return False
+        
         # Step 1: Create Sales Invoice
         si_payload = {
+            "customer_id": customer_id,
             "customer_name": "Test Customer Partial",
             "invoice_date": "2025-01-23",
             "items": [{"item_name": "Widget", "quantity": 10, "rate": 10, "amount": 100}],
@@ -247,7 +266,6 @@ class PaymentAllocationTester:
                 data = await response.json()
                 si_id = data["invoice"]["id"]
                 si_total = data["invoice"]["total_amount"]
-                customer_id = data["invoice"]["customer_id"]
                 self.created_resources["invoices"].append(si_id)
                 self.log_test("2.1 Create Sales Invoice", True, f"SI ID: {si_id}, Total: ₹{si_total}")
             else:
