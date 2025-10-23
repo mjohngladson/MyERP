@@ -11852,28 +11852,29 @@ class BackendTester:
             return False
 
     async def run_all_tests(self):
-        """Run backend tests focusing on BALANCE SHEET VERIFICATION - CORRECT DEBIT NOTE TAX ACCOUNTING"""
-        print("🚀 Starting GiLi Backend API Testing Suite - BALANCE SHEET VERIFICATION")
+        """Run backend tests focusing on SALES INVOICE PAYMENT ALLOCATION FIX"""
+        print("🚀 Starting GiLi Backend API Testing Suite - SALES INVOICE PAYMENT ALLOCATION FIX")
         print(f"🌐 Testing against: {self.base_url}")
-        print("🎯 BALANCE SHEET VERIFICATION - CORRECT DEBIT NOTE TAX ACCOUNTING:")
-        print("   USER REQUEST: Verify Balance Sheet shows correct accounting after Purchase Invoice and Debit Note")
-        print("   CRITICAL ISSUE: Debit Note tax should create 'Tax Payable (GST Reversal)' LIABILITY, not reduce 'Input Tax Credit' ASSET")
-        print("   TEST SCENARIO: Create PI (₹100+18%=₹118) and DN (₹90+18%=₹106.20)")
-        print("   EXPECTED BALANCE SHEET:")
-        print("      ASSETS:")
-        print("        - Input Tax Credit: ₹18.00 (from PI only - DN doesn't touch this)")
-        print("      LIABILITIES:")
-        print("        - Accounts Payable: ₹11.80 (₹118 from PI - ₹106.20 from DN)")
-        print("        - Output Tax Payable (GST Reversal): ₹16.20 (from DN tax reversal)")
-        print("      EQUITY:")
-        print("        - Net Loss: (₹10.00) (from P&L: Purchases ₹100 - Purchase Returns ₹90)")
-        print("   ACCOUNTING EQUATION: Assets ₹18 = Liabilities ₹28 + Equity (₹10) = ₹18 ✅")
+        print("🎯 SALES INVOICE PAYMENT ALLOCATION FIX:")
+        print("   USER REQUEST: Test NEW sales invoice allocation fix + verify partially paid invoices appear")
+        print("   CRITICAL FIX: Invoices.py now preserves customer_id even if lookup fails")
+        print("   TEST SCENARIOS:")
+        print("      1. Create NEW Sales Invoice with valid customer (₹500 + 18% tax = ₹590)")
+        print("      2. Verify invoice has customer_id in UUID format in database")
+        print("      3. Query /api/invoices/?customer_id={UUID} to confirm invoice appears")
+        print("      4. Create partial payment allocation (₹300)")
+        print("      5. Verify invoice payment_status becomes 'Partially Paid'")
+        print("      6. Query again - partially paid invoice should STILL appear")
+        print("      7. Create full payment allocation (remaining ₹290)")
+        print("      8. Verify invoice payment_status becomes 'Paid'")
+        print("      9. Query again - fully paid invoice behavior")
+        print("   CLEANUP: Delete ALL test data after tests complete")
         print("=" * 80)
         
-        # Tests to run (BALANCE SHEET VERIFICATION as requested in review)
+        # Tests to run (PAYMENT ALLOCATION FIX as requested in review)
         tests_to_run = [
             self.test_health_check,                                      # Basic API health check
-            self.test_balance_sheet_verification_debit_note_tax_accounting,  # NEW: Balance Sheet verification
+            self.test_sales_invoice_payment_allocation_fix,              # NEW: Payment allocation fix test
         ]
         
         passed = 0
