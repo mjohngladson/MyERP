@@ -1088,6 +1088,7 @@ class BackendTester:
             
             # STEP 5: Create payment for this customer
             payment_payload = {
+                "payment_type": "Receive",  # Required: "Receive" or "Pay"
                 "party_type": "Customer",
                 "party_id": customer_id,
                 "party_name": customer_name,
