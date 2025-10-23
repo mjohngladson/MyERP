@@ -240,7 +240,7 @@ async def create_debit_note(body: Dict[str, Any]):
     # CRITICAL: Validate DN amount doesn't exceed available PI balance (even for draft)
     # Calculate cumulative DN amount by querying ALL existing DNs (draft + submitted) for this PI
     if reference_invoice_id:
-        from database import purchase_invoices_collection
+        from database import purchase_invoices_collection, payment_allocations_collection
         invoice = await purchase_invoices_collection.find_one({"id": reference_invoice_id})
         if invoice:
             original_invoice_total = float(invoice.get("original_total_amount", invoice.get("total_amount", 0)))
@@ -264,6 +264,42 @@ async def create_debit_note(body: Dict[str, Any]):
                            f"Available for debit: ₹{available_for_dn:.2f}. "
                            f"Cannot create Debit Note (even in draft) that exceeds invoice amount."
                 )
+            
+            # NEW VALIDATION: Check payment allocations
+            # DN should not be created if it would make allocated payments exceed the new invoice total
+            allocations = await payment_allocations_collection.find({
+                "invoice_id": reference_invoice_id,
+                "status": "active"
+            }).to_list(length=1000)
+            
+            total_allocated = sum(float(a.get("allocated_amount", 0)) for a in allocations)
+            
+            if total_allocated > 0:
+                # Calculate what the invoice total would be after this DN
+                new_invoice_total_after_dn = original_invoice_total - total_dn_after_this
+                
+                # If allocated payments exceed the new invoice total, DN cannot be created
+                if total_allocated > new_invoice_total_after_dn:
+                    # Calculate maximum DN amount that would still leave invoice >= allocated payments
+                    max_dn_amount = original_invoice_total - existing_dn_amount - total_allocated
+                    
+                    if max_dn_amount <= 0:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"❌ Debit Note creation rejected: Purchase Invoice has ₹{total_allocated:.2f} in allocated payments. "
+                                   f"Invoice total: ₹{original_invoice_total:.2f}, Already debited: ₹{existing_dn_amount:.2f}. "
+                                   f"Cannot create Debit Note because the invoice is fully allocated to payments. "
+                                   f"Please reverse or reduce payment allocations first before creating Debit Note."
+                        )
+                    else:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"❌ Debit Note creation rejected: DN amount (₹{total_amount:.2f}) would make allocated payments exceed invoice total. "
+                                   f"Invoice total: ₹{original_invoice_total:.2f}, Already debited: ₹{existing_dn_amount:.2f}, "
+                                   f"Allocated payments: ₹{total_allocated:.2f}. "
+                                   f"Maximum DN amount allowed: ₹{max_dn_amount:.2f}. "
+                                   f"After DN, invoice total would be ₹{new_invoice_total_after_dn:.2f} but ₹{total_allocated:.2f} is already allocated to payments."
+                        )
     
     # Set debit_note_date to today if not provided (required for journal entry posting_date)
     debit_note_date = body.get("debit_note_date")
