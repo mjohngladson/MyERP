@@ -54,11 +54,18 @@ const PaymentAllocationForm = ({ payment, onClose, onSuccess }) => {
       
       // Filter for unpaid or partially paid invoices
       // Include invoices without payment_status field (default to unpaid)
+      // Exclude invoices with 0 or null total_amount (nothing to allocate)
       const unpaidInvoices = (Array.isArray(data) ? data : data.invoices || []).filter(
-        inv => !inv.payment_status || inv.payment_status === 'Unpaid' || inv.payment_status === 'Partially Paid'
+        inv => {
+          // Check payment status
+          const isUnpaid = !inv.payment_status || inv.payment_status === 'Unpaid' || inv.payment_status === 'Partially Paid';
+          // Check if invoice has amount to allocate (exclude 0 or null amounts)
+          const hasAmount = inv.total_amount && parseFloat(inv.total_amount) > 0;
+          return isUnpaid && hasAmount;
+        }
       );
       
-      console.log('Loaded invoices:', unpaidInvoices.length, 'from', (Array.isArray(data) ? data : data.invoices || []).length, 'total');
+      console.log('Loaded invoices:', unpaidInvoices.length, 'from', (Array.isArray(data) ? data : data.invoices || []).length, 'total (filtered out 0 amount invoices)');
       setInvoices(unpaidInvoices);
     } catch (err) {
       console.error('Failed to load invoices:', err);
