@@ -134,7 +134,18 @@ backend:
           agent: "testing"
           comment: "TESTING RESULTS: ✅ ALL 7 TESTS PASSED PERFECTLY. (1) SI with qty=1.5 - CORRECTLY REJECTED with error 'Line item 1: Quantity must be a whole number (integer), not decimal. Received: 1.5'. (2) Verified NO SI created in DB - CONFIRMED 0 SIs. (3) PI with qty=2.3 - CORRECTLY REJECTED with error 'Received: 2.3'. (4) CN with qty=0.5 - CORRECTLY REJECTED with error 'Received: 0.5'. (5) DN with qty=3.7 - CORRECTLY REJECTED with error 'Received: 3.7'. (6) SI with qty=5 (integer) - CORRECTLY ACCEPTED, created INV-20251022-0001. (7) Verified 1 SI created in DB - CONFIRMED. VALIDATION: All transaction types (SI, PI, CN, DN) correctly reject decimal quantities and accept integer quantities. Error messages are clear and helpful. No invalid documents created in database. FIX IS WORKING 100% AS EXPECTED."
 
-frontend: []
+frontend:
+  - task: "Credit Note Form - Customer and Invoice Dropdown Population"
+    implemented: true
+    working: false
+    file: "frontend/src/components/CreditNoteForm.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "USER REQUEST: Test Credit Note form dropdown population for customers and invoices. TESTING RESULTS: ❌ CRITICAL ISSUE - Mixed Content Error blocking /api/invoices API call. DETAILED FINDINGS: (1) ✅ Login and navigation to Credit Note form successful. (2) ❌ Console logs 'Loaded customers:' and 'Loaded invoices:' NOT FOUND - API calls failed before data could be logged to console. (3) ✅ /api/master/customers API call successful (HTTP 200, HTTPS) - returns 2 customers: ABC Corporation and XYZ Enterprises. (4) ❌ /api/invoices API call FAILED - Browser blocked with Mixed Content error: 'Mixed Content: The page at https://... was loaded over HTTPS, but requested an insecure XMLHttpRequest endpoint http://...'. (5) ✅ Customer dropdown appears when clicked but shows 0 options (data not populated due to API response not being processed). (6) ❌ Invoice dropdown appears when clicked but shows 0 options (API call completely failed). ROOT CAUSE ANALYSIS: Backend route defined as /api/invoices/ (with trailing slash) at routers/invoices.py line 29. Frontend makes request to /api/invoices (without trailing slash) at CreditNoteForm.jsx line 36. FastAPI automatically redirects to add trailing slash (HTTP 307). Redirect Location header uses HTTP instead of HTTPS: 'location: http://erp-accounting-8.preview.emergentagent.com/api/invoices/?limit=200'. Browser blocks mixed content (HTTPS page loading HTTP resource) for security. VERIFICATION: curl test confirms HTTP 307 redirect with HTTP Location header. /api/master/customers works because it doesn't have this redirect issue. FIX REQUIRED: Change CreditNoteForm.jsx line 36 from 'api.get('/invoices', { params: { limit: 200 } })' to 'api.get('/invoices/', { params: { limit: 200 } })' to include trailing slash and avoid redirect. IMPACT: HIGH - Users cannot select reference invoices when creating Credit Notes, limiting functionality."
 
 metadata:
   created_by: "main_agent"
