@@ -207,7 +207,7 @@ class DNCNPaymentTester:
                 "payment_status": "Paid"
             }
             
-            async with self.session.post(f"{self.base_url}/api/sales/invoices", json=si_payload) as response:
+            async with self.session.post(f"{self.base_url}/api/invoices", json=si_payload) as response:
                 if response.status == 200:
                     data = await response.json()
                     si_id = data.get("invoice", {}).get("id")
